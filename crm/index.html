@@ -499,6 +499,7 @@ let db=null,dl=null,sampleFn=null,assets=null;
 const mem={clients:new Map(),missions:new Map(),vehicules:new Map(),services:new Map()};
 
 function list(col){
+  computeDemo();
   if(!S.demoView||!DEMO[col])return S[col];
   if(col==='vehicules')return vehicles();
   if(col==='missions'&&S.vehicules.length){const map={};DEMO.vehicules.forEach(d=>{const r=S.vehicules.find(v=>v.nom===d.nom);if(r)map[d.id]=r.id});return DEMO.missions.map(m=>map[m.vehiculeId]?{...m,vehiculeId:map[m.vehiculeId]}:m)}
@@ -507,12 +508,14 @@ function list(col){
 async function save(col,obj){
   if(obj._demo){toast('Exemple en lecture seule — créez votre propre fiche.');return null}
   const id=obj.id||uid();const body={...obj};delete body.id;body.updatedAt=nowISO();if(!body.createdAt)body.createdAt=body.updatedAt;
-  if(db){try{await db.collection(col).doc(id).set(body)}catch(e){toast(errMsg(e));throw e}}
+  if(db){try{await db.collection(col).doc(id).set(body)}catch(e){toast(errMsg(e));throw e}
+    S[col]=[...S[col].filter(x=>x.id!==id),{id,...body}];refresh()}
   else{mem[col].set(id,{id,...body});S[col]=[...mem[col].values()];refresh()}
   return id;
 }
 async function remove(col,id){
-  if(db){try{await db.collection(col).doc(id).delete()}catch(e){toast(errMsg(e));throw e}}
+  if(db){try{await db.collection(col).doc(id).delete()}catch(e){toast(errMsg(e));throw e}
+    S[col]=S[col].filter(x=>x.id!==id);refresh()}
   else{mem[col].delete(id);S[col]=[...mem[col].values()];refresh()}
 }
 function errMsg(e){const c=e&&e.code;return c==='quota_exceeded'?'Base pleine : supprimez des fiches anciennes pour en créer de nouvelles.':c==='invalid_argument'?'Enregistrement refusé : fiche trop volumineuse.':c==='resource_exhausted'?'Trop de modifications d’un coup, réessayez dans un instant.':'Enregistrement impossible pour l’instant. Vérifiez votre connexion.'}
@@ -579,7 +582,7 @@ function monthBounds(d){const a=new Date(d.getFullYear(),d.getMonth(),1);const b
 function caMois(ref){const [a,b]=monthBounds(ref);return list('missions').filter(m=>ACTIVE.includes(m.statut)).reduce((s,m)=>{const d=durDays(m);const o=overlapDays(m,a,b);return s+(+m.montant||0)*(d?o/d:0)},0)}
 function joursLoues(v,ref){const [a,b]=monthBounds(ref);return list('missions').filter(m=>m.vehiculeId===v.id&&ACTIVE.includes(m.statut)).reduce((s,m)=>s+overlapDays(m,a,b),0)}
 function seuil(v){const t=+v.tarifJour||0;return t?((+v.loyerMois||0)+(+v.chargesMois||0))/t:0}
-function clashes(m,all){if(!m.vehiculeId||!['confirmee','encours','proposition'].includes(m.statut))return [];const a=parse(m.debut),b=parse(m.fin)||a;if(!a)return [];return all.filter(o=>o.id!==m.id&&o.vehiculeId===m.vehiculeId&&['confirmee','encours'].includes(o.statut)&&parse(o.debut)&&parse(o.debut)<b&&(parse(o.fin)||parse(o.debut))>a)}
+function clashes(m,all){if(!m.vehiculeId||!['nouvelle','confirmee','encours','proposition'].includes(m.statut))return [];const a=parse(m.debut),b=parse(m.fin)||a;if(!a)return [];return all.filter(o=>o.id!==m.id&&o.vehiculeId===m.vehiculeId&&['confirmee','encours'].includes(o.statut)&&parse(o.debut)&&parse(o.debut)<b&&(parse(o.fin)||parse(o.debut))>a)}
 function contratScore(m){const k=m.contrat||{};const p=k.pieces||{};const steps=[!!p.permis,!!p.passeport,!!p.domicile,k.statut==='signe',!!(k.edlDepart&&k.edlDepart.fait),!!(k.edlRetour&&k.edlRetour.fait)];return {done:steps.filter(Boolean).length,total:steps.length}}
 function todos(){
   const ms=list('missions'),now=new Date(),out={amel:[],youssouf:[],aziz:[]};
@@ -848,6 +851,8 @@ const opt=(arr,v)=>arr.map(o=>typeof o==='string'?`<option ${o===v?'selected':''
 const fld=(k,l,v,type,extra)=>`<div class="f ${extra&&extra.full?'full':''}"><label for="f_${k.replace(/\./g,'_')}">${l}</label>${type==='textarea'?`<textarea id="f_${k.replace(/\./g,'_')}" data-k="${k}">${esc(v)}</textarea>`:type==='select'?`<select id="f_${k.replace(/\./g,'_')}" data-k="${k}">${extra.opts}</select>`:`<input id="f_${k.replace(/\./g,'_')}" data-k="${k}" type="${type||'text'}" value="${esc(v)}" ${extra&&extra.ph?`placeholder="${esc(extra.ph)}"`:''} ${type==='number'?'inputmode="decimal" step="any"':''}>`}</div>`;
 function getK(o,k){return k.split('.').reduce((x,p)=>x==null?'':x[p],o)}
 function setK(o,k,v){const ps=k.split('.');let x=o;ps.slice(0,-1).forEach(p=>{if(x[p]==null||typeof x[p]!=='object')x[p]={};x=x[p]});x[ps[ps.length-1]]=v}
+function missionHints(d){const cl=clashes(d,list('missions'));return `${cl.length?`<div class="warn-box">${ico('alert')}<span>Ce véhicule est déjà réservé sur ce créneau : ${cl.map(o=>esc(o.titre)+' ('+fmtDT(parse(o.debut))+')').join(', ')}.</span></div>`:''}
+      ${(()=>{const v=byId(vehicles(),d.vehiculeId);if(!v||!d.debut)return '';const n=durDays(d);const est=n*(+v.tarifJour||0);return `<div class="note-box">Repère : ${n} jour${n>1?'s':''} × ${fmtE(v.tarifJour)} = <b class="num">${fmtE(est)}</b> au tarif ${esc(v.nom)}.${(+d.montant)&&(+d.montant)<est*.85?' Le montant saisi est plus de 15 % sous ce repère.':''}</div>`})()}`}
 function drawRender(){
   const d=DR.draft;const k=DR.kind;const isNew=!DR.id;const demo=!!d._demo;let title='',eyebrow='',tabs=[],body='',foot='';
   if(k==='mission'){
@@ -865,8 +870,7 @@ function drawRender(){
       ${fld('montant','Montant total (€ TTC)',d.montant,'number')}${fld('acompte','Acompte reçu (€)',d.acompte,'number')}
       ${fld('statut','Statut',d.statut,'select',{opts:opt(STATUTS,d.statut)})}${fld('paiement','Paiement',d.paiement||'non','select',{opts:opt(PAIEMENT_ST,d.paiement||'non')})}
       ${fld('notes','Notes internes',d.notes,'textarea',{full:1})}</div>
-      ${cl.length?`<div class="warn-box">${ico('alert')}<span>Ce véhicule est déjà réservé sur ce créneau : ${cl.map(o=>esc(o.titre)+' ('+fmtDT(parse(o.debut))+')').join(', ')}.</span></div>`:''}
-      ${(()=>{const v=byId(vehicles(),d.vehiculeId);if(!v||!d.debut)return '';const n=durDays(d);const est=n*(+v.tarifJour||0);return `<div class="note-box">Repère : ${n} jour${n>1?'s':''} × ${fmtE(v.tarifJour)} = <b class="num">${fmtE(est)}</b> au tarif ${esc(v.nom)}.${(+d.montant)&&(+d.montant)<est*.85?' Le montant saisi est plus de 15 % sous ce repère.':''}</div>`})()}`;
+      <div id="drHints">${missionHints(d)}</div>`;
     if(DR.tab==='contrat'){const c=d.contrat||{};body=`<div class="sec-t">Contrat</div><div class="fg">
       ${fld('contrat.statut','Statut du contrat',c.statut,'select',{opts:opt(CONTRAT_ST,c.statut)})}${fld('contrat.caution','Caution (€)',c.caution,'number')}
       ${fld('contrat.cautionStatut','Caution',c.cautionStatut,'select',{opts:opt(CAUTION_ST,c.cautionStatut)})}</div>
@@ -919,7 +923,7 @@ async function saveDrawer(){
   if(k==='vehicule'&&!d.nom.trim()){toast('Indiquez le modèle.');return}
   if(k==='service'){if(!d.nom.trim()){toast('Indiquez un nom.');return}
     if(!S.services.length){for(const s of DEFAULT_SERVICES){if(s.id!==d.id)await save('services',{...s})}}
-    if(!d.id)d.id=d.nom.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||uid();}
+    if(!d.id)d.id=d.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||uid();}
   if(k==='mission'&&d.fin&&d.debut&&parse(d.fin)<parse(d.debut)){toast('La fin est avant le début.');return}
   try{const id=await save(col,{...d,id:DR.id||d.id||undefined});if(id){DR.id=id;DR.draft.id=id;toast('Enregistré');if(k==='client'&&DR.pendingMission){const pm=DR.pendingMission;DR.pendingMission=null;openDrawer('mission',null,'main',{...pm,clientId:id});return}drawRender()}}catch(e){}
 }
@@ -1038,7 +1042,7 @@ document.addEventListener('click',async e=>{
   else if(a==='del-no'){DR.confirmDel=false;drawRender()}
   else if(a==='del-yes'){const col=DR.kind==='mission'?'missions':DR.kind==='client'?'clients':DR.kind==='vehicule'?'vehicules':'services';await remove(col,DR.id);closeDrawer();toast('Supprimé')}
   else if(a==='new-mission-for'){openDrawer('mission',null,'main',{clientId:DR.id})}
-  else if(a==='dl-contrat'){readForm();try{await dl.save({filename:`contrat-amane-${(DR.draft.titre||'mission').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'-').slice(0,40)}.html`,data:contratHTML(DR.draft)})}catch(err){if(err&&err.code!=='cancelled'&&err.code!=='declined')toast('Téléchargement impossible.')}}
+  else if(a==='dl-contrat'){readForm();try{await dl.save({filename:`contrat-amane-${(DR.draft.titre||'mission').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').slice(0,40)}.html`,data:contratHTML(DR.draft)})}catch(err){if(err&&err.code!=='cancelled'&&err.code!=='declined')toast('Téléchargement impossible.')}}
   else if(a==='ai-write')aiWrite();
   else if(a==='ai-copy')copyText(($('#aiOut')||{}).value||'');
   else if(a==='mj-close')$('#mj').hidden=true;
@@ -1063,7 +1067,7 @@ document.addEventListener('change',e=>{
   if(t.dataset&&t.dataset.imp!=null){IMP.groups[+t.dataset.imp].target=t.value;impRender();return}
   if(t.id==='fSvc'){S.filters.svc=t.value;render()}
   if(t.id==='f_clientId'&&t.value==='__new'){readForm();DR.draft.clientId='';const pm={...DR.draft};delete pm.id;openDrawer('client');DR.pendingMission=pm}
-  else if(DR.open&&t.closest('#drawer')&&t.dataset.k&&['vehiculeId','debut','fin','montant','service'].includes(t.dataset.k)){readForm();const keep=document.activeElement&&document.activeElement.id;drawRender();if(keep){const el=document.getElementById(keep);el&&el.focus()}}
+  else if(DR.open&&DR.kind==='mission'&&t.closest('#drawer')&&t.dataset.k&&['vehiculeId','debut','fin','montant','service'].includes(t.dataset.k)){readForm();const h=document.getElementById('drHints');if(h)h.innerHTML=missionHints(DR.draft);const vs=document.getElementById('f_vehiculeId');if(vs)[...vs.options].forEach(o=>{const v=byId(vehicles(),o.value);if(v)o.textContent=v.nom+vehSuffix(v,DR.draft)})}
 });
 document.addEventListener('input',e=>{if(e.target.id==='fQ'){S.filters.q=e.target.value;const pos=e.target.selectionStart;render();const el=$('#fQ');el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}if(e.target.id==='palIn')palBuild(e.target.value);if(e.target.id==='mjIn')MJ.text=e.target.value});
 document.addEventListener('keydown',e=>{
