@@ -9,9 +9,6 @@ def vid(m):
         if os.path.exists(os.path.join(S,'video',n+'.mp4')) and os.path.exists(os.path.join(S,'img',n+'-poster.jpg')): return n
     raise SystemExit('no video for '+m.group(1))
 # Textes v2 (fr/en/es/ar) repris tels quels
-v2=open(os.path.join(S,'src-v2.html'),encoding='utf-8').read()
-a=v2.index('const I18N={');b=v2.index('\nlet LANG',a)
-src=src.replace('{{I18N_V2}}',v2[a:b])
 out=re.sub(r'\{\{SVG:([a-z]+)\}\}',svg,src)
 out=re.sub(r'\{\{VID:([a-z|-]+)\}\}',vid,out)
 assert '{{' not in out
