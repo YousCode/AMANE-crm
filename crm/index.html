@@ -184,7 +184,17 @@ button{cursor:pointer}
 .col-h .s{font-family:var(--f-mono);font-size:12px;color:var(--fg-3)}
 .card{padding:13px 14px;border-radius:12px;cursor:grab;display:flex;flex-direction:column;gap:8px;transition:transform .18s,border-color .2s}
 .card:hover{transform:translateY(-2px);border-color:var(--line)}
-.card.dragging{opacity:.4}
+.card.dragging{opacity:.35}
+.card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:pan-x pan-y}
+.card.ghost{position:fixed;left:0;top:0;z-index:90;margin:0;pointer-events:none;opacity:.96;box-shadow:0 24px 48px -16px rgba(17,17,17,.35);transition:none}
+body.is-dragging,body.is-dragging *{cursor:grabbing!important}
+body.is-dragging{user-select:none;-webkit-user-select:none}
+.mv{display:flex;align-items:center;justify-content:space-between;gap:6px;border-top:1px solid var(--line-2);padding-top:8px;margin-top:2px;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--fg-3);opacity:0;transition:opacity .2s}
+.card:hover .mv,.card:focus-within .mv{opacity:1}
+@media (hover:none){.mv{opacity:1}}
+.mv button{width:30px;height:26px;border-radius:8px;border:1px solid var(--line-2);background:var(--bg);color:var(--fg);font-size:15px;line-height:1;cursor:pointer}
+.mv button:hover:not([disabled]){border-color:var(--accent)}
+.mv button[disabled]{opacity:.3;cursor:default}
 .card .ct{font-weight:500;line-height:1.3}
 .card .cm{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg-3)}
 .card .cm svg{width:14px;height:14px;flex:0 0 auto}
@@ -743,12 +753,12 @@ function vDemandes(){
   const ms=missionsFiltered();const vs=vehicles();
   const cols=STATUTS.map(s=>{const it=ms.filter(m=>m.statut===s.id).sort((a,b)=>(parse(a.debut)||0)-(parse(b.debut)||0));const tot=it.reduce((x,m)=>x+(+m.montant||0),0);
     return `<div class="col" data-col="${s.id}"><div class="col-h">${chip(s.id)}<span class="s">${it.length} · ${fmtK(tot)}</span></div>${it.map(m=>{const c=clientOf(m),v=byId(vs,m.vehiculeId),k=contratScore(m),cl=clashes(m,list('missions')).length;
-      return `<div class="glass lit card" draggable="true" data-id="${m.id}" data-open="mission:${m.id}" tabindex="0" role="button"><div class="ct">${esc(m.titre)}</div><div class="cm">${ico('user')}${esc(c?c.nom:'Client à préciser')}</div><div class="cm">${ico(SVC_ICON[m.service]||'spark')}${esc(svcName(m.service))}${v?' · '+esc(v.nom):''}</div><div class="cm">${ico('clock')}${fmtDT(parse(m.debut))}</div>${cl?`<div class="cm" style="color:var(--bad)">${ico('alert')}Véhicule déjà réservé</div>`:''}<div class="cf">${av(m.responsable)}${['confirmee','encours'].includes(s.id)?`<span class="ck ${k.done===k.total?'y':'w'}"><b>${k.done===k.total?'✓':k.done}</b>dossier</span>`:''}<span class="amt">${m.montant?fmtE(m.montant):'—'}</span></div>${m._demo?'<span class="ex">Exemple</span>':''}</div>`}).join('')}</div>`}).join('');
+      return `<div class="glass lit card" data-id="${m.id}" data-open="mission:${m.id}" tabindex="0" role="button"><div class="ct">${esc(m.titre)}</div><div class="cm">${ico('user')}${esc(c?c.nom:'Client à préciser')}</div><div class="cm">${ico(SVC_ICON[m.service]||'spark')}${esc(svcName(m.service))}${v?' · '+esc(v.nom):''}</div><div class="cm">${ico('clock')}${fmtDT(parse(m.debut))}</div>${cl?`<div class="cm" style="color:var(--bad)">${ico('alert')}Véhicule déjà réservé</div>`:''}<div class="cf">${av(m.responsable)}${['confirmee','encours'].includes(s.id)?`<span class="ck ${k.done===k.total?'y':'w'}"><b>${k.done===k.total?'✓':k.done}</b>dossier</span>`:''}<span class="amt">${m.montant?fmtE(m.montant):'—'}</span></div><div class="mv"><button type="button" data-move="${m.id}:-1" aria-label="Étape précédente" ${s.id===STATUTS[0].id?'disabled':''}>‹</button><span>Déplacer</span><button type="button" data-move="${m.id}:1" aria-label="Étape suivante" ${s.id===STATUTS[STATUTS.length-1].id?'disabled':''}>›</button></div>${m._demo?'<span class="ex">Exemple</span>':''}</div>`}).join('')}</div>`}).join('');
   return `<div class="view-h"><div><div class="label">Pipeline</div><h2>Demandes</h2></div><div class="tools">
     <div class="seg" role="group" aria-label="Filtre"><button type="button" data-f-mine="0" aria-pressed="${!S.filters.mine}">Toutes</button><button type="button" data-f-mine="1" aria-pressed="${S.filters.mine}" ${S.me?'':'disabled title="Choisissez qui vous êtes"'}>Les miennes</button></div>
     <select class="field-inline" id="fSvc" aria-label="Service"><option value="">Tous les services</option>${services().map(s=>`<option value="${esc(s.id)}" ${S.filters.svc===s.id?'selected':''}>${esc(s.nom)}</option>`).join('')}</select>
     <button class="btn sm primary" type="button" data-act="new-mission">${ico('plus')}Demande</button></div></div>
-    <p style="margin:-8px 0 14px;color:var(--fg-3);font-size:13px">Glissez une carte d’une colonne à l’autre pour changer son statut.</p>
+    <p style="margin:-8px 0 14px;color:var(--fg-3);font-size:13px">Glissez une carte d’une colonne à l’autre (au doigt : appui long), ou utilisez les flèches ‹ › de la carte.</p>
     <div class="kanban">${cols}</div>`;
 }
 function vPlanning(){
@@ -1028,9 +1038,10 @@ function act(a){
   else if(a==='mj')openMj();
 }
 document.addEventListener('click',async e=>{
-  const t=e.target.closest('[data-route],[data-open],[data-act],[data-tab],[data-week],[data-todo],[data-f-mine],[data-pi],[data-who],[data-aitype]');if(!t)return;
+  const t=e.target.closest('[data-move],[data-route],[data-open],[data-act],[data-tab],[data-week],[data-todo],[data-f-mine],[data-pi],[data-who],[data-aitype]');if(!t)return;
   if(t.dataset.route){go(t.dataset.route);return}
-  if(t.dataset.open){if(t.classList.contains('card')&&t._dragged){t._dragged=false;return}const [k,id,tab]=t.dataset.open.split(':');if(DR.open&&k!==DR.kind)readForm();openDrawer(k,id,tab);return}
+  if(t.dataset.move){const [mid,dir]=t.dataset.move.split(':');const m=byId(list('missions'),mid);if(m){const i=STATUTS.findIndex(x=>x.id===m.statut)+(+dir);if(i>=0&&i<STATUTS.length)moveMission(mid,STATUTS[i].id)}return}
+  if(t.dataset.open){if(t.classList.contains('card')&&DRAG.suppress)return;const [k,id,tab]=t.dataset.open.split(':');if(DR.open&&k!==DR.kind)readForm();openDrawer(k,id,tab);return}
   if(t.dataset.tab){readForm();DR.tab=t.dataset.tab;drawRender();return}
   if(t.dataset.week){const w=+t.dataset.week;S.filters.week=w===0?0:S.filters.week+w;render();return}
   if(t.dataset.todo){S.filters.todo=t.dataset.todo;render();return}
@@ -1087,18 +1098,54 @@ $('#scrim').addEventListener('click',closeDrawer);
 $('#palBtn').addEventListener('click',openPal);$('#helpBtn').addEventListener('click',()=>go('aide'));$('#mjBtn').addEventListener('click',openMj);$('#newBtn').addEventListener('click',()=>openDrawer('mission'));$('#meBtn').addEventListener('click',openWho);
 document.addEventListener('pointermove',e=>{const g=e.target.closest&&e.target.closest('.lit');if(!g)return;const r=g.getBoundingClientRect();g.style.setProperty('--mx',(e.clientX-r.left)+'px');g.style.setProperty('--my',(e.clientY-r.top)+'px')},{passive:true});
 
-function wireKanban(){
-  document.querySelectorAll('.card[draggable]').forEach(c=>{
-    c.addEventListener('dragstart',e=>{c.classList.add('dragging');c._dragged=true;e.dataTransfer.setData('text/plain',c.dataset.id);e.dataTransfer.effectAllowed='move'});
-    c.addEventListener('dragend',()=>{c.classList.remove('dragging');setTimeout(()=>{c._dragged=false},50)});
-  });
-  document.querySelectorAll('.col').forEach(col=>{
-    col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('over')});
-    col.addEventListener('dragleave',e=>{if(!col.contains(e.relatedTarget))col.classList.remove('over')});
-    col.addEventListener('drop',async e=>{e.preventDefault();col.classList.remove('over');const id=e.dataTransfer.getData('text/plain');const m=byId(list('missions'),id);if(!m||m.statut===col.dataset.col)return;if(m._demo){toast('Exemple en lecture seule — créez votre propre demande.');return}
-      const nm={...JSON.parse(JSON.stringify(m)),statut:col.dataset.col};await save('missions',nm);toast(`${m.titre} → ${label(STATUTS,col.dataset.col)}`)});
-  });
+function wireKanban(){}
+/* Glisser-déposer maison : souris, stylet, et doigt (appui long). Fonctionne dans le lecteur claude.ai. */
+const DRAG={el:null,id:null,pid:null,sx:0,sy:0,ox:0,oy:0,started:false,touch:false,timer:0,ghost:null,over:null,suppress:false};
+async function moveMission(id,statut){
+  const m=byId(list('missions'),id);if(!m||m.statut===statut)return;
+  if(m._demo){const dm=DEMO.missions.find(x=>x.id===id);if(dm)dm.statut=statut;refresh();toast(`Exemple déplacé vers « ${label(STATUTS,statut)} » (non enregistré)`);return}
+  const nm={...JSON.parse(JSON.stringify(m)),statut};try{await save('missions',nm);toast(`${m.titre} → ${label(STATUTS,statut)}`)}catch(e){}
 }
+function dragStart(x,y){
+  const c=DRAG.el;if(!c||!document.body.contains(c)){DRAG.el=null;return}
+  DRAG.started=true;const r=c.getBoundingClientRect();DRAG.ox=x-r.left;DRAG.oy=y-r.top;
+  const g=c.cloneNode(true);g.classList.add('ghost');g.classList.remove('lit');g.style.width=r.width+'px';g.removeAttribute('data-open');g.removeAttribute('data-id');document.body.appendChild(g);DRAG.ghost=g;
+  c.classList.add('dragging');document.body.classList.add('is-dragging');
+  try{c.setPointerCapture(DRAG.pid)}catch(_){}
+  if(DRAG.touch&&navigator.vibrate)try{navigator.vibrate(12)}catch(_){}
+  dragMove(x,y);
+}
+function dragMove(x,y){
+  if(DRAG.ghost)DRAG.ghost.style.transform=`translate(${x-DRAG.ox}px,${y-DRAG.oy}px) rotate(1.5deg)`;
+  const el=document.elementFromPoint(x,y);const col=el&&el.closest?el.closest('.col'):null;
+  if(col!==DRAG.over){if(DRAG.over)DRAG.over.classList.remove('over');DRAG.over=col;if(col)col.classList.add('over')}
+  const k=document.querySelector('.kanban');if(k){const kr=k.getBoundingClientRect();if(x<kr.left+50)k.scrollLeft-=14;else if(x>kr.right-50)k.scrollLeft+=14}
+  if(y<70)window.scrollBy(0,-12);else if(y>innerHeight-70)window.scrollBy(0,12);
+}
+function dragEnd(){
+  if(DRAG.ghost)DRAG.ghost.remove();DRAG.ghost=null;
+  if(DRAG.el)DRAG.el.classList.remove('dragging');document.body.classList.remove('is-dragging');
+  if(DRAG.over)DRAG.over.classList.remove('over');
+  const col=DRAG.over,id=DRAG.id,was=DRAG.started;DRAG.over=null;DRAG.el=null;DRAG.started=false;clearTimeout(DRAG.timer);
+  return was?{col,id}:null;
+}
+document.addEventListener('pointerdown',e=>{
+  if(e.button>0)return;const c=e.target.closest&&e.target.closest('.card[data-id]');if(!c||e.target.closest('button,a,input,select,textarea'))return;
+  DRAG.el=c;DRAG.id=c.dataset.id;DRAG.pid=e.pointerId;DRAG.sx=e.clientX;DRAG.sy=e.clientY;DRAG.started=false;DRAG.touch=e.pointerType==='touch';
+  clearTimeout(DRAG.timer);if(DRAG.touch){const x=e.clientX,y=e.clientY;DRAG.timer=setTimeout(()=>{if(DRAG.el&&!DRAG.started)dragStart(x,y)},300)}
+});
+document.addEventListener('pointermove',e=>{
+  if(!DRAG.el||e.pointerId!==DRAG.pid)return;
+  if(!DRAG.started){const d=Math.hypot(e.clientX-DRAG.sx,e.clientY-DRAG.sy);if(DRAG.touch){if(d>10){clearTimeout(DRAG.timer);DRAG.el=null}return}if(d<6)return;dragStart(e.clientX,e.clientY);return}
+  dragMove(e.clientX,e.clientY);
+});
+document.addEventListener('touchmove',e=>{if(DRAG.started)e.preventDefault()},{passive:false});
+document.addEventListener('contextmenu',e=>{if(DRAG.el&&DRAG.touch)e.preventDefault()});
+document.addEventListener('pointerup',e=>{
+  if(!DRAG.el||e.pointerId!==DRAG.pid){return}
+  const r=dragEnd();if(r){DRAG.suppress=true;setTimeout(()=>{DRAG.suppress=false},80);if(r.col&&r.col.dataset.col)moveMission(r.id,r.col.dataset.col)}
+});
+document.addEventListener('pointercancel',()=>{if(DRAG.el)dragEnd()});
 
 /* ---------- Horloge ---------- */
 function tick(){$('#clock').textContent='Paris · '+new Date().toLocaleString('fr-FR',{timeZone:'Europe/Paris',weekday:'long',hour:'2-digit',minute:'2-digit'})}

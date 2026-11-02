@@ -30,6 +30,12 @@ await p.evaluate(()=>location.hash='demandes');await p.waitForTimeout(500);
 const card=await p.$('.card[data-id]');ok('carte visible dans le pipeline',!!card);
 if(card){await p.dragAndDrop('.card[data-id]','.col[data-col="encours"]');await p.waitForTimeout(500);
  const st=await p.evaluate(()=>Object.values(window.__store.missions)[0].statut);ok('glisser-déposer change le statut',st==='encours',st)}
+// arrows fallback + demo-free move back
+await p.hover('.card[data-id]');await p.click('.card[data-id] [data-move$=":1"]');await p.waitForTimeout(500);
+const st3=await p.evaluate(()=>Object.values(window.__store.missions)[0].statut);ok('flèche › avance le statut',st3==='terminee',st3);
+await p.hover('.card[data-id]');await p.click('.card[data-id] [data-move$=":-1"]');await p.waitForTimeout(500);
+ok('flèche ‹ recule le statut',(await p.evaluate(()=>Object.values(window.__store.missions)[0].statut))==='encours');
+ok('pas de fiche ouverte par les flèches',!(await p.evaluate(()=>document.getElementById('drawer').classList.contains('on'))));
 // contract tab
 await p.click('.card[data-id]',{timeout:5000});await p.waitForTimeout(400);await p.click('[data-tab="contrat"]');await p.waitForTimeout(300);
 await p.check('[data-k="contrat.pieces.permis"]');await p.check('[data-k="contrat.pieces.passeport"]');await p.selectOption('#f_contrat_statut','signe');await p.fill('#f_contrat_caution','10000');
