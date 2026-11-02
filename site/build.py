@@ -11,5 +11,10 @@ def vid(m):
 # Textes v2 (fr/en/es/ar) repris tels quels
 out=re.sub(r'\{\{SVG:([a-z]+)\}\}',svg,src)
 out=re.sub(r'\{\{VID:([a-z|-]+)\}\}',vid,out)
+def vm(m):
+    for n in m.group(1).split('|'):
+        if os.path.exists(os.path.join(S,'video',n+'.mp4')) and os.path.exists(os.path.join(S,'img',n+'-poster.jpg')): return n
+    return ''
+out=re.sub(r'\{\{VM:([a-z|-]+)\}\}',vm,out)
 assert '{{' not in out
 open(os.path.join(S,'index.html'),'w',encoding='utf-8').write(out);print('built',len(out))
