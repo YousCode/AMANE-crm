@@ -388,6 +388,65 @@ body.is-dragging{user-select:none;-webkit-user-select:none}
   .mj-res{grid-template-columns:1fr}
   .kanban{grid-template-columns:repeat(6,minmax(80vw,1fr))}
 }
+
+/* Conciergerie : devis, carnet, programme, tâches, journal, finances */
+.tabs{overflow-x:auto;scrollbar-width:none;white-space:nowrap}.tabs::-webkit-scrollbar{display:none}.tabs button{flex:0 0 auto}
+.ln{display:grid;grid-template-columns:minmax(0,2.4fr) 64px 92px 104px 34px;gap:8px;align-items:center}
+.ln input,.ln select{width:100%;min-width:0;min-height:38px;border-radius:10px;border:1px solid var(--line-2);background:var(--glass);padding:7px 9px;color:var(--fg);font-size:13.5px}
+.ln input:focus,.ln select:focus{outline:none;border-color:var(--accent)}
+.ln select option{background:var(--bg2);color:var(--fg)}
+.ln-h{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--fg-3);margin-bottom:-8px}
+.ln.pay{grid-template-columns:150px 120px minmax(0,1fr) 34px}
+.ln.com{grid-template-columns:minmax(0,1.6fr) 90px 64px 84px 112px 34px}
+.ln.com .due{font-size:13px;text-align:right}
+.ln.pr{grid-template-columns:190px 130px minmax(0,1fr) 34px}
+.ln.pr2{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:6px}
+.ln.tk{grid-template-columns:28px minmax(0,1fr) minmax(0,1fr) 34px;row-gap:6px;padding-bottom:10px;border-bottom:1px solid var(--line-2)}.ln.tk>input[data-k$=".t"]{grid-column:2/-1}.ln.tk>select{grid-column:2}
+.ln.tk.done input[data-k$=".t"]{text-decoration:line-through;color:var(--fg-3)}
+.ln input.late{border-color:var(--bad);color:var(--bad)}
+.ln.jr{grid-template-columns:190px 130px 90px 100px 34px}
+.ln.jr2{grid-template-columns:minmax(0,1fr) auto;margin-top:6px}
+.pst{padding:10px 0;border-top:1px solid var(--line-2)}
+.pst:first-child{border-top:0}
+.jph{display:flex;align-items:center;gap:8px}.jph img{width:44px;height:34px;object-fit:cover;border-radius:6px}
+.pvbox:not(:empty){margin-top:8px;padding:10px 12px;border-radius:10px;border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);font-size:13px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.pst a.btn,#prOutW a.btn{color:var(--fg);text-decoration:none}
+.lnk{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit}
+.tkc{display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px}
+.tkc input{accent-color:var(--fg);width:18px;height:18px}
+.x-s{width:34px;height:34px;border-radius:9px;border:1px solid var(--line-2);background:none;display:grid;place-items:center;color:var(--fg-3);cursor:pointer}
+.x-s svg{width:14px;height:14px}.x-s:hover{color:var(--bad);border-color:var(--bad)}
+.muted-s{font-size:12.5px;color:var(--fg-3);margin:4px 0 0}
+.tots{display:grid;gap:4px;margin-left:auto;width:min(320px,100%);padding:12px 14px;border:1px solid var(--line-2);border-radius:12px;background:var(--glass)}
+.tots div{display:flex;justify-content:space-between;gap:12px;font-size:13.5px;color:var(--fg-2)}
+.tots .g{color:var(--fg);font-weight:500;border-top:1px solid var(--line-2);padding-top:6px;margin-top:2px}
+.tots b{font-weight:400}
+.doc-h{display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:14px;align-items:end}
+.doc-n{font-family:var(--f-display);font-size:24px;line-height:1.2}
+.f .lab{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--fg-3)}
+.seg.wrap{display:flex;flex-wrap:wrap;width:fit-content;max-width:100%}
+.row.partners{grid-template-columns:34px minmax(0,1.6fr) minmax(0,1fr) 70px}
+.row.fin{grid-template-columns:minmax(0,1fr) 120px 110px}
+.ic-s{width:34px;height:34px;border-radius:17px 17px 5px 5px;border:1px solid var(--line);display:grid;place-items:center;color:var(--accent)}.ic-s svg{width:16px;height:16px}
+.ex-s{font-size:10px;letter-spacing:.2em;color:var(--fg-3);text-transform:uppercase}
+.tagc{display:inline-block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;border:1px solid var(--line);border-radius:10px;padding:1px 7px;margin-left:6px;color:var(--fg-2)}
+.fin-k{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bars .b{display:grid;grid-template-columns:140px minmax(0,1fr) 90px;gap:10px;align-items:center;font-size:13px}
+.bars .b i{display:block;height:10px;border-radius:5px;background:var(--accent);min-width:2px}
+.bars .b span:last-child{text-align:right}
+@media (max-width:760px){
+  .ln{grid-template-columns:58px minmax(0,1fr) minmax(0,1fr) 34px}
+  .ln.pay,.ln.pr{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 34px}
+  .ln.com{grid-template-columns:minmax(0,1fr) 58px minmax(0,1fr)}.ln.com .x-s{justify-self:end}
+  .ln.pr2{grid-template-columns:1fr 1fr}
+  .ln.jr{grid-template-columns:minmax(0,1fr) 72px 84px 34px}
+  .ln>*:first-child{grid-column:1/-1}
+  .ln.tk>*:first-child{grid-column:auto}
+  .ln-h{display:none}.fin-k{grid-template-columns:1fr 1fr}.doc-h{grid-template-columns:1fr}
+  .row.partners{grid-template-columns:34px minmax(0,1fr)}.row.partners .hide-m{display:none}.row.fin{grid-template-columns:minmax(0,1fr) auto}.row.fin .hide-m{display:none}
+  .bars .b{grid-template-columns:100px minmax(0,1fr) 80px}
+}
 </style>
 
 <div class="ambient" aria-hidden="true">
@@ -430,6 +489,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none}
 <input type="file" id="impDir" webkitdirectory multiple hidden>
 <input type="file" id="impFiles" accept="image/*,.heic,.heif" multiple hidden>
 <input type="file" id="phIn" accept="image/*,.heic,.heif" multiple hidden>
+<input type="file" id="jIn" accept="image/*,.heic,.heif" hidden>
 <div class="modal" id="imp" hidden><div class="mbox" role="dialog" aria-modal="true" aria-labelledby="impTitle"><div class="mj-b" id="impBody"></div></div></div>
 <div class="modal" id="whoM" hidden><div class="mbox" role="dialog" aria-modal="true" aria-labelledby="whoTitle"><div class="mj-b" id="whoBody"></div></div></div>
 
@@ -456,6 +516,8 @@ const CARBURANT=['1/4','1/2','3/4','Plein'];
 const ACTIVE=['confirmee','encours','terminee'];
 
 const I={
+  carnet:'M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM5 18a2 2 0 0 1 2-2h12M9 8h6M9 11h4',
+  finances:'M4 20V10M10 20V4M16 20v-7M21 20H3',
   salon:'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
   demandes:'M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v13h-4z',
   planning:'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
@@ -506,14 +568,15 @@ function overlapDays(m,from,to){const a=parse(m.debut),b=parse(m.fin)||a;if(!a)r
 function durDays(m){const a=parse(m.debut),b=parse(m.fin)||a;if(!a)return 0;return Math.max(1,Math.round((sod(b)-sod(a))/864e5)+1)}
 
 /* ---------- État & stockage ---------- */
-const COLS=['clients','missions','vehicules','services'];
-const S={clients:[],missions:[],vehicules:[],services:[],loaded:new Set(),mode:'boot',me:lsGet('amane.me',''),route:'salon',demoView:false,filters:{mine:false,svc:'',q:'',week:0,todo:''}};
+const COLS=['clients','missions','vehicules','services','partenaires'];
+const S={clients:[],missions:[],vehicules:[],services:[],partenaires:[],loaded:new Set(),mode:'boot',me:lsGet('amane.me',''),route:'salon',demoView:false,filters:{mine:false,svc:'',q:'',week:0,todo:''}};
 let db=null,dl=null,sampleFn=null,assets=null;
-const mem={clients:new Map(),missions:new Map(),vehicules:new Map(),services:new Map()};
+const mem={clients:new Map(),missions:new Map(),vehicules:new Map(),services:new Map(),partenaires:new Map()};
 
 function list(col){
   computeDemo();
   if(!S.demoView||!DEMO[col])return S[col];
+  if(col==='partenaires'&&S.partenaires.length)return S.partenaires;
   if(col==='vehicules')return vehicles();
   if(col==='missions'&&S.vehicules.length){const map={};DEMO.vehicules.forEach(d=>{const r=S.vehicules.find(v=>v.nom===d.nom);if(r)map[d.id]=r.id});return DEMO.missions.map(m=>map[m.vehiculeId]?{...m,vehiculeId:map[m.vehiculeId]}:m)}
   return DEMO[col];
@@ -574,7 +637,24 @@ const DEMO=(function(){
     {id:'dm6',titre:'Urus — week-end Deauville',clientId:'dc2',service:'location',vehiculeId:'dv1',debut:at(-12,9),fin:at(-10,19),lieu:'Paris → Deauville',montant:3000,statut:'terminee',responsable:'amel',contrat:K({statut:'signe',caution:15000,cautionStatut:'encaissee',pieces:{permis:true,passeport:true,domicile:true},edlDepart:{fait:true},edlRetour:{fait:true}}),paiement:'solde'},
     {id:'dm7',titre:'Urus — demande soirée Lido',clientId:'dc3',service:'chauffeur',vehiculeId:'dv1',debut:at(1,19),fin:at(2,1),lieu:'Champs-Élysées',montant:900,statut:'proposition',responsable:'amel',contrat:K({}),paiement:'non'},
     {id:'dm8',titre:'Ferrari — essai refusé (budget)',clientId:'dc2',service:'location',vehiculeId:'dv2',debut:at(-3,10),fin:at(-3,18),montant:1300,statut:'perdue',responsable:'amel',contrat:K({}),paiement:'non'}].map(x=>({...x,_demo:1}));
-  return {vehicules:V,clients:C,missions:M,services:null};
+  const td=n=>toLocal(addD(t,n)).slice(0,10);
+  const P=[
+    {id:'dp1',nom:'Karim B.',type:'chauffeur',contact:'Karim',tel:'+33 6 •• •• •• ••',langues:'FR, AR, EN',notes:'Carte VTC, costume sombre, arabophone.',actif:true},
+    {id:'dp2',nom:'Sofiane M.',type:'chauffeur',tel:'+33 7 •• •• •• ••',langues:'FR, EN',actif:true},
+    {id:'dp3',nom:'Maison de maroquinerie',type:'boutique',contact:'Responsable des clients privés',adresse:'Faubourg Saint-Honoré',commission:8,actif:true},
+    {id:'dp4',nom:'Table gastronomique',type:'restaurant',adresse:'Paris 8e',actif:true},
+    {id:'dp5',nom:'Garage partenaire',type:'garage',adresse:'Paris 17e',notes:'Entretien et préparation.',actif:true}].map(x=>({...x,_demo:1}));
+  Object.assign(M[0],{chauffeurId:'dp1',chauffeur:'Karim B.',
+    devis:{numero:'D-EXEMPLE-01',statut:'accepte',date:td(-5),lignes:[{d:'Séjour clé en main — Classe V VIP avec chauffeur',q:5,u:'jour',pu:1900},{d:'Personal shopping (honoraires)',q:2,u:'jour',pu:650},{d:'Réservations et conciergerie',q:1,u:'forfait',pu:1283.33}],remise:0,tva:20,factureNumero:'F-EXEMPLE-01',factureDate:td(-1),paiements:[{date:td(-4),montant:5000,moyen:'virement'}]},
+    commissions:[{partenaireId:'dp3',base:6000,pct:8,statut:'a_recevoir'}],
+    programme:[{dt:at(0,10),type:'transfert',lieu:'Avenue Montaigne',client:'Votre chauffeur vous attend dans le hall.'},{dt:at(0,13),type:'restaurant',partenaireId:'dp4',lieu:'Paris 8e',client:'Table pour cinq, au calme.'},{dt:at(1,11),type:'shopping',partenaireId:'dp3',lieu:'Faubourg Saint-Honoré',client:'Rendez-vous privé, salon réservé.',interne:'Commission 8 %'}],
+    taches:[{t:'Envoyer le programme au client',resp:'amel',due:td(-1),fait:true},{t:'Confirmer la table du soir',resp:'amel',due:td(0),fait:false},{t:'Plein et préparation du van',resp:'youssouf',due:td(0),fait:false}]});
+  Object.assign(M[1],{devis:{numero:'D-EXEMPLE-02',statut:'envoye',date:td(-2),lignes:[{d:'Location G 63',q:1,u:'jour',pu:650},{d:'Livraison et reprise Paris 16e',q:1,u:'forfait',pu:433.33}],remise:0,tva:20,paiements:[{date:td(-1),montant:400,moyen:'cb'}]}});
+  Object.assign(M[5],{devis:{numero:'D-EXEMPLE-03',statut:'accepte',date:td(-14),lignes:[{d:'Urus SE — week-end Deauville',q:3,u:'jour',pu:833.33}],remise:0,tva:20,factureNumero:'F-EXEMPLE-02',factureDate:td(-10),paiements:[{date:td(-13),montant:900,moyen:'virement'},{date:td(-10),montant:2100,moyen:'cb'}]}});
+  Object.assign(V[0],{journal:[{dt:at(-11,15),type:'pv',desc:'Excès de vitesse, A13',cout:0,traite:false}],echeances:{assurance:td(20)}});
+  Object.assign(V[3],{journal:[{dt:at(-2,9),type:'entretien',km:23800,cout:640,desc:'Vidange et plaquettes'}]});
+  const bd=addD(t,3);Object.assign(C[1],{naissance:`1985-${pad(bd.getMonth()+1)}-${pad(bd.getDate())}`,tags:{regulier:true}});Object.assign(C[0],{tags:{vip:true,famille:true},nationalite:'Qatarie'});
+  return {vehicules:V,clients:C,missions:M,services:null,partenaires:P};
 })();
 const DEFAULT_SERVICES=[
   {id:'location',nom:'Voiture d’exception',description:'Location à la journée, livrée et reprise à l’adresse du client.',tarif:'Selon véhicule · 450–1 300 €/j',ordre:1},
@@ -613,6 +693,12 @@ function todos(){
     if(m.statut==='terminee'&&m.paiement!=='solde')out.aziz.push({sev:'bad',t:'Solde à encaisser',d:`${cn} · ${fmtE((+m.montant||0)-(+m.acompte||0))}`,id:m.id});
     if(clashes(m,ms).length)out.youssouf.push({sev:'bad',t:'Double réservation',d:`${m.titre}`,id:m.id});
   });
+  ms.forEach(m=>{if(m.statut==='perdue')return;(m.taches||[]).forEach(x=>{if(x.fait||!x.resp||!out[x.resp]||!(x.t||'').trim())return;const due=parse(x.due);out[x.resp].push({sev:due&&due<sod(now)?'bad':'warn',t:x.t,d:`${m.titre}${due?' · '+fmtDay(due):''}`,id:m.id,tab:'taches'})})});
+  ms.forEach(m=>{if(chClashes(m,ms).length)out.youssouf.push({sev:'bad',t:'Chauffeur en double réservation',d:m.titre,id:m.id})});
+  ms.forEach(m=>{const dv=m.devis;if(dv&&dv.factureNumero){const tt=dvTotals(dv);const fd=parse(dv.factureDate);if(tt.solde>0.005&&fd&&now-fd>7*864e5)out.aziz.push({sev:'bad',t:`Facture ${dv.factureNumero} en retard`,d:`${(clientOf(m)||{}).nom||''} · ${fmtE(tt.solde)}`,id:m.id,tab:'devis'})}});
+  vehicles().forEach(v=>{const e=v.echeances||{};[['assurance','Assurance'],['ct','Contrôle technique'],['leasing','Fin de leasing']].forEach(([k,l])=>{const d=parse(e[k]);if(d&&d-now<30*864e5)out.youssouf.push({sev:d-now<7*864e5?'bad':'warn',t:`${l} ${v.nom}`,d:`Échéance ${fmtDay(d)}`,vid:v.id})});
+    (v.journal||[]).forEach(j=>{if(j.type==='pv'&&!j.traite){const m=driverAt(v.id,j.dt);out.aziz.push({sev:'bad',t:`PV à désigner · ${v.nom}`,d:m?`Conducteur : ${(clientOf(m)||{}).nom||'?'}`:'Date et heure à vérifier',vid:v.id,vtab:'journal'})}})});
+  list('clients').forEach(c=>{const b=parse(c.naissance);if(!b)return;const t0=sod(now);let nx=new Date(t0.getFullYear(),b.getMonth(),b.getDate());if(nx<t0)nx=new Date(t0.getFullYear()+1,b.getMonth(),b.getDate());const dd=Math.round((nx-t0)/864e5);if(dd<=7)out.amel.push({sev:dd<=1?'bad':'warn',t:`Anniversaire de ${c.nom}`,d:dd===0?'Aujourd’hui':`Dans ${dd} jour${dd>1?'s':''} · ${fmtDay(nx)}`,cid:c.id})});
   vehicles().forEach(v=>{const r=parse(v.revision);if(r&&r-now<30*864e5)out.youssouf.push({sev:r-now<7*864e5?'bad':'warn',t:`Révision ${v.nom}`,d:`Prévue ${fmtDay(r)}`,vid:v.id});if(v.statut==='entretien')out.youssouf.push({sev:'warn',t:`${v.nom} en entretien`,d:'Indisponible à la location',vid:v.id})});
   return out;
 }
@@ -682,8 +768,155 @@ async function impGo(){const todo=IMP.groups.filter(g=>g.target&&g.target!=='__s
     if(r.stop){res.stop=r.stop;break}}
   IMP.groups.forEach(g=>g.url&&URL.revokeObjectURL(g.url));IMP.busy='';$('#imp').hidden=true;toast(upMsg(res))}
 
+/* ---------- Conciergerie : devis, carnet, programme, tâches, journal, finances ---------- */
+const PART_TYPES=[{id:'chauffeur',label:'Chauffeur'},{id:'restaurant',label:'Restaurant'},{id:'hotel',label:'Hôtel / palace'},{id:'boutique',label:'Boutique'},{id:'garage',label:'Garage / entretien'},{id:'assurance',label:'Assurance'},{id:'autre',label:'Autre'}];
+const DEVIS_ST=[{id:'brouillon',label:'Brouillon'},{id:'envoye',label:'Envoyé'},{id:'accepte',label:'Accepté'},{id:'refuse',label:'Refusé'}];
+const UNITES=[{id:'jour',label:'jour'},{id:'heure',label:'heure'},{id:'forfait',label:'forfait'}];
+const MOYENS=[{id:'virement',label:'Virement'},{id:'cb',label:'Carte bancaire'},{id:'especes',label:'Espèces'},{id:'lien',label:'Lien de paiement'}];
+const PROG_TYPES=[{id:'transfert',label:'Transfert'},{id:'restaurant',label:'Restaurant'},{id:'shopping',label:'Shopping'},{id:'visite',label:'Visite'},{id:'hotel',label:'Hôtel'},{id:'autre',label:'Autre'}];
+const JOURNAL_T=[{id:'entretien',label:'Entretien'},{id:'reparation',label:'Réparation'},{id:'dommage',label:'Dommage'},{id:'pv',label:'PV / amende'},{id:'controle',label:'Contrôle'},{id:'autre',label:'Autre'}];
+const CLIENT_TAGS=[['vip','VIP'],['regulier','Régulier'],['delegation','Délégation'],['famille','Famille'],['entreprise','Entreprise']];
+const TASK_TPL={
+  location:[['Préparation et lavage du véhicule','youssouf',-1],['Plein et contrôle des niveaux','youssouf',-1],['État des lieux départ','aziz',0],['Remise des clés','youssouf',0],['Retour du véhicule','youssouf','fin+0'],['État des lieux retour','aziz','fin+0'],['Restitution de la caution','aziz','fin+2']],
+  chauffeur:[['Confirmer le chauffeur','youssouf',-2],['Envoyer le nom du chauffeur au client','amel',-1],['Préparer eau, presse et chargeurs','youssouf',0]],
+  van:[['Préparer le van (eau, sièges enfant si besoin)','youssouf',-1],['Confirmer chauffeur et horaires au client','amel',-1]],
+  transfert:[['Vérifier le numéro de vol et l’horaire','amel',-1],['Pancarte nominative','youssouf',0],['Confirmer l’arrivée au client','amel',0]],
+  shopping:[['Réserver les rendez-vous en boutique','amel',-3],['Prévenir les boutiques (commission)','amel',-2],['Livraison des achats à l’hôtel','youssouf','fin+0']],
+  sejour:[['Envoyer le programme au client','amel',-3],['Réserver tables et rendez-vous','amel',-3],['Préparer véhicule et chauffeur','youssouf',-1],['Facture et solde','aziz','fin+0']],
+  conciergerie:[['Confirmer la réservation','amel',-1],['Rappel au client la veille','amel',-1]],
+  clip:[['Repérage et autorisations','youssouf',-3],['Préparation du véhicule','youssouf',-1],['Livraison du montage','youssouf','fin+5']]};
+const DOC_LANGS=['FR','EN','ES','AR'];
+const docLang=c=>{const l=String(c&&c.langue||'').toUpperCase();return DOC_LANGS.includes(l)?l:'EN'};
+const LOC={FR:'fr-FR',EN:'en-GB',ES:'es-ES',AR:'ar'};
+const TXT={
+ FR:{quote:'Devis',invoice:'Facture',date:'Date',client:'Client',desc:'Désignation',qty:'Qté',unit:'Unité',pu:'Prix unitaire HT',total:'Total HT',discount:'Remise',vat:'TVA',ttc:'Total TTC',paid:'Déjà réglé',due:'Reste à payer',payments:'Règlements',terms:'Conditions',termsTxt:'Devis valable 15 jours. Acompte de 30 % à la confirmation, solde à la remise des clés. Dépôt de garantie par pré-autorisation bancaire pour les locations.',bank:'Coordonnées bancaires',prog:'Programme de votre séjour',progIntro:'Voici le programme préparé pour vous. Votre interlocuteur Amane reste joignable à tout moment.',units:{jour:'jour',heure:'heure',forfait:'forfait'},types:{transfert:'Transfert',restaurant:'Restaurant',shopping:'Shopping',visite:'Visite',hotel:'Hôtel',autre:'Rendez-vous'},hello:n=>n?`Bonjour ${n},`:'Bonjour,',sign:'Bien à vous,\nAmane',ref:'Référence'},
+ EN:{quote:'Quotation',invoice:'Invoice',date:'Date',client:'Client',desc:'Description',qty:'Qty',unit:'Unit',pu:'Unit price excl. VAT',total:'Total excl. VAT',discount:'Discount',vat:'VAT',ttc:'Total incl. VAT',paid:'Already paid',due:'Balance due',payments:'Payments',terms:'Terms',termsTxt:'Quotation valid for 15 days. 30% deposit on confirmation, balance on handover of the keys. Security deposit by card pre-authorisation for rentals.',bank:'Bank details',prog:'Your stay programme',progIntro:'Here is the programme prepared for you. Your Amane contact remains available at any time.',units:{jour:'day',heure:'hour',forfait:'flat fee'},types:{transfert:'Transfer',restaurant:'Restaurant',shopping:'Shopping',visite:'Visit',hotel:'Hotel',autre:'Appointment'},hello:n=>n?`Dear ${n},`:'Hello,',sign:'Kind regards,\nAmane',ref:'Reference'},
+ ES:{quote:'Presupuesto',invoice:'Factura',date:'Fecha',client:'Cliente',desc:'Concepto',qty:'Cant.',unit:'Unidad',pu:'Precio unitario sin IVA',total:'Total sin IVA',discount:'Descuento',vat:'IVA',ttc:'Total con IVA',paid:'Ya abonado',due:'Pendiente de pago',payments:'Pagos',terms:'Condiciones',termsTxt:'Presupuesto válido 15 días. Anticipo del 30 % a la confirmación, saldo a la entrega de las llaves. Depósito de garantía mediante preautorización bancaria para los alquileres.',bank:'Datos bancarios',prog:'Programa de su estancia',progIntro:'Este es el programa preparado para usted. Su contacto Amane sigue disponible en todo momento.',units:{jour:'día',heure:'hora',forfait:'tarifa fija'},types:{transfert:'Traslado',restaurant:'Restaurante',shopping:'Compras',visite:'Visita',hotel:'Hotel',autre:'Cita'},hello:n=>n?`Estimado/a ${n}:`:'Hola:',sign:'Atentamente,\nAmane',ref:'Referencia'},
+ AR:{quote:'عرض سعر',invoice:'فاتورة',date:'التاريخ',client:'العميل',desc:'البيان',qty:'الكمية',unit:'الوحدة',pu:'سعر الوحدة دون ضريبة',total:'المجموع دون ضريبة',discount:'خصم',vat:'ضريبة القيمة المضافة',ttc:'المجموع شامل الضريبة',paid:'المدفوع',due:'المتبقي',payments:'الدفعات',terms:'الشروط',termsTxt:'العرض صالح لمدة 15 يوماً. دفعة مقدمة 30٪ عند التأكيد، والباقي عند تسليم المفاتيح. تأمين عبر حجز مسبق على البطاقة البنكية للتأجير.',bank:'البيانات البنكية',prog:'برنامج إقامتكم',progIntro:'إليكم البرنامج الذي أعددناه لكم. جهة تواصلكم في Amane متاحة في أي وقت.',units:{jour:'يوم',heure:'ساعة',forfait:'مبلغ ثابت'},types:{transfert:'تنقّل',restaurant:'مطعم',shopping:'تسوّق',visite:'زيارة',hotel:'فندق',autre:'موعد'},hello:n=>n?`مرحباً ${n}،`:'مرحباً،',sign:'مع أطيب التحيات،\nAmane',ref:'المرجع'}};
+const r2=n=>Math.round((+n||0)*100)/100;
+const fmtE2=n=>new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2}).format(+n||0);
+const fmtL=(n,L)=>new Intl.NumberFormat(LOC[L]||'fr-FR',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2}).format(+n||0);
+const today=()=>toLocal(new Date()).slice(0,10);
+const slug=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||'document';
+const colOf=k=>({mission:'missions',client:'clients',vehicule:'vehicules',partenaire:'partenaires',service:'services'})[k];
+function partners(){return list('partenaires')||[]}
+function chauffeurs(){return partners().filter(p=>p.type==='chauffeur'&&p.actif!==false)}
+function dvTotals(dv){dv=dv||{};const ht=(dv.lignes||[]).reduce((x,l)=>x+(+l.q||0)*(+l.pu||0),0);const rem=ht*(+dv.remise||0)/100;const base=ht-rem;const rate=dv.tva===''||dv.tva==null?20:+dv.tva;const tva=base*rate/100;const ttc=base+tva;const paid=(dv.paiements||[]).reduce((x,q)=>x+(+q.montant||0),0);return {ht:r2(ht),rem:r2(rem),base:r2(base),tva:r2(tva),rate,ttc:r2(ttc),paid:r2(paid),solde:r2(r2(ttc)-r2(paid))}}
+function dvDefaultLines(d){const v=byId(vehicles(),d.vehiculeId),n=durDays(d)||1,L=[];
+  if(v)L.push({d:`${svcName(d.service)} — ${v.nom}`,q:n,u:'jour',pu:+v.tarifJour||0});
+  if(d.chauffeurId||d.service==='chauffeur'){const ch=byId(partners(),d.chauffeurId);L.push({d:'Chauffeur privé'+(ch?' — '+ch.nom:''),q:n,u:'jour',pu:0})}
+  if(!L.length)L.push({d:svcName(d.service)+(d.titre?' — '+d.titre:''),q:1,u:'forfait',pu:r2((+d.montant||0)/1.2)});return L}
+let numQ=Promise.resolve();
+function nextNumero(kind){const r=numQ.then(()=>nextNumero0(kind));numQ=r.catch(()=>{});return r}
+async function nextNumero0(kind){const y=new Date().getFullYear(),key=kind+'-'+y,pre=kind==='devis'?'D':'F';const fmt=n=>`${pre}-${y}-${String(n).padStart(4,'0')}`;
+  if(!db){S.cnt=S.cnt||{};S.cnt[key]=(S.cnt[key]||0)+1;return fmt(S.cnt[key])}
+  const ref=db.doc('meta/compteurs'),holder=S.holder||(S.holder='h'+uid()+uid());
+  for(let i=0;i<12;i++){let r={acquired:true};try{if(typeof ref.acquire==='function')r=await ref.acquire({holder,ttlMs:3000})}catch(e){r={acquired:true}}
+    if(r.acquired){const sn=await ref.get();const cur=sn&&sn.exists?(sn.data()||{}):{};const n=(+cur[key]||0)+1;await ref.set({...cur,[key]:n});return fmt(n)}
+    await new Promise(res=>setTimeout(res,250+Math.random()*400))}
+  throw {code:'resource_exhausted'}}
+function chClashes(m,all){if(!m.chauffeurId||!['nouvelle','confirmee','encours','proposition'].includes(m.statut))return [];const a=parse(m.debut),b=parse(m.fin)||a;if(!a)return [];return all.filter(o=>o.id!==m.id&&o.chauffeurId===m.chauffeurId&&['confirmee','encours'].includes(o.statut)&&parse(o.debut)&&parse(o.debut)<b&&(parse(o.fin)||parse(o.debut))>a)}
+function chSuffix(p,d){return chClashes({...d,chauffeurId:p.id},list('missions')).length?' — déjà pris sur ce créneau':''}
+function driverAt(vid,dt){const t=parse(dt);if(!t)return null;return list('missions').find(m=>m.vehiculeId===vid&&['confirmee','encours','terminee'].includes(m.statut)&&parse(m.debut)&&parse(m.debut)<=t&&(parse(m.fin)||parse(m.debut))>=t)||null}
+function waLink(tel,txt){const n=String(tel||'').replace(/\D/g,'');return n.length>=8?`https://wa.me/${n}?text=${encodeURIComponent(txt||'')}`:`https://wa.me/?text=${encodeURIComponent(txt||'')}`}
+async function dlSave(filename,data){if(!dl){toast('Téléchargement disponible quand la page est ouverte dans claude.ai.');return false}try{await dl.save({filename,data});return true}catch(err){if(err&&err.code!=='cancelled'&&err.code!=='declined')toast('Téléchargement impossible.');return false}}
+function progSteps(m){return [...(m.programme||[])].filter(x=>x.dt).sort((a,b)=>parse(a.dt)-parse(b.dt))}
+function progText(m){const c=clientOf(m)||{},L=docLang(c),T=TXT[L];let day='';const lines=[T.hello((c.nom||'').trim()),'',T.progIntro,''];
+  progSteps(m).forEach(x=>{const d=parse(x.dt);const dl0=d.toLocaleDateString(LOC[L],{weekday:'long',day:'numeric',month:'long'});if(dl0!==day){day=dl0;lines.push('*'+dl0.charAt(0).toUpperCase()+dl0.slice(1)+'*')}const p=byId(partners(),x.partenaireId);
+    lines.push(`${d.toLocaleTimeString(LOC[L],{hour:'2-digit',minute:'2-digit',hour12:false})} · ${T.types[x.type]||T.types.autre}${p?' — '+p.nom:''}${x.lieu?' — '+x.lieu:''}${x.client?'\n    '+x.client:''}`)});
+  if(!progSteps(m).length)lines.push('—');lines.push('',T.sign);return lines.join('\n')}
+function docShell(title,L,body,legal){const rtl=L==='AR';const a=((document.querySelector('.rail .brand svg')||{}).outerHTML||'').replace('<svg ','<svg width="26" ');
+  return `<!doctype html><html lang="${L.toLowerCase()}" dir="${rtl?'rtl':'ltr'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>body{font-family:${rtl?'Tahoma,"Noto Naskh Arabic",':''}Georgia,"Times New Roman",serif;max-width:760px;margin:48px auto;padding:0 24px;color:#111;line-height:1.55;background:#fff}header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:1px solid #D9D3C9;padding-bottom:18px;margin-bottom:26px}.brand{display:flex;align-items:center;gap:12px;font-size:13px;letter-spacing:.32em;color:#111}.brand svg{height:auto;color:#111}h1{font-weight:400;font-size:30px;margin:0 0 4px}.muted{color:#6E675F;font-size:13px}table{width:100%;border-collapse:collapse;margin:14px 0}th,td{padding:8px 6px;border-bottom:1px solid #ECE6DC;text-align:${rtl?'right':'left'};vertical-align:top;font-size:14px}th{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#6E675F;font-weight:400}td.n,th.n{text-align:${rtl?'left':'right'};white-space:nowrap}.tot{margin-${rtl?'right':'left'}:auto;width:min(360px,100%)}.tot td{border:0;padding:4px 6px}.tot tr.g td{border-top:1px solid #111;font-size:16px;padding-top:8px}.ph{background:#FFF3C4;padding:0 3px}h2{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#6E675F;font-weight:400;margin-top:28px}.day{margin-top:22px;font-size:17px;border-bottom:1px solid #ECE6DC;padding-bottom:6px}.st{display:grid;grid-template-columns:70px 1fr;gap:12px;padding:10px 0}.st b{font-weight:400;color:#8A6A3B}footer{margin-top:40px;font-size:11.5px;color:#6E675F;border-top:1px solid #D9D3C9;padding-top:12px}@media print{body{margin:0 auto}}</style></head><body><header><div class="brand">${a}<span>AMANE</span></div>${legal?`<div class="muted" style="text-align:${rtl?'left':'right'}">Amane — <span class="ph">[Raison sociale]</span><br><span class="ph">[Adresse]</span><br>SIREN <span class="ph">[SIREN]</span> · TVA <span class="ph">[TVA intracom.]</span></div>`:''}</header>${body}${legal?`<footer>Amane · <span class="ph">[Raison sociale]</span> · SIREN <span class="ph">[SIREN]</span> · <span class="ph">[Adresse]</span> · TVA <span class="ph">[TVA intracom.]</span></footer>`:''}</body></html>`}
+function devisHTML(m,kind){const c=clientOf(m)||{},L=docLang(c),T=TXT[L],dv=m.devis||{},t=dvTotals(dv),fac=kind==='facture';const num=fac?(dv.factureNumero||''):(dv.numero||'');const dt=parse(fac?dv.factureDate:dv.date)||new Date();
+  const rows=(dv.lignes||[]).map(l=>`<tr><td>${esc(l.d)}</td><td class="n">${esc(l.q)}</td><td>${esc(T.units[l.u]||l.u||'')}</td><td class="n">${fmtL(l.pu,L)}</td><td class="n">${fmtL((+l.q||0)*(+l.pu||0),L)}</td></tr>`).join('');
+  const pays=fac&&(dv.paiements||[]).length?`<h2>${T.payments}</h2><table>${dv.paiements.map(q=>`<tr><td>${q.date?esc(parse(q.date).toLocaleDateString(LOC[L])):''}</td><td>${esc((MOYENS.find(x=>x.id===q.moyen)||{}).label||'')}</td><td class="n">${fmtL(q.montant,L)}</td></tr>`).join('')}</table>`:'';
+  const body=`<h1>${fac?T.invoice:T.quote} ${esc(num)}</h1><p class="muted">${T.date} : ${dt.toLocaleDateString(LOC[L])} · ${T.ref} : ${esc(m.titre||'')}${fac&&dv.numero?' · '+T.quote+' '+esc(dv.numero):''}</p>
+  <h2>${T.client}</h2><p>${esc(c.nom||'')}<br>${esc([c.hotel,c.pays].filter(Boolean).join(', '))}<br>${esc([c.tel,c.email].filter(Boolean).join(' · '))}</p>
+  <table><thead><tr><th>${T.desc}</th><th class="n">${T.qty}</th><th>${T.unit}</th><th class="n">${T.pu}</th><th class="n">${T.total}</th></tr></thead><tbody>${rows}</tbody></table>
+  <table class="tot"><tr><td>${T.total}</td><td class="n">${fmtL(t.ht,L)}</td></tr>${t.rem?`<tr><td>${T.discount} ${esc(dv.remise)} %</td><td class="n">−${fmtL(t.rem,L)}</td></tr>`:''}<tr><td>${T.vat} ${esc(t.rate)} %</td><td class="n">${fmtL(t.tva,L)}</td></tr><tr class="g"><td>${T.ttc}</td><td class="n">${fmtL(t.ttc,L)}</td></tr>${fac?`<tr><td>${T.paid}</td><td class="n">${fmtL(t.paid,L)}</td></tr><tr class="g"><td>${T.due}</td><td class="n">${fmtL(Math.max(0,t.solde),L)}</td></tr>`:''}</table>${pays}
+  <h2>${T.terms}</h2><p>${T.termsTxt}</p><h2>${T.bank}</h2><p>IBAN <span class="ph">[IBAN]</span> · BIC <span class="ph">[BIC]</span></p>`;
+  return docShell(`${fac?T.invoice:T.quote} ${num}`,L,body,true)}
+function carnetHTML(m){const c=clientOf(m)||{},L=docLang(c),T=TXT[L];let day='',h='';
+  progSteps(m).forEach(x=>{const d=parse(x.dt);const dl0=d.toLocaleDateString(LOC[L],{weekday:'long',day:'numeric',month:'long'});if(dl0!==day){day=dl0;h+=`<div class="day">${esc(dl0.charAt(0).toUpperCase()+dl0.slice(1))}</div>`}const p=byId(partners(),x.partenaireId);
+    h+=`<div class="st"><b>${d.toLocaleTimeString(LOC[L],{hour:'2-digit',minute:'2-digit',hour12:false})}</b><div>${esc(T.types[x.type]||T.types.autre)}${p?' — '+esc(p.nom):''}${x.lieu||(p&&p.adresse)?`<div class="muted">${esc([x.lieu,p&&p.adresse].filter(Boolean).join(' · '))}</div>`:''}${x.client?`<div>${esc(x.client)}</div>`:''}</div></div>`});
+  const a=parse(m.debut),b=parse(m.fin);
+  return docShell(T.prog,L,`<h1>${T.prog}</h1><p class="muted">${esc(c.nom||'')}${a?' · '+a.toLocaleDateString(LOC[L],{day:'numeric',month:'long'})+(b?' — '+b.toLocaleDateString(LOC[L],{day:'numeric',month:'long',year:'numeric'}):''):''}</p><p>${T.progIntro}</p>${h||'<p>—</p>'}`,false)}
+function icsDate(x){const d=parse(x);return d?d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,''):''}
+function icsEsc(x){return String(x||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n')}
+function planningICS(){const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Amane//CRM//FR','CALSCALE:GREGORIAN','X-WR-CALNAME:Amane'];
+  list('missions').filter(m=>BOOK.includes(m.statut)&&parse(m.debut)).forEach(m=>{const c=clientOf(m)||{},v=byId(vehicles(),m.vehiculeId),ch=byId(partners(),m.chauffeurId);
+    L.push('BEGIN:VEVENT','UID:'+m.id+'@amane','DTSTAMP:'+icsDate(new Date().toISOString()),'DTSTART:'+icsDate(m.debut),'DTEND:'+icsDate(m.fin||m.debut),'SUMMARY:'+icsEsc(m.titre),'LOCATION:'+icsEsc(m.lieu),'DESCRIPTION:'+icsEsc([c.nom,svcName(m.service),v&&v.nom,ch?'Chauffeur : '+ch.nom:m.chauffeur].filter(Boolean).join(' · ')),'END:VEVENT')});
+  L.push('END:VCALENDAR');return L.join('\r\n')}
+function monthOf(off){const n=new Date();return new Date(n.getFullYear(),n.getMonth()+off,15)}
+function finData(ref){const [a,b0]=monthBounds(ref);const b=addD(b0,1);const inM=x=>{const d=parse(x);return !!d&&d>=a&&d<b};const ms=list('missions');
+  let facture=0,encaisse=0;const factures=[];
+  ms.forEach(m=>{const dv=m.devis;if(!dv)return;const t=dvTotals(dv);if(dv.factureNumero){if(inM(dv.factureDate))facture+=t.ttc;if(t.solde>0.005)factures.push({m,t,date:parse(dv.factureDate)})}(dv.paiements||[]).forEach(q=>{if(inM(q.date))encaisse+=+q.montant||0})});
+  let comR=0,comA=0;ms.forEach(m=>(m.commissions||[]).forEach(c=>{const due=(+c.base||0)*(+c.pct||0)/100;if(c.statut==='recue'){if(inM(c.recueLe))comR+=due}else comA+=due}));
+  const vs=vehicles();const fixe=vs.reduce((x,v)=>x+(+v.loyerMois||0)+(+v.chargesMois||0),0);const journ=vs.reduce((x,v)=>x+(v.journal||[]).filter(j=>inM(j.dt)).reduce((y,j)=>y+(+j.cout||0),0),0);
+  const signe=ms.filter(m=>ACTIVE.includes(m.statut)&&inM(m.debut));const bySvc={},byVeh={};signe.forEach(m=>{bySvc[m.service]=(bySvc[m.service]||0)+(+m.montant||0);if(m.vehiculeId)byVeh[m.vehiculeId]=(byVeh[m.vehiculeId]||0)+(+m.montant||0)});
+  return {a,b:b0,facture:r2(facture),encaisse:r2(encaisse),factures:factures.sort((x,y)=>(x.date||0)-(y.date||0)),reste:r2(factures.reduce((x,f)=>x+f.t.solde,0)),comR:r2(comR),comA:r2(comA),fixe:r2(fixe),journ:r2(journ),res:r2(encaisse+comR-fixe-journ),bySvc,byVeh}}
+function finCSV(fd){const rows=[['Facture','Devis','Client','Service','Véhicule','Chauffeur','Début','Fin','Statut','Total TTC','Réglé','Reste']];
+  list('missions').filter(m=>{const d=parse(m.debut);return d&&d>=fd.a&&d<addD(fd.b,1)}).forEach(m=>{const dv=m.devis,t=dvTotals(dv),c=clientOf(m)||{},v=byId(vehicles(),m.vehiculeId)||{};
+    rows.push([dv&&dv.factureNumero||'',dv&&dv.numero||'',c.nom||'',svcName(m.service),v.nom||'',m.chauffeur||'',m.debut||'',m.fin||'',label(STATUTS,m.statut),dv?t.ttc:(+m.montant||0),dv?t.paid:(+m.acompte||0),dv?t.solde:r2((+m.montant||0)-(+m.acompte||0))])});
+  return '\ufeff'+rows.map(r=>r.map(x=>{const y=typeof x==='number'?String(x).replace('.',','):String(x);const z=y.replace(/"/g,'""');return /[;"\n]/.test(z)?`"${z}"`:z}).join(';')).join('\r\n')}
+function exportJSON(){return JSON.stringify({exporte:new Date().toISOString(),clients:S.clients,missions:S.missions,vehicules:S.vehicules,services:S.services,partenaires:S.partenaires},null,2)}
+function tplTasks(d){const a=sod(parse(d.debut)||new Date()),b=sod(parse(d.fin)||parse(d.debut)||new Date());return (TASK_TPL[d.service]||[]).map(([t,resp,off])=>{let base=a,o=off;if(typeof off==='string'){base=b;o=+(off.split('+')[1]||0)}return {t,resp,due:toLocal(addD(base,o)).slice(0,10),fait:false}})}
+
+/* Onglets de la fiche demande */
+function dvTotHTML(dv){const t=dvTotals(dv);return `<div class="tots"><div><span>Total HT</span><b class="num">${fmtE2(t.ht)}</b></div>${t.rem?`<div><span>Remise</span><b class="num">−${fmtE2(t.rem)}</b></div>`:''}<div><span>TVA ${esc(t.rate)} %</span><b class="num">${fmtE2(t.tva)}</b></div><div class="g"><span>Total TTC</span><b class="num">${fmtE2(t.ttc)}</b></div><div><span>Réglé</span><b class="num">${fmtE2(t.paid)}</b></div><div class="g"><span>Reste à payer</span><b class="num" style="color:${t.solde>0.005?'var(--bad)':'var(--ok)'}">${fmtE2(Math.max(0,t.solde))}</b></div></div>`}
+function commissionsBlock(d){const ps=partners().filter(p=>p.type!=='chauffeur');const cs=d.commissions||[];
+  return `<div class="sec-t">Commissions partenaires</div>${cs.map((c,i)=>`<div class="ln com"><select aria-label="Partenaire" data-k="commissions.${i}.partenaireId"><option value="">— Partenaire —</option>${opt(ps.map(p=>({id:p.id,label:p.nom})),c.partenaireId)}</select><input aria-label="Montant de base" type="number" step="any" inputmode="decimal" data-k="commissions.${i}.base" value="${esc(c.base)}" placeholder="Base €"><input aria-label="Pourcentage" type="number" step="any" inputmode="decimal" data-k="commissions.${i}.pct" value="${esc(c.pct)}" placeholder="%"><span class="num due">${fmtE2((+c.base||0)*(+c.pct||0)/100)}</span><select aria-label="Statut de la commission" data-k="commissions.${i}.statut">${opt([{id:'a_recevoir',label:'À recevoir'},{id:'recue',label:'Reçue'}],c.statut||'a_recevoir')}</select><button type="button" class="x-s" data-act="com-del" data-i="${i}" aria-label="Supprimer la commission">${ico('close')}</button></div>`).join('')||'<p class="muted-s">Commissions dues par une boutique, un restaurant ou un hôtel sur cette demande.</p>'}<div><button class="btn sm" type="button" data-act="com-add">${ico('plus')}Commission</button></div>`}
+function tabDevis(d){const dv=d.devis;
+  if(!dv)return `<div class="empty"><div class="arch"></div>Aucun devis pour cette demande.<div style="margin-top:12px"><button class="btn sm primary" type="button" data-act="dv-new">${ico('plus')}Créer le devis</button></div><p class="muted-s">Les lignes sont pré-remplies depuis le service, le véhicule, le chauffeur et la durée.</p></div>`+commissionsBlock(d);
+  const lines=(dv.lignes||[]).map((l,i)=>`<div class="ln"><input aria-label="Désignation" data-k="devis.lignes.${i}.d" value="${esc(l.d)}" placeholder="Désignation"><input aria-label="Quantité" type="number" step="any" inputmode="decimal" data-k="devis.lignes.${i}.q" value="${esc(l.q)}"><select aria-label="Unité" data-k="devis.lignes.${i}.u">${opt(UNITES,l.u)}</select><input aria-label="Prix unitaire HT" type="number" step="any" inputmode="decimal" data-k="devis.lignes.${i}.pu" value="${esc(l.pu)}"><button type="button" class="x-s" data-act="dv-del" data-i="${i}" aria-label="Supprimer la ligne">${ico('close')}</button></div>`).join('');
+  const pays=(dv.paiements||[]).map((q,i)=>`<div class="ln pay"><input aria-label="Date du règlement" type="date" data-k="devis.paiements.${i}.date" value="${esc(q.date)}"><input aria-label="Montant du règlement" type="number" step="any" inputmode="decimal" data-k="devis.paiements.${i}.montant" value="${esc(q.montant)}"><select aria-label="Moyen de paiement" data-k="devis.paiements.${i}.moyen">${opt(MOYENS,q.moyen)}</select><button type="button" class="x-s" data-act="pay-del" data-i="${i}" aria-label="Supprimer le règlement">${ico('close')}</button></div>`).join('');
+  const dlb=(doc,l)=>`<button class="btn sm" type="button" data-act="dv-dl" data-doc="${doc}" ${dl?'':'disabled title="Disponible dans claude.ai"'}>${ico('down')}${l}</button>`;
+  return `<div class="doc-h"><div><div class="label">${dv.factureNumero?'Facture':'Devis'}</div><div class="doc-n num" id="dvNum">${esc(dv.factureNumero||dv.numero||'Numéro attribué à l’enregistrement')}</div>${dv.factureNumero?`<div class="muted-s">Devis ${esc(dv.numero||'')} · facturé le ${esc(dv.factureDate?fmtDay(parse(dv.factureDate)):'')}</div>`:''}</div>${fld('devis.statut','Statut du devis',dv.statut,'select',{opts:opt(DEVIS_ST,dv.statut)})}</div>
+  <div class="sec-t">Lignes</div><div class="ln ln-h" aria-hidden="true"><span>Désignation</span><span>Qté</span><span>Unité</span><span>PU HT</span><span></span></div>${lines}
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="button" data-act="dv-add">${ico('plus')}Ligne</button><button class="btn sm ghost" type="button" data-act="dv-fill">Pré-remplir depuis la demande</button></div>
+  <div class="fg">${fld('devis.remise','Remise (%)',dv.remise,'number')}${fld('devis.tva','TVA (%)',dv.tva==null?20:dv.tva,'number')}</div>
+  <div id="dvTot">${dvTotHTML(dv)}</div>
+  <div class="sec-t">Règlements</div>${pays||'<p class="muted-s">Aucun règlement enregistré.</p>'}<div><button class="btn sm" type="button" data-act="pay-add">${ico('plus')}Règlement</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">${dv.factureNumero?'':`<button class="btn sm primary" type="button" data-act="dv-facture">Transformer en facture</button>`}${dlb('devis','Devis')}${dv.factureNumero?dlb('facture','Facture'):''}</div>
+  <div class="note-box">Prix unitaires hors taxes. À l’enregistrement, le montant TTC de la demande, l’acompte et le statut de paiement suivent ce devis. Raison sociale, SIREN, TVA et IBAN restent à compléter dans les documents.</div>`+commissionsBlock(d)}
+function tabProg(d){const ps=partners();(d.programme||[]).sort((a,b)=>(parse(a.dt)||Infinity)-(parse(b.dt)||Infinity));const c=clientOf(d)||{};
+  const rows=(d.programme||[]).map((x,i)=>`<div class="pst"><div class="ln pr"><input aria-label="Date et heure" type="datetime-local" data-k="programme.${i}.dt" value="${esc(x.dt)}"><select aria-label="Type d’étape" data-k="programme.${i}.type">${opt(PROG_TYPES,x.type)}</select><input aria-label="Lieu" data-k="programme.${i}.lieu" value="${esc(x.lieu)}" placeholder="Lieu"><button type="button" class="x-s" data-act="pr-del" data-i="${i}" aria-label="Supprimer l’étape">${ico('close')}</button></div><div class="ln pr2"><select aria-label="Partenaire" data-k="programme.${i}.partenaireId"><option value="">Partenaire (optionnel)</option>${opt(ps.map(p=>({id:p.id,label:p.nom+' · '+label(PART_TYPES,p.type)})),x.partenaireId)}</select><input aria-label="Note pour le client" data-k="programme.${i}.client" value="${esc(x.client)}" placeholder="Note pour le client"><input aria-label="Note interne" data-k="programme.${i}.interne" value="${esc(x.interne)}" placeholder="Note interne"></div></div>`).join('');
+  return `<div class="note-box">Le programme se partage avec le client dans sa langue (${esc(docLang(c))}) : message WhatsApp ou carnet à télécharger. Les notes internes ne sont jamais partagées.</div>${rows||'<div class="empty"><div class="arch"></div>Aucune étape pour l’instant.</div>'}
+  <div><button class="btn sm" type="button" data-act="pr-add">${ico('plus')}Étape</button></div>
+  <div class="sec-t">Envoyer au client</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" type="button" data-act="pr-text">Préparer le message</button><button class="btn sm" type="button" data-act="pr-ai" ${sampleFn?'':'disabled title="Disponible dans claude.ai"'}>${ico('spark')}Rédiger avec le Majordome</button><button class="btn sm" type="button" data-act="pr-dl" ${dl?'':'disabled title="Disponible dans claude.ai"'}>${ico('down')}Carnet de séjour</button></div>
+  <div id="prOutW" ${DR.prog?'':'hidden'}><div class="f full"><label for="prOut">Message</label><textarea id="prOut" dir="auto" style="min-height:200px">${esc(DR.prog||'')}</textarea></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn sm" type="button" data-act="pr-copy">${ico('copy')}Copier</button><a class="btn sm" id="prWa" href="${esc(waLink(c.tel,DR.prog||''))}" target="_blank" rel="noopener">Ouvrir dans WhatsApp</a></div><p class="muted-s">${c.tel?'WhatsApp s’ouvre sur la conversation du client, message prêt.':'Ajoutez le téléphone du client pour ouvrir directement sa conversation.'}</p></div>`}
+function tabTaches(d){const ts=d.taches||[];const now=sod(new Date());
+  return `${ts.map((x,i)=>{const due=parse(x.due);const late=!x.fait&&due&&due<now;return `<div class="ln tk ${x.fait?'done':''}"><label class="tkc"><input type="checkbox" data-k="taches.${i}.fait" ${x.fait?'checked':''} aria-label="Fait"></label><input aria-label="Tâche" data-k="taches.${i}.t" value="${esc(x.t)}" placeholder="Tâche"><select aria-label="Responsable" data-k="taches.${i}.resp">${opt(TEAM.map(t=>({id:t.id,label:t.nom})),x.resp)}</select><input aria-label="Échéance" type="date" data-k="taches.${i}.due" value="${esc(x.due)}" ${late?'class="late"':''}><button type="button" class="x-s" data-act="tk-del" data-i="${i}" aria-label="Supprimer la tâche">${ico('close')}</button></div>`}).join('')||'<div class="empty"><div class="arch"></div>Aucune tâche.</div>'}
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="button" data-act="tk-add">${ico('plus')}Tâche</button>${TASK_TPL[d.service]?`<button class="btn sm ghost" type="button" data-act="tk-tpl">Ajouter le modèle « ${esc(svcName(d.service))} »</button>`:''}</div>
+  <p class="muted-s">Les tâches non faites apparaissent dans « À faire » de la personne responsable. Cocher une tâche l’enregistre aussitôt.</p>`}
+function pvHTML(d,i){const j=(d.journal||[])[i];if(!j||j.type!=='pv')return '';const m=driverAt(DR.id||d.id,j.dt);const c=m&&clientOf(m);
+  return `${m?`Conducteur à désigner : <b>${esc(c?c.nom:'client inconnu')}</b>${c&&c.tel?' · '+esc(c.tel):''} — <button type="button" class="lnk" data-open="mission:${m.id}">${esc(m.titre)}</button>`:(j.dt?'Aucune demande à cette date : le véhicule était chez Amane.':'Indiquez la date et l’heure de l’infraction.')}<label class="tkc"><input type="checkbox" data-k="journal.${i}.traite" ${j.traite?'checked':''}>Désignation faite</label>`}
+function tabJournal(d){const js=d.journal||[];js.sort((a,b)=>(parse(b.dt)||Infinity)-(parse(a.dt)||Infinity));
+  return `${js.map((j,i)=>`<div class="pst"><div class="ln jr"><input aria-label="Date et heure" type="datetime-local" data-k="journal.${i}.dt" value="${esc(j.dt)}"><select aria-label="Type" data-k="journal.${i}.type">${opt(JOURNAL_T,j.type)}</select><input aria-label="Kilométrage" type="number" inputmode="numeric" data-k="journal.${i}.km" value="${esc(j.km)}" placeholder="km"><input aria-label="Coût" type="number" step="any" inputmode="decimal" data-k="journal.${i}.cout" value="${esc(j.cout)}" placeholder="Coût €"><button type="button" class="x-s" data-act="jr-del" data-i="${i}" aria-label="Supprimer l’entrée">${ico('close')}</button></div><div class="ln jr2"><input aria-label="Description" data-k="journal.${i}.desc" value="${esc(j.desc)}" placeholder="Description"><span class="jph">${j.photo?`<img src="${photoURL(j.photo)}" alt="Pièce jointe">`:''}${assets&&!d._demo&&DR.id?`<button type="button" class="btn sm ghost" data-act="jr-ph" data-i="${i}">${j.photo?'Changer la photo':'Photo'}</button>`:''}</span></div><div class="pvbox" id="pv${i}">${pvHTML(d,i)}</div></div>`).join('')||'<div class="empty"><div class="arch"></div>Journal vide.</div>'}
+  <div><button class="btn sm" type="button" data-act="jr-add">${ico('plus')}Entrée</button></div>
+  <p class="muted-s">Pour un PV, la date et l’heure suffisent : le CRM retrouve la demande et le client qui avaient la voiture, pour la désignation ANTAI.</p>`}
+
+/* Vues Carnet et Finances */
+function vCarnet(){const f=S.filters;const q=(f.pq||'').toLowerCase();const t=f.pt||'';const all=partners();
+  const ps=all.filter(p=>(!t||p.type===t)&&(!q||[p.nom,p.contact,p.tel,p.email,p.adresse,p.langues].join(' ').toLowerCase().includes(q))).sort((a,b)=>(a.type+a.nom).localeCompare(b.type+b.nom));
+  const icoOf=p=>p.type==='chauffeur'?'key':p.type==='boutique'?'bag':p.type==='restaurant'?'star':p.type==='garage'?'flotte':p.type==='hotel'?'salon':'user';
+  return `<div class="view-h"><div><div class="label">Partenaires</div><h2>Carnet</h2></div><div class="tools"><input class="field-inline" id="fPQ" type="search" placeholder="Nom, téléphone, langue…" value="${esc(f.pq||'')}" aria-label="Rechercher un partenaire"><button class="btn sm primary" type="button" data-act="new-partenaire">${ico('plus')}Partenaire</button></div></div>
+  <div class="seg wrap" role="group" aria-label="Type de partenaire" style="margin-bottom:14px"><button type="button" data-pt="" aria-pressed="${!t}">Tous ${all.length}</button>${PART_TYPES.map(x=>`<button type="button" data-pt="${x.id}" aria-pressed="${t===x.id}">${x.label} ${all.filter(p=>p.type===x.id).length}</button>`).join('')}</div>
+  <div class="glass"><div class="list">${ps.length?ps.map(p=>`<button class="row partners" type="button" data-open="partenaire:${p.id}"><span class="ic-s">${ico(icoOf(p))}</span><span style="min-width:0"><div class="main-t">${esc(p.nom)}${p._demo?' <span class="ex-s">exemple</span>':''}${p.actif===false?' <span class="ex-s">inactif</span>':''}</div><div class="sub-t">${esc([label(PART_TYPES,p.type),p.contact,p.langues].filter(Boolean).join(' · '))}</div></span><span class="sub-t hide-m">${esc(p.tel||p.adresse||'')}</span><span class="num hide-m">${p.commission?esc(p.commission)+' %':''}</span></button>`).join(''):`<div class="empty"><div class="arch"></div>${q||t?'Aucun partenaire ne correspond.':'Carnet vide. Ajoutez vos chauffeurs, restaurants, boutiques et garages.'}</div>`}</div></div>`}
+function vFinances(){const off=S.filters.fm||0;const ref=monthOf(off);const fd=finData(ref);const mlab=ref.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});const now=new Date();
+  const svcRows=Object.entries(fd.bySvc).sort((a,b)=>b[1]-a[1]);const vehRows=Object.entries(fd.byVeh).sort((a,b)=>b[1]-a[1]);const mx=Math.max(1,...svcRows.map(x=>x[1]),...vehRows.map(x=>x[1]));
+  const bar=(l,v)=>`<div class="b"><span>${esc(l)}</span><span><i style="width:${v/mx*100}%"></i></span><span class="num">${fmtK(v)}</span></div>`;
+  const kpi=(l,v,h,col)=>`<div class="glass kpi"><div class="label">${l}</div><div class="v num" ${col?`style="color:${col}"`:''}>${fmtE(v)}</div><div class="h">${h}</div></div>`;
+  return `<div class="view-h"><div><div class="label">Espace d’Aziz</div><h2>Finances · ${esc(mlab)}</h2></div><div class="tools"><button class="btn sm" type="button" data-fm="-1" aria-label="Mois précédent">${ico('left')}</button><button class="btn sm" type="button" data-fm="0">Ce mois</button><button class="btn sm" type="button" data-fm="1" aria-label="Mois suivant">${ico('right')}</button><button class="btn sm" type="button" data-act="fin-csv" ${dl?'':'disabled title="Disponible dans claude.ai"'}>${ico('down')}Export CSV</button></div></div>
+  <div class="fin-k" id="finK">${kpi('Facturé',fd.facture,'Factures émises ce mois, TTC')}${kpi('Encaissé',fd.encaisse,'Règlements reçus ce mois')}${kpi('Reste à encaisser',fd.reste,`${fd.factures.length} facture${fd.factures.length>1?'s':''} non soldée${fd.factures.length>1?'s':''}, tous mois`,fd.reste>0?'var(--bad)':'')}
+    ${kpi('Commissions à recevoir',fd.comA,`${fmtE(fd.comR)} reçues ce mois`)}${kpi('Coûts flotte',fd.fixe+fd.journ,`Loyers et charges ${fmtE(fd.fixe)} · journal ${fmtE(fd.journ)}`)}${kpi('Résultat estimé',fd.res,'Encaissé + commissions reçues − coûts flotte',fd.res<0?'var(--bad)':'var(--ok)')}</div>
+  <div class="grid-salon"><div class="stack"><div class="glass panel"><div class="panel-h"><h2>Factures à encaisser</h2><span class="sub">en rouge : émises depuis plus de 7 jours</span></div><div class="list">${fd.factures.map(x=>{const late=x.date&&now-x.date>7*864e5;const c=clientOf(x.m)||{};return `<button class="row fin" type="button" data-open="mission:${x.m.id}:devis"><span style="min-width:0"><div class="main-t">${esc(x.m.devis.factureNumero)} · ${esc(c.nom||'')}</div><div class="sub-t">${esc(x.m.titre)}</div></span><span class="num" style="color:${late?'var(--bad)':'var(--fg)'}">${fmtE(x.t.solde)}</span><span class="sub-t hide-m">${x.date?fmtDay(x.date):''}</span></button>`}).join('')||'<div class="empty"><div class="arch"></div>Toutes les factures sont soldées.</div>'}</div></div></div>
+  <div class="stack"><div class="glass panel"><div class="panel-h"><h2>Signé par service</h2><span class="sub">début ce mois</span></div><div class="bars">${svcRows.map(([k,v])=>bar(svcName(k),v)).join('')||'<div class="empty">Aucune demande confirmée ce mois.</div>'}</div></div>
+  <div class="glass panel"><div class="panel-h"><h2>Par véhicule</h2></div><div class="bars">${vehRows.map(([k,v])=>bar((byId(vehicles(),k)||{}).nom||'—',v)).join('')||'<div class="empty">—</div>'}</div></div></div></div>
+  <p class="muted-s" style="margin-top:12px">Montants TTC. Le résultat est une estimation de trésorerie, pas une comptabilité : il ne tient compte ni des salaires, ni de la TVA à reverser, ni des impôts.</p>`}
+
 /* ---------- Rendu : coque ---------- */
-const ROUTES=[['salon','Salon'],['demandes','Demandes'],['planning','Planning'],['clients','Clients'],['flotte','Flotte'],['contrats','Contrats'],['services','Services'],['aide','Aide']];
+const ROUTES=[['salon','Salon'],['demandes','Demandes'],['planning','Planning'],['clients','Clients'],['carnet','Carnet'],['flotte','Flotte'],['contrats','Contrats'],['finances','Finances'],['services','Services'],['aide','Aide']];
 function renderNav(){
   const t=todos();const nNew=list('missions').filter(m=>m.statut==='nouvelle').length;const nK=t.aziz.length;
   $('#nav').innerHTML=ROUTES.map(([k,l])=>{const n=k==='demandes'?nNew:k==='contrats'?nK:0;return `<button class="nav-btn" type="button" aria-label="${l}" data-route="${k}" ${S.route===k?'aria-current="page"':''}>${ico(k)}<span>${l}</span>${n?`<span class="dot">${n}</span>`:''}</button>`}).join('');
@@ -707,7 +940,7 @@ function renderBanner(){
 function render(){
   computeDemo();renderNav();renderHello();renderBanner();
   const v=$('#view');const r=S.route;
-  v.innerHTML=r==='salon'?vSalon():r==='demandes'?vDemandes():r==='planning'?vPlanning():r==='clients'?vClients():r==='flotte'?vFlotte():r==='contrats'?vContrats():r==='aide'?vAide():vServices();
+  v.innerHTML=r==='salon'?vSalon():r==='demandes'?vDemandes():r==='planning'?vPlanning():r==='clients'?vClients():r==='flotte'?vFlotte():r==='contrats'?vContrats():r==='aide'?vAide():r==='carnet'?vCarnet():r==='finances'?vFinances():vServices();
   if(r==='demandes')wireKanban();
 }
 let rq=0;function refresh(){cancelAnimationFrame(rq);rq=requestAnimationFrame(render)}
@@ -735,7 +968,7 @@ function vSalon(){
   const t=todos();const sel=S.filters.todo||S.me||'amel';
   const tl=(t[sel]||[]).slice(0,7);
   const tdo=`<div class="todo-tabs" role="group" aria-label="À faire par personne">${TEAM.map(p=>`<button type="button" data-todo="${p.id}" aria-pressed="${sel===p.id}">${av(p.id)}${esc(p.nom)} <span class="n">${t[p.id].length}</span></button>`).join('')}</div>`+
-    (tl.length?tl.map(x=>`<button class="todo" type="button" data-open="${x.vid?'vehicule:'+x.vid:'mission:'+x.id}"><span class="sev" style="background:var(--${x.sev})"></span><span><div class="tt">${esc(x.t)}</div><div class="td">${esc(x.d)}</div></span></button>`).join(''):`<div class="empty"><div class="arch"></div>Rien en attente pour ${esc(teamOf(sel).nom)}.</div>`);
+    (tl.length?tl.map(x=>`<button class="todo" type="button" data-open="${x.cid?'client:'+x.cid:x.vid?'vehicule:'+x.vid+(x.vtab?':'+x.vtab:''):'mission:'+x.id+(x.tab?':'+x.tab:'')}"><span class="sev" style="background:var(--${x.sev})"></span><span><div class="tt">${esc(x.t)}</div><div class="td">${esc(x.d)}</div></span></button>`).join(''):`<div class="empty"><div class="arch"></div>Rien en attente pour ${esc(teamOf(sel).nom)}.</div>`);
   const fl=vs.map(v=>{const j=joursLoues(v,now),s=seuil(v),max=Math.max(daysInMonth*.6,s*1.6,j);const ok=j>=s;
     return `<div class="fleet-row"><span class="nm">${esc(v.nom)}</span><div class="track"><div class="fill" style="width:${Math.min(100,j/max*100)}%;${ok?'':'background:rgba(184,149,92,.45)'}"></div><div class="be" style="left:${Math.min(100,s/max*100)}%" data-l="seuil ${s.toFixed(1).replace('.',',')} j"></div></div><span class="r num" style="color:${ok?'var(--ok)':'var(--fg-2)'}">${j} j ${ok?'✓':''}</span></div>`}).join('');
   const counts=['nouvelle','proposition','confirmee','encours','terminee'].map(s=>ms.filter(m=>m.statut===s).length);const mxC=Math.max(1,...counts);
@@ -765,22 +998,22 @@ function vPlanning(){
   const vs=vehicles(),ms=list('missions').filter(m=>m.statut!=='perdue');
   const mon=addD(sod(new Date()),-((new Date().getDay()+6)%7)+S.filters.week*7);const sun=addD(mon,7);const days=[...Array(7)].map((_,i)=>addD(mon,i));
   const today=sod(new Date());
-  const rows=[...vs.map(v=>({id:v.id,nom:v.nom,sub:v.categorie||'',ms:ms.filter(m=>m.vehiculeId===v.id)})),{id:'_none',nom:'Sans véhicule',sub:'chauffeur, shopping, conciergerie',ms:ms.filter(m=>!m.vehiculeId)}];
+  const rows=[...vs.map(v=>({id:v.id,nom:v.nom,sub:v.categorie||'',ms:ms.filter(m=>m.vehiculeId===v.id)})),...chauffeurs().map(p=>({id:'ch:'+p.id,nom:p.nom,sub:'Chauffeur',ms:ms.filter(m=>m.chauffeurId===p.id)})),{id:'_none',nom:'Sans véhicule',sub:'chauffeur, shopping, conciergerie',ms:ms.filter(m=>!m.vehiculeId)}];
   const body=rows.map(r=>{const inWeek=r.ms.filter(m=>{const a=parse(m.debut),b=parse(m.fin)||a;return a&&a<sun&&b>=mon}).sort((a,b)=>parse(a.debut)-parse(b.debut));
     const lanes=[];const placed=inWeek.map(m=>{const a=parse(m.debut),b=parse(m.fin)||addD(a,0);const s=Math.max(0,(a-mon)/864e5),e=Math.min(7,Math.max(s+.6,(b-mon)/864e5));let l=lanes.findIndex(x=>x<=s);if(l<0){l=lanes.length;lanes.push(e)}else lanes[l]=e;return {m,s,e,l}});
     const h=Math.max(1,lanes.length)*34+16;const all=list('missions');
-    return `<div class="plan-r" style="height:${h}px"><div class="rl">${esc(r.nom)}<small>${esc(r.sub)}</small></div>${days.map(d=>`<div class="cell ${sameDay(d,today)?'today':''}"></div>`).join('')}<div class="lanes">${placed.map(p=>{const c=clientOf(p.m);return `<button type="button" class="bar-m ${p.m.statut} ${clashes(p.m,all).length?'clash':''}" style="left:calc(${p.s/7*100}% + 3px);width:calc(${(p.e-p.s)/7*100}% - 6px);top:${8+p.l*34}px" data-open="mission:${p.m.id}" title="${esc(p.m.titre)}">${esc(c?c.nom:p.m.titre)} · ${esc(p.m.titre)}</button>`}).join('')}</div></div>`}).join('');
+    return `<div class="plan-r" style="height:${h}px"><div class="rl">${esc(r.nom)}<small>${esc(r.sub)}</small></div>${days.map(d=>`<div class="cell ${sameDay(d,today)?'today':''}"></div>`).join('')}<div class="lanes">${placed.map(p=>{const c=clientOf(p.m);return `<button type="button" class="bar-m ${p.m.statut} ${(r.id.startsWith('ch:')?chClashes(p.m,all):clashes(p.m,all)).length?'clash':''}" style="left:calc(${p.s/7*100}% + 3px);width:calc(${(p.e-p.s)/7*100}% - 6px);top:${8+p.l*34}px" data-open="mission:${p.m.id}" title="${esc(p.m.titre)}">${esc(c?c.nom:p.m.titre)} · ${esc(p.m.titre)}</button>`}).join('')}</div></div>`}).join('');
   const lbl=`${mon.toLocaleDateString('fr-FR',{day:'numeric',month:'long'})} — ${addD(sun,-1).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}`;
-  return `<div class="view-h"><div><div class="label">Semaine</div><h2>${esc(lbl)}</h2></div><div class="tools"><button class="btn sm" type="button" data-week="-1" aria-label="Semaine précédente">${ico('left')}</button><button class="btn sm" type="button" data-week="0">Cette semaine</button><button class="btn sm" type="button" data-week="1" aria-label="Semaine suivante">${ico('right')}</button></div></div>
+  return `<div class="view-h"><div><div class="label">Semaine</div><h2>${esc(lbl)}</h2></div><div class="tools"><button class="btn sm" type="button" data-week="-1" aria-label="Semaine précédente">${ico('left')}</button><button class="btn sm" type="button" data-week="0">Cette semaine</button><button class="btn sm" type="button" data-week="1" aria-label="Semaine suivante">${ico('right')}</button><button class="btn sm" type="button" data-act="ics" ${dl?'':'disabled title="Disponible dans claude.ai"'}>${ico('down')}Agenda (.ics)</button></div></div>
   <div class="glass plan-wrap"><div class="plan"><div class="plan-h"><div></div>${days.map(d=>`<div class="${sameDay(d,today)?'today':''}">${d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'})}</div>`).join('')}</div>${body}</div></div>
-  <p style="color:var(--fg-3);font-size:12.5px;margin-top:10px">Hachuré : proposition non confirmée. Contour rouge : deux missions confirmées sur le même véhicule au même moment.</p>`;
+  <p style="color:var(--fg-3);font-size:12.5px;margin-top:10px">Hachuré : proposition non confirmée. Contour rouge : véhicule ou chauffeur réservé deux fois au même moment. « Agenda (.ics) » s’importe dans Google Agenda ou Apple Calendrier.</p>`;
 }
 function vClients(){
   const q=(S.filters.q||'').toLowerCase();const ms=list('missions');
   const cs=list('clients').filter(c=>!q||[c.nom,c.tel,c.email,c.pays,c.hotel].join(' ').toLowerCase().includes(q)).map(c=>{const mine=ms.filter(m=>m.clientId===c.id);const ca=mine.filter(m=>ACTIVE.includes(m.statut)).reduce((s,m)=>s+(+m.montant||0),0);const last=mine.map(m=>parse(m.debut)).filter(Boolean).sort((a,b)=>b-a)[0];return {c,ca,last,n:mine.length}}).sort((a,b)=>b.ca-a.ca);
   return `<div class="view-h"><div><div class="label">Carnet</div><h2>Clients</h2></div><div class="tools"><input class="field-inline" id="fQ" type="search" placeholder="Nom, téléphone, pays…" value="${esc(S.filters.q)}" aria-label="Rechercher un client"><button class="btn sm primary" type="button" data-act="new-client">${ico('plus')}Client</button></div></div>
   <div class="glass"><div class="list-h row clients hide-m" style="cursor:default"><span></span><span>Client</span><span class="hide-m">Origine</span><span class="hide-m">Statut</span><span>Chiffre</span><span class="hide-m">Dernière</span></div>
-  <div class="list">${cs.length?cs.map(({c,ca,last,n})=>`<button class="row clients" type="button" data-open="client:${c.id}">${av(c.responsable)}<span style="min-width:0"><div class="main-t">${esc(c.nom)}${c._demo?' <span class="ex" style="font-size:10px;letter-spacing:.2em;color:var(--fg-3)">EXEMPLE</span>':''}</div><div class="sub-t">${esc([c.tel,c.langue,c.canal].filter(Boolean).join(' · '))}</div></span><span class="sub-t hide-m">${esc([c.hotel,c.pays].filter(Boolean).join(' · ')||'—')}</span><span class="hide-m"><span class="chip" style="${c.statut==='vip'?'color:var(--accent);border-color:var(--accent)':''}">${esc(label(CLIENT_STATUTS,c.statut))}</span></span><span class="num">${fmtK(ca)}<div class="sub-t">${n} mission${n>1?'s':''}</div></span><span class="sub-t hide-m">${last?fmtDay(last):'—'}</span></button>`).join(''):`<div class="empty"><div class="arch"></div>${q?'Aucun client ne correspond.':'Aucun client pour l’instant.'}</div>`}</div></div>`;
+  <div class="list">${cs.length?cs.map(({c,ca,last,n})=>`<button class="row clients" type="button" data-open="client:${c.id}">${av(c.responsable)}<span style="min-width:0"><div class="main-t">${esc(c.nom)}${CLIENT_TAGS.filter(([x])=>(c.tags||{})[x]).map(([,l])=>`<span class="tagc">${l}</span>`).join('')}${c._demo?' <span class="ex" style="font-size:10px;letter-spacing:.2em;color:var(--fg-3)">EXEMPLE</span>':''}</div><div class="sub-t">${esc([c.tel,c.langue,c.canal].filter(Boolean).join(' · '))}</div></span><span class="sub-t hide-m">${esc([c.hotel,c.pays].filter(Boolean).join(' · ')||'—')}</span><span class="hide-m"><span class="chip" style="${c.statut==='vip'?'color:var(--accent);border-color:var(--accent)':''}">${esc(label(CLIENT_STATUTS,c.statut))}</span></span><span class="num">${fmtK(ca)}<div class="sub-t">${n} mission${n>1?'s':''}</div></span><span class="sub-t hide-m">${last?fmtDay(last):'—'}</span></button>`).join(''):`<div class="empty"><div class="arch"></div>${q?'Aucun client ne correspond.':'Aucun client pour l’instant.'}</div>`}</div></div>`;
 }
 function vFlotte(){
   const vs=vehicles(),now=new Date(),f=S.filters;if(!f.from){f.from=toLocal(now);f.to=toLocal(new Date(+now+864e5))}
@@ -821,12 +1054,23 @@ function vAide(){
       <div class="glass panel"><div class="panel-h"><h2>Qui fait quoi</h2><span class="sub">l’onglet « À faire » du Salon suit ce partage</span></div>
         ${roles.map(([id,d])=>{const t=teamOf(id);return `<div class="who">${av(id)}<div><b>${t.nom} · ${t.role}</b><span>${d}</span></div></div>`}).join('')}
       </div>
+      <div class="glass panel"><div class="panel-h"><h2>Outils de conciergerie</h2><span class="sub">dans chaque fiche demande et dans le rail</span></div>
+        <div class="facts">
+          <div><i>·</i><span><b style="font-weight:500;color:var(--fg)">Devis & facture</b> : Amel prépare le devis (numéro D-année-0001 automatique), le transforme en facture une fois accepté ; Aziz saisit les règlements. Le statut de paiement suit tout seul.</span></div>
+          <div><i>·</i><span><b style="font-weight:500;color:var(--fg)">Programme</b> : les étapes du séjour, envoyées au client sur WhatsApp ou en carnet dans sa langue (FR, EN, ES, AR).</span></div>
+          <div><i>·</i><span><b style="font-weight:500;color:var(--fg)">Carnet</b> : chauffeurs, restaurants, hôtels, boutiques, garages. Un chauffeur pris deux fois apparaît en rouge dans le Planning. Les commissions des partenaires se notent dans le devis.</span></div>
+          <div><i>·</i><span><b style="font-weight:500;color:var(--fg)">Tâches</b> : une checklist par demande, avec un modèle par service ; chaque tâche arrive dans « À faire » de son responsable.</span></div>
+          <div><i>·</i><span><b style="font-weight:500;color:var(--fg)">Journal de flotte</b> (Youssouf) : entretiens, dommages, coûts, échéances assurance et contrôle. Pour un PV, la date suffit : le conducteur à désigner est retrouvé, et Aziz le voit dans « À faire ».</span></div>
+          <div><i>·</i><span><b style="font-weight:500;color:var(--fg)">Finances</b> (Aziz) : facturé, encaissé, factures en retard, commissions, coûts de la flotte, export CSV.</span></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sm" type="button" data-act="export-json" ${dl?'':'disabled title="Disponible dans claude.ai"'}>${ico('down')}Sauvegarder toutes les données (JSON)</button></div>
+      </div>
       <div class="glass panel"><div class="panel-h"><h2>Raccourcis</h2></div>
         <ul class="kb"><li><kbd>⌘K</kbd><kbd>Ctrl K</kbd>chercher un client, une demande, une voiture, ou lancer une action</li><li><kbd>Échap</kbd>fermer une fiche ou une fenêtre</li><li><b style="font-weight:500;color:var(--fg)">Majordome</b> : analyse un message client et rédige les réponses (proposition, confirmation, relance, remerciement)</li></ul>
       </div>
       <div class="glass panel"><div class="panel-h"><h2>Ce qui est enregistré</h2><span class="sub">${live?'base partagée active':'mode local : rien n’est enregistré ici'}</span></div>
         <div class="facts">
-          <div><i>·</i><span>Clients, demandes, flotte, services et photos sont enregistrés dans une base commune. Ce que l’un modifie apparaît chez les autres en quelques secondes.</span></div>
+          <div><i>·</i><span>Clients, demandes, devis, carnet, flotte, services et photos sont enregistrés dans une base commune. Ce que l’un modifie apparaît chez les autres en quelques secondes.</span></div>
           <div><i>·</i><span>Seules les personnes invitées avec le droit « peut modifier » voient les données. Avec « peut voir », la page reste vide : c’est voulu.</span></div>
           <div><i>·</i><span>« Qui êtes-vous ? » et vos filtres restent sur votre appareil.</span></div>
           <div><i>·</i><span>Les exemples affichés tant que la base est vide ne sont pas enregistrés et disparaissent à la première vraie fiche.</span></div>
@@ -846,8 +1090,8 @@ function vServices(){
 /* ---------- Tiroir (fiches) ---------- */
 const DR={open:false,kind:null,id:null,tab:'main',draft:null,confirmDel:false,refresh(){drawRender()}};
 function openDrawer(kind,id,tab,preset){
-  DR.open=true;DR.kind=kind;DR.id=id||null;DR.tab=tab||'main';DR.confirmDel=false;DR.ai='';
-  const src=kind==='mission'?list('missions'):kind==='client'?list('clients'):kind==='vehicule'?vehicles():services();
+  DR.open=true;DR.kind=kind;DR.id=id||null;DR.tab=tab||'main';DR.confirmDel=false;DR.ai='';DR.prog='';
+  const src=kind==='mission'?list('missions'):kind==='client'?list('clients'):kind==='vehicule'?vehicles():kind==='partenaire'?partners():services();
   const ex=id?byId(src,id):null;
   DR.draft=ex?JSON.parse(JSON.stringify(ex)):blank(kind,preset);
   drawRender();$('#drawer').classList.add('on');$('#scrim').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');
@@ -855,22 +1099,23 @@ function openDrawer(kind,id,tab,preset){
 }
 function closeDrawer(){DR.open=false;$('#drawer').classList.remove('on');$('#scrim').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true')}
 function blank(kind,p){p=p||{};const now=new Date();now.setMinutes(0,0,0);const a=addD(now,1);a.setHours(10);const b=new Date(a);b.setHours(19);
-  if(kind==='mission')return {titre:'',clientId:p.clientId||'',service:p.service||'location',vehiculeId:'',debut:toLocal(a),fin:toLocal(b),lieu:'',montant:'',acompte:'',statut:'nouvelle',responsable:S.me||'amel',chauffeur:'',notes:'',paiement:'non',contrat:{statut:'a_rediger',caution:'',cautionStatut:'aucune',pieces:{permis:false,passeport:false,domicile:false},edlDepart:{fait:false,km:'',carburant:'Plein',notes:''},edlRetour:{fait:false,km:'',carburant:'Plein',notes:''}},...p};
+  if(kind==='mission')return {titre:'',clientId:p.clientId||'',service:p.service||'location',vehiculeId:'',debut:toLocal(a),fin:toLocal(b),lieu:'',montant:'',acompte:'',statut:'nouvelle',responsable:S.me||'amel',chauffeur:'',chauffeurId:'',programme:[],taches:[],commissions:[],devis:null,notes:'',paiement:'non',contrat:{statut:'a_rediger',caution:'',cautionStatut:'aucune',pieces:{permis:false,passeport:false,domicile:false},edlDepart:{fait:false,km:'',carburant:'Plein',notes:''},edlRetour:{fait:false,km:'',carburant:'Plein',notes:''}},...p};
   if(kind==='client')return {nom:'',tel:'',email:'',langue:'FR',pays:'',hotel:'',canal:'WhatsApp',statut:'prospect',responsable:S.me||'amel',prefs:'',notes:'',...p};
   if(kind==='vehicule')return {nom:'',categorie:'',plaque:'',couleur:'',tarifJour:'',loyerMois:'',chargesMois:500,statut:'disponible',km:'',revision:'',notes:'',ordre:vehicles().length+1,...p};
+  if(kind==='partenaire')return {nom:'',type:S.filters.pt||'chauffeur',contact:'',tel:'',email:'',langues:'',adresse:'',commission:'',notes:'',actif:true,...p};
   return {id:'',nom:'',description:'',tarif:'',ordre:services().length+1,...p};
 }
 const opt=(arr,v)=>arr.map(o=>typeof o==='string'?`<option ${o===v?'selected':''}>${esc(o)}</option>`:`<option value="${esc(o.id)}" ${o.id===v?'selected':''}>${esc(o.label||o.nom)}</option>`).join('');
 const fld=(k,l,v,type,extra)=>`<div class="f ${extra&&extra.full?'full':''}"><label for="f_${k.replace(/\./g,'_')}">${l}</label>${type==='textarea'?`<textarea id="f_${k.replace(/\./g,'_')}" data-k="${k}">${esc(v)}</textarea>`:type==='select'?`<select id="f_${k.replace(/\./g,'_')}" data-k="${k}">${extra.opts}</select>`:`<input id="f_${k.replace(/\./g,'_')}" data-k="${k}" type="${type||'text'}" value="${esc(v)}" ${extra&&extra.ph?`placeholder="${esc(extra.ph)}"`:''} ${type==='number'?'inputmode="decimal" step="any"':''}>`}</div>`;
 function getK(o,k){return k.split('.').reduce((x,p)=>x==null?'':x[p],o)}
 function setK(o,k,v){const ps=k.split('.');let x=o;ps.slice(0,-1).forEach(p=>{if(x[p]==null||typeof x[p]!=='object')x[p]={};x=x[p]});x[ps[ps.length-1]]=v}
-function missionHints(d){const cl=clashes(d,list('missions'));return `${cl.length?`<div class="warn-box">${ico('alert')}<span>Ce véhicule est déjà réservé sur ce créneau : ${cl.map(o=>esc(o.titre)+' ('+fmtDT(parse(o.debut))+')').join(', ')}.</span></div>`:''}
+function missionHints(d){const cl=clashes(d,list('missions'));const cc=chClashes(d,list('missions'));return `${cc.length?`<div class="warn-box">${ico('alert')}<span>Ce chauffeur est déjà pris sur ce créneau : ${cc.map(o=>esc(o.titre)+' ('+fmtDT(parse(o.debut))+')').join(', ')}.</span></div>`:''}${cl.length?`<div class="warn-box">${ico('alert')}<span>Ce véhicule est déjà réservé sur ce créneau : ${cl.map(o=>esc(o.titre)+' ('+fmtDT(parse(o.debut))+')').join(', ')}.</span></div>`:''}
       ${(()=>{const v=byId(vehicles(),d.vehiculeId);if(!v||!d.debut)return '';const n=durDays(d);const est=n*(+v.tarifJour||0);return `<div class="note-box">Repère : ${n} jour${n>1?'s':''} × ${fmtE(v.tarifJour)} = <b class="num">${fmtE(est)}</b> au tarif ${esc(v.nom)}.${(+d.montant)&&(+d.montant)<est*.85?' Le montant saisi est plus de 15 % sous ce repère.':''}</div>`})()}`}
 function drawRender(){
   const d=DR.draft;const k=DR.kind;const isNew=!DR.id;const demo=!!d._demo;let title='',eyebrow='',tabs=[],body='',foot='';
   if(k==='mission'){
     eyebrow=isNew?'Nouvelle demande':`${label(STATUTS,d.statut)} · ${svcName(d.service)}`;title=d.titre||'Demande sans titre';
-    tabs=[['main','Demande'],['contrat','Contrat & dossier'],['ia','Message client']];
+    const nT=(d.taches||[]).filter(x=>!x.fait).length;tabs=[['main','Demande'],['devis','Devis & facture'],['prog','Programme'],['taches','Tâches'+(nT?' ('+nT+')':'')],['contrat','Contrat & dossier'],['ia','Message client']];
     const cl=clashes(d,list('missions'));
     if(DR.tab==='main')body=`<div class="fg">
       ${fld('titre','Titre',d.titre,'text',{full:1,ph:'Ex. G 63 — anniversaire de mariage'})}
@@ -879,7 +1124,7 @@ function drawRender(){
       ${fld('service','Service',d.service,'select',{opts:opt(services().map(s=>({id:s.id,label:s.nom})),d.service)})}
       ${fld('vehiculeId','Véhicule',d.vehiculeId,'select',{opts:'<option value="">Aucun</option>'+opt(vehicles().map(v=>({id:v.id,label:v.nom+vehSuffix(v,d)})),d.vehiculeId)})}
       ${fld('debut','Début',d.debut,'datetime-local')}${fld('fin','Fin',d.fin,'datetime-local')}
-      ${fld('lieu','Lieu de remise',d.lieu,'text',{ph:'Hôtel, adresse, aéroport'})}${fld('chauffeur','Chauffeur',d.chauffeur,'text',{ph:'Si service chauffeur'})}
+      ${fld('lieu','Lieu de remise',d.lieu,'text',{ph:'Hôtel, adresse, aéroport'})}<div class="f"><label for="f_chauffeurId">Chauffeur (carnet)</label><select id="f_chauffeurId" data-k="chauffeurId"><option value="">Aucun</option>${opt(chauffeurs().map(p=>({id:p.id,label:p.nom+chSuffix(p,d)})),d.chauffeurId)}</select></div>${fld('chauffeur','Chauffeur hors carnet',d.chauffeurId?'':d.chauffeur,'text',{ph:'Nom, si absent du carnet'})}
       ${fld('montant','Montant total (€ TTC)',d.montant,'number')}${fld('acompte','Acompte reçu (€)',d.acompte,'number')}
       ${fld('statut','Statut',d.statut,'select',{opts:opt(STATUTS,d.statut)})}${fld('paiement','Paiement',d.paiement||'non','select',{opts:opt(PAIEMENT_ST,d.paiement||'non')})}
       ${fld('notes','Notes internes',d.notes,'textarea',{full:1})}</div>
@@ -891,6 +1136,9 @@ function drawRender(){
       ${['edlDepart','edlRetour'].map(e=>{const o=c[e]||{};return `<div class="sec-t">État des lieux ${e==='edlDepart'?'départ':'retour'}</div><div class="fg"><div class="f full checks"><label><input type="checkbox" data-k="contrat.${e}.fait" ${o.fait?'checked':''}>Fait et signé par le client</label></div>${fld('contrat.'+e+'.km','Kilométrage',o.km,'number')}${fld('contrat.'+e+'.carburant','Carburant',o.carburant||'Plein','select',{opts:opt(CARBURANT,o.carburant||'Plein')})}${fld('contrat.'+e+'.notes','Rayures, jantes, intérieur',o.notes,'textarea',{full:1})}</div>`}).join('')}
       <div class="note-box">Le contrat généré est un modèle de travail. Faites valider la version définitive par votre avocat avant le premier usage.</div>`;
       foot=dl&&!isNew?`<button class="btn sm" type="button" data-act="dl-contrat">${ico('down')}Télécharger le contrat</button>`:'';}
+    if(DR.tab==='devis')body=tabDevis(d);
+    if(DR.tab==='prog')body=tabProg(d);
+    if(DR.tab==='taches')body=tabTaches(d);
     if(DR.tab==='ia'){const c=byId(list('clients'),d.clientId);body=`<div class="note-box">Le majordome rédige un message pour ${esc(c?c.nom:'le client')} dans sa langue (${esc(c&&c.langue||'FR')}), au ton Amane : vouvoiement, sobriété, un seul interlocuteur.</div>
       <div class="seg" role="group" aria-label="Type de message">${[['proposition','Proposition'],['confirmation','Confirmation'],['relance','Relance'],['merci','Remerciement']].map(([x,l])=>`<button type="button" data-aitype="${x}" aria-pressed="${(DR.aiType||'proposition')===x}">${l}</button>`).join('')}</div>
       <div class="f full"><label for="aiOut">Message</label><textarea id="aiOut" style="min-height:220px">${esc(DR.ai||'')}</textarea></div>
@@ -900,19 +1148,25 @@ function drawRender(){
     eyebrow=isNew?'Nouveau client':label(CLIENT_STATUTS,d.statut);title=d.nom||'Client sans nom';tabs=[['main','Fiche'],['hist','Historique']];
     if(DR.tab==='main')body=`<div class="fg">${fld('nom','Nom',d.nom,'text',{full:1,ph:'Nom ou famille'})}${fld('tel','Téléphone / WhatsApp',d.tel,'tel')}${fld('email','E-mail',d.email,'email')}
       ${fld('langue','Langue',d.langue,'select',{opts:opt(LANGUES,d.langue)})}${fld('pays','Pays',d.pays)}${fld('hotel','Hôtel / adresse à Paris',d.hotel)}${fld('canal','Canal d’arrivée',d.canal,'select',{opts:opt(CANAUX,d.canal)})}
-      ${fld('statut','Statut',d.statut,'select',{opts:opt(CLIENT_STATUTS,d.statut)})}${fld('responsable','Interlocuteur',d.responsable,'select',{opts:opt(TEAM.map(t=>({id:t.id,label:t.nom})),d.responsable)})}
+      ${fld('statut','Statut',d.statut,'select',{opts:opt(CLIENT_STATUTS,d.statut)})}${fld('responsable','Interlocuteur',d.responsable,'select',{opts:opt(TEAM.map(t=>({id:t.id,label:t.nom})),d.responsable)})}${fld('naissance','Date de naissance',d.naissance,'date')}${fld('nationalite','Nationalité',d.nationalite)}<div class="f full"><span class="lab">Documents reçus</span><div class="checks">${[['passeport','Passeport'],['permis','Permis'],['domicile','Justificatif de domicile']].map(([x,l])=>`<label><input type="checkbox" data-k="docs.${x}" ${(d.docs||{})[x]?'checked':''}>${l}</label>`).join('')}</div></div><div class="f full"><span class="lab">Étiquettes</span><div class="checks">${CLIENT_TAGS.map(([x,l])=>`<label><input type="checkbox" data-k="tags.${x}" ${(d.tags||{})[x]?'checked':''}>${l}</label>`).join('')}</div></div>
       ${fld('prefs','Goûts et préférences',d.prefs,'textarea',{full:1})}${fld('notes','Notes internes',d.notes,'textarea',{full:1})}</div>`;
     if(DR.tab==='hist'){const ms=list('missions').filter(m=>m.clientId===DR.id).sort((a,b)=>(parse(b.debut)||0)-(parse(a.debut)||0));const ca=ms.filter(m=>ACTIVE.includes(m.statut)).reduce((s,m)=>s+(+m.montant||0),0);
       body=`<div class="kv"><div><span>Chiffre total</span><b>${fmtE(ca)}</b></div><div><span>Missions</span><b>${ms.length}</b></div></div><div class="hist">${ms.map(m=>`<button type="button" data-open="mission:${m.id}"><span>${esc(m.titre)}<div class="sub-t" style="font-size:12px;color:var(--fg-3)">${fmtDay(parse(m.debut))}</div></span><span>${chip(m.statut)}</span></button>`).join('')||'<div class="empty">Aucune mission.</div>'}</div>${!isNew?`<button class="btn sm primary" type="button" data-act="new-mission-for">${ico('plus')}Nouvelle demande pour ce client</button>`:''}`}
   }
   if(k==='vehicule'){
-    eyebrow=isNew?'Nouveau véhicule':nowLine(d);title=d.nom||'Véhicule';tabs=isNew?[['main','Fiche']]:[['main','Fiche'],['photos','Photos'+((d.photos||[]).length?' ('+d.photos.length+')':'')],['dispo','Disponibilités']];
+    eyebrow=isNew?'Nouveau véhicule':nowLine(d);title=d.nom||'Véhicule';tabs=isNew?[['main','Fiche']]:[['main','Fiche'],['photos','Photos'+((d.photos||[]).length?' ('+d.photos.length+')':'')],['dispo','Disponibilités'],['journal','Journal'+((d.journal||[]).length?' ('+d.journal.length+')':'')]];
     const s=seuil(d);
-    if(DR.tab==='photos')body=vPhotosTab(d);else if(DR.tab==='dispo')body=vDispoTab(d);else body=`<div class="fg">${fld('nom','Modèle',d.nom,'text',{ph:'Ex. G 63'})}${fld('categorie','Catégorie',d.categorie,'text',{ph:'SUV, supercar, van…'})}${fld('plaque','Immatriculation',d.plaque)}${fld('couleur','Couleur',d.couleur)}
+    if(DR.tab==='photos')body=vPhotosTab(d);else if(DR.tab==='dispo')body=vDispoTab(d);else if(DR.tab==='journal')body=tabJournal(d);else body=`<div class="fg">${fld('nom','Modèle',d.nom,'text',{ph:'Ex. G 63'})}${fld('categorie','Catégorie',d.categorie,'text',{ph:'SUV, supercar, van…'})}${fld('plaque','Immatriculation',d.plaque)}${fld('couleur','Couleur',d.couleur)}
       ${fld('tarifJour','Tarif location / jour (€)',d.tarifJour,'number')}${fld('loyerMois','Loyer leasing / mois (€)',d.loyerMois,'number')}${fld('chargesMois','Assurance + entretien / mois (€)',d.chargesMois,'number')}
       ${fld('statut','Statut',d.statut,'select',{opts:opt([{id:'disponible',label:'Disponible'},{id:'entretien',label:'En entretien'},{id:'indisponible',label:'Indisponible'}],d.statut)})}
-      ${fld('km','Kilométrage',d.km,'number')}${fld('revision','Prochaine révision',d.revision,'date')}${fld('notes','Notes',d.notes,'textarea',{full:1})}</div>
+      ${fld('km','Kilométrage',d.km,'number')}${fld('revision','Prochaine révision',d.revision,'date')}${fld('echeances.assurance','Échéance assurance',(d.echeances||{}).assurance,'date')}${fld('echeances.ct','Contrôle technique',(d.echeances||{}).ct,'date')}${fld('echeances.leasing','Fin de leasing',(d.echeances||{}).leasing,'date')}${fld('notes','Notes',d.notes,'textarea',{full:1})}</div>
       ${s?`<div class="note-box">Point mort : <b class="num">${s.toFixed(1).replace('.',',')} jours</b> de location par mois couvrent loyer, assurance et entretien.</div>`:''}`;
+  }
+  if(k==='partenaire'){
+    eyebrow=isNew?'Nouveau partenaire':label(PART_TYPES,d.type);title=d.nom||'Partenaire';tabs=isNew?[['main','Fiche']]:[['main','Fiche'],['hist','Missions']];
+    if(DR.tab==='hist'){const pid=DR.id;const ms=list('missions').filter(m=>m.chauffeurId===pid||(m.commissions||[]).some(c=>c.partenaireId===pid)||(m.programme||[]).some(x=>x.partenaireId===pid)).sort((a,b)=>(parse(b.debut)||0)-(parse(a.debut)||0));const comm=list('missions').reduce((x,m)=>x+(m.commissions||[]).filter(c=>c.partenaireId===pid).reduce((y,c)=>y+(+c.base||0)*(+c.pct||0)/100,0),0);
+      body=`<div class="kv"><div><span>Missions</span><b>${ms.length}</b></div><div><span>Commissions</span><b>${fmtE(comm)}</b></div></div><div class="hist">${ms.map(m=>`<button type="button" data-open="mission:${m.id}"><span>${esc(m.titre)}<div class="sub-t" style="font-size:12px;color:var(--fg-3)">${fmtDT(parse(m.debut))}</div></span><span>${chip(m.statut)}</span></button>`).join('')||'<div class="empty">Aucune mission.</div>'}</div>`}
+    else body=`<div class="fg">${fld('nom','Nom',d.nom,'text',{full:1})}${fld('type','Type',d.type,'select',{opts:opt(PART_TYPES,d.type)})}${fld('contact','Contact',d.contact)}${fld('tel','Téléphone',d.tel,'tel')}${fld('email','E-mail',d.email,'email')}${fld('langues','Langues',d.langues,'text',{ph:'FR, EN, AR'})}${fld('commission','Commission (%)',d.commission,'number')}${fld('adresse','Adresse',d.adresse,'text',{full:1})}<div class="f full checks"><label><input type="checkbox" data-k="actif" ${d.actif!==false?'checked':''}>Actif</label></div>${fld('notes','Notes',d.notes,'textarea',{full:1})}</div>`;
   }
   if(k==='service'){
     eyebrow=isNew?'Nouveau service':'Service';title=d.nom||'Service';tabs=[['main','Fiche']];
@@ -930,7 +1184,8 @@ function readForm(){
 }
 async function saveDrawer(){
   readForm();const d=DR.draft,k=DR.kind;
-  const col=k==='mission'?'missions':k==='client'?'clients':k==='vehicule'?'vehicules':'services';
+  const col=colOf(k);
+  if(k==='partenaire'&&!String(d.nom||'').trim()){toast('Indiquez un nom.');return}
   if(k==='mission'&&!d.titre.trim()){d.titre=`${svcName(d.service)}${clientOf(d)?' — '+clientOf(d).nom:''}`}
   if(k==='client'&&!d.nom.trim()){toast('Indiquez au moins un nom.');return}
   if(k==='vehicule'&&!d.nom.trim()){toast('Indiquez le modèle.');return}
@@ -938,6 +1193,15 @@ async function saveDrawer(){
     if(!S.services.length){for(const s of DEFAULT_SERVICES){if(s.id!==d.id)await save('services',{...s})}}
     if(!d.id)d.id=d.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||uid();}
   if(k==='mission'&&d.fin&&d.debut&&parse(d.fin)<parse(d.debut)){toast('La fin est avant le début.');return}
+  if(k==='mission'){
+    if(d.chauffeurId){const ch=byId(partners(),d.chauffeurId);if(ch)d.chauffeur=ch.nom}
+    d.taches=(d.taches||[]).filter(x=>String(x.t||'').trim());d.programme=(d.programme||[]).filter(x=>x.dt||x.lieu||x.client);
+    d.commissions=(d.commissions||[]).filter(c=>c.partenaireId||+c.base);d.commissions.forEach(c=>{if(c.statut==='recue'&&!c.recueLe)c.recueLe=today();if(c.statut!=='recue')delete c.recueLe});
+    if(d.devis){const dv=d.devis;dv.lignes=(dv.lignes||[]).filter(l=>String(l.d||'').trim()||+l.pu);dv.paiements=(dv.paiements||[]).filter(q=>+q.montant);if(!dv.date)dv.date=today();
+      try{if(!dv.numero)dv.numero=await nextNumero('devis');if(dv.wantFacture&&!dv.factureNumero){dv.factureNumero=await nextNumero('facture');dv.factureDate=today()}}catch(e){toast('Numérotation impossible pour l’instant, réessayez.');return}
+      delete dv.wantFacture;const tt=dvTotals(dv);if(dv.lignes.length)d.montant=tt.ttc;if(dv.paiements.length){d.acompte=tt.paid;d.paiement=tt.ttc>0&&tt.paid>=tt.ttc-0.005?'solde':tt.paid>0?'acompte':'non'}}
+  }
+  if(k==='vehicule'){d.journal=(d.journal||[]).filter(j=>j.dt||j.desc||+j.cout||j.photo)}
   try{const id=await save(col,{...d,id:DR.id||d.id||undefined});if(id){DR.id=id;DR.draft.id=id;toast('Enregistré');if(k==='client'&&DR.pendingMission){const pm=DR.pendingMission;DR.pendingMission=null;openDrawer('mission',null,'main',{...pm,clientId:id});return}drawRender()}}catch(e){}
 }
 
@@ -1014,10 +1278,11 @@ const PAL={items:[],i:0};
 function openPal(){$('#pal').hidden=false;const inp=$('#palIn');inp.value='';palBuild('');inp.focus()}
 function palBuild(q){
   q=q.toLowerCase().trim();const it=[];
-  const acts=[['act','new-mission','Nouvelle demande','plus'],['act','mj','Ouvrir le majordome','spark'],['act','new-client','Nouveau client','user'],['act','new-vehicule','Ajouter un véhicule','flotte'],...ROUTES.map(([k,l])=>['route',k,'Aller à '+l,k])];
+  const acts=[['act','new-mission','Nouvelle demande','plus'],['act','mj','Ouvrir le majordome','spark'],['act','new-client','Nouveau client','user'],['act','new-partenaire','Nouveau partenaire','carnet'],['act','new-vehicule','Ajouter un véhicule','flotte'],...ROUTES.map(([k,l])=>['route',k,'Aller à '+l,k])];
   acts.forEach(([t,v,l,ic])=>{if(!q||l.toLowerCase().includes(q))it.push({g:'Actions',t,v,l,ic,k:''})});
   if(q){list('clients').filter(c=>[c.nom,c.tel,c.email,c.hotel].join(' ').toLowerCase().includes(q)).slice(0,6).forEach(c=>it.push({g:'Clients',t:'open',v:'client:'+c.id,l:c.nom,ic:'user',k:label(CLIENT_STATUTS,c.statut)}));
     list('missions').filter(m=>[m.titre,m.lieu,(clientOf(m)||{}).nom].join(' ').toLowerCase().includes(q)).slice(0,6).forEach(m=>it.push({g:'Demandes',t:'open',v:'mission:'+m.id,l:m.titre,ic:SVC_ICON[m.service]||'spark',k:label(STATUTS,m.statut)}));
+    partners().filter(p=>[p.nom,p.contact,p.tel,p.langues].join(' ').toLowerCase().includes(q)).slice(0,6).forEach(p=>it.push({g:'Carnet',t:'open',v:'partenaire:'+p.id,l:p.nom,ic:'carnet',k:label(PART_TYPES,p.type)}));
     vehicles().filter(v=>[v.nom,v.plaque].join(' ').toLowerCase().includes(q)).forEach(v=>it.push({g:'Flotte',t:'open',v:'vehicule:'+v.id,l:v.nom,ic:'flotte',k:v.statut}))}
   PAL.items=it;PAL.i=0;palRender();
 }
@@ -1035,11 +1300,14 @@ function act(a){
   else if(a==='new-client')openDrawer('client');
   else if(a==='new-vehicule')openDrawer('vehicule');
   else if(a==='new-service')openDrawer('service');
+  else if(a==='new-partenaire')openDrawer('partenaire');
   else if(a==='mj')openMj();
 }
 document.addEventListener('click',async e=>{
-  const t=e.target.closest('[data-move],[data-route],[data-open],[data-act],[data-tab],[data-week],[data-todo],[data-f-mine],[data-pi],[data-who],[data-aitype]');if(!t)return;
+  const t=e.target.closest('[data-pt],[data-fm],[data-move],[data-route],[data-open],[data-act],[data-tab],[data-week],[data-todo],[data-f-mine],[data-pi],[data-who],[data-aitype]');if(!t)return;
   if(t.dataset.route){go(t.dataset.route);return}
+  if(t.dataset.pt!==undefined){S.filters.pt=t.dataset.pt;render();return}
+  if(t.dataset.fm!==undefined){const f=+t.dataset.fm;S.filters.fm=f===0?0:(S.filters.fm||0)+f;render();return}
   if(t.dataset.move){const [mid,dir]=t.dataset.move.split(':');const m=byId(list('missions'),mid);if(m){const i=STATUTS.findIndex(x=>x.id===m.statut)+(+dir);if(i>=0&&i<STATUTS.length)moveMission(mid,STATUTS[i].id)}return}
   if(t.dataset.open){if(t.classList.contains('card')&&DRAG.suppress)return;const [k,id,tab]=t.dataset.open.split(':');if(DR.open&&k!==DR.kind)readForm();openDrawer(k,id,tab);return}
   if(t.dataset.tab){readForm();DR.tab=t.dataset.tab;drawRender();return}
@@ -1054,9 +1322,13 @@ document.addEventListener('click',async e=>{
   else if(a==='save')saveDrawer();
   else if(a==='del'){DR.confirmDel=true;readForm();drawRender()}
   else if(a==='del-no'){DR.confirmDel=false;drawRender()}
-  else if(a==='del-yes'){const col=DR.kind==='mission'?'missions':DR.kind==='client'?'clients':DR.kind==='vehicule'?'vehicules':'services';await remove(col,DR.id);closeDrawer();toast('Supprimé')}
+  else if(a==='del-yes'){await remove(colOf(DR.kind),DR.id);closeDrawer();toast('Supprimé')}
   else if(a==='new-mission-for'){openDrawer('mission',null,'main',{clientId:DR.id})}
   else if(a==='dl-contrat'){readForm();try{await dl.save({filename:`contrat-amane-${(DR.draft.titre||'mission').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').slice(0,40)}.html`,data:contratHTML(DR.draft)})}catch(err){if(err&&err.code!=='cancelled'&&err.code!=='declined')toast('Téléchargement impossible.')}}
+  else if(a&&/^(dv|pay|com|pr|tk|jr)-/.test(a)){conciergeAct(a,t)}
+  else if(a==='ics')dlSave('amane-planning.ics',planningICS());
+  else if(a==='fin-csv'){const ref=monthOf(S.filters.fm||0);dlSave(`amane-finances-${ref.getFullYear()}-${pad(ref.getMonth()+1)}.csv`,finCSV(finData(ref)))}
+  else if(a==='export-json')dlSave(`amane-sauvegarde-${today()}.json`,exportJSON());
   else if(a==='ai-write')aiWrite();
   else if(a==='ai-copy')copyText(($('#aiOut')||{}).value||'');
   else if(a==='mj-close')$('#mj').hidden=true;
@@ -1077,13 +1349,15 @@ document.addEventListener('change',e=>{
   const t=e.target;
   if(t.id==='impDir'||t.id==='impFiles'){openImport(t.files);t.value='';return}
   if(t.id==='phIn'){addPhotos(t.files);t.value='';return}
+  if(t.id==='jIn'){journalPhoto(t.files);t.value='';return}
+  if(DR.open&&t.closest&&t.closest('#drawer')&&t.dataset&&t.dataset.k&&conciergeChange(t))return;
   if(t.id==='availFrom'||t.id==='availTo'){S.filters[t.id==='availFrom'?'from':'to']=t.value;if(!(parse(S.filters.to)>parse(S.filters.from)))S.filters.to=toLocal(new Date(+(parse(S.filters.from)||new Date())+864e5));render();return}
   if(t.dataset&&t.dataset.imp!=null){IMP.groups[+t.dataset.imp].target=t.value;impRender();return}
   if(t.id==='fSvc'){S.filters.svc=t.value;render()}
   if(t.id==='f_clientId'&&t.value==='__new'){readForm();DR.draft.clientId='';const pm={...DR.draft};delete pm.id;openDrawer('client');DR.pendingMission=pm}
-  else if(DR.open&&DR.kind==='mission'&&t.closest('#drawer')&&t.dataset.k&&['vehiculeId','debut','fin','montant','service'].includes(t.dataset.k)){readForm();const h=document.getElementById('drHints');if(h)h.innerHTML=missionHints(DR.draft);const vs=document.getElementById('f_vehiculeId');if(vs)[...vs.options].forEach(o=>{const v=byId(vehicles(),o.value);if(v)o.textContent=v.nom+vehSuffix(v,DR.draft)})}
+  else if(DR.open&&DR.kind==='mission'&&t.closest('#drawer')&&t.dataset.k&&['vehiculeId','debut','fin','montant','service','chauffeurId'].includes(t.dataset.k)){readForm();const h=document.getElementById('drHints');if(h)h.innerHTML=missionHints(DR.draft);const cs=document.getElementById('f_chauffeurId');if(cs)[...cs.options].forEach(o=>{const p=byId(partners(),o.value);if(p)o.textContent=p.nom+chSuffix(p,DR.draft)});const vs=document.getElementById('f_vehiculeId');if(vs)[...vs.options].forEach(o=>{const v=byId(vehicles(),o.value);if(v)o.textContent=v.nom+vehSuffix(v,DR.draft)})}
 });
-document.addEventListener('input',e=>{if(e.target.id==='fQ'){S.filters.q=e.target.value;const pos=e.target.selectionStart;render();const el=$('#fQ');el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}if(e.target.id==='palIn')palBuild(e.target.value);if(e.target.id==='mjIn')MJ.text=e.target.value});
+document.addEventListener('input',e=>{if(e.target.id==='fPQ'){S.filters.pq=e.target.value;const pos=e.target.selectionStart;render();const el=$('#fPQ');el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}return}if(e.target.id==='prOut'){DR.prog=e.target.value;const w=$('#prWa');if(w)w.href=waLink((clientOf(DR.draft)||{}).tel,DR.prog);return}if(e.target.id==='fQ'){S.filters.q=e.target.value;const pos=e.target.selectionStart;render();const el=$('#fQ');el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}if(e.target.id==='palIn')palBuild(e.target.value);if(e.target.id==='mjIn')MJ.text=e.target.value});
 document.addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#pal').hidden?openPal():($('#pal').hidden=true);return}
   if(e.key==='Escape'){if(!$('#pal').hidden)$('#pal').hidden=true;else if(!$('#mj').hidden)$('#mj').hidden=true;else if(!$('#whoM').hidden)$('#whoM').hidden=true;else if(!$('#imp').hidden){if(!IMP.busy)$('#imp').hidden=true}else if(DR.open)closeDrawer();return}
@@ -1099,6 +1373,44 @@ $('#palBtn').addEventListener('click',openPal);$('#helpBtn').addEventListener('c
 document.addEventListener('pointermove',e=>{const g=e.target.closest&&e.target.closest('.lit');if(!g)return;const r=g.getBoundingClientRect();g.style.setProperty('--mx',(e.clientX-r.left)+'px');g.style.setProperty('--my',(e.clientY-r.top)+'px')},{passive:true});
 
 function wireKanban(){}
+/* Actions des onglets conciergerie */
+async function conciergeAct(a,t){
+  readForm();const d=DR.draft;const i=+t.dataset.i;const demo=!!d._demo;
+  if(demo&&!['pr-text','pr-copy','pr-dl','dv-dl'].includes(a)){toast('Exemple en lecture seule — créez votre propre fiche.');return}
+  if(a==='dv-new'){d.devis={statut:'brouillon',lignes:dvDefaultLines(d),remise:0,tva:20,paiements:[]};return drawRender()}
+  if(a==='dv-add'){d.devis.lignes.push({d:'',q:1,u:'forfait',pu:0});return drawRender()}
+  if(a==='dv-del'){d.devis.lignes.splice(i,1);return drawRender()}
+  if(a==='dv-fill'){d.devis.lignes=dvDefaultLines(d);return drawRender()}
+  if(a==='pay-add'){(d.devis.paiements=d.devis.paiements||[]).push({date:today(),montant:Math.max(0,dvTotals(d.devis).solde),moyen:'virement'});return drawRender()}
+  if(a==='pay-del'){d.devis.paiements.splice(i,1);return drawRender()}
+  if(a==='dv-facture'){if(!(d.devis.lignes||[]).length){toast('Ajoutez au moins une ligne.');return}d.devis.statut='accepte';d.devis.wantFacture=true;const sel=document.getElementById('f_devis_statut');if(sel)sel.value='accepte';return saveDrawer()}
+  if(a==='dv-dl'){const kind=t.dataset.doc;const dv=d.devis||{};const num=kind==='facture'?dv.factureNumero:dv.numero;if(!num){toast('Enregistrez d’abord : le numéro est attribué à l’enregistrement.');return}return dlSave(`${kind}-${num}.html`,devisHTML(d,kind))}
+  if(a==='com-add'){(d.commissions=d.commissions||[]).push({partenaireId:'',base:'',pct:'',statut:'a_recevoir'});return drawRender()}
+  if(a==='com-del'){d.commissions.splice(i,1);return drawRender()}
+  if(a==='pr-add'){const ps=progSteps(d);const last=ps.length?parse(ps[ps.length-1].dt):null;const dt=last?new Date(+last+2*36e5):(parse(d.debut)||new Date());(d.programme=d.programme||[]).push({dt:toLocal(dt),type:'autre',lieu:'',partenaireId:'',client:'',interne:''});return drawRender()}
+  if(a==='pr-del'){d.programme.splice(i,1);return drawRender()}
+  if(a==='pr-text'){DR.prog=progText(d);drawRender();const o=$('#prOut');if(o)o.focus();return}
+  if(a==='pr-copy')return copyText(($('#prOut')||{}).value||DR.prog||'');
+  if(a==='pr-dl'){const c=clientOf(d)||{};return dlSave(`carnet-sejour-${slug(c.nom||d.titre)}.html`,carnetHTML(d))}
+  if(a==='pr-ai'){if(!sampleFn)return;const c=clientOf(d)||{};const base=progText(d);DR.prog='Rédaction…';drawRender();
+    try{const r=await sampleFn(`Réécris ce programme de séjour en message WhatsApp pour le client, dans sa langue (${docLang(c)}), au ton de la conciergerie de luxe Amane : vouvoiement, élégant, sobre, phrases courtes, aucun emoji, garde toutes les heures, lieux et informations exactement, n'invente rien, garde la signature « Amane ». Réponds uniquement par le message.\n\n${base}`,{modelTier:'default'});DR.prog=r.text||base}
+    catch(e){DR.prog=base;toast(e&&e.code==='rate_limited'?'Trop de demandes, réessayez dans une minute.':'Rédaction impossible, message standard proposé.')}
+    if(DR.open&&DR.tab==='prog')drawRender();return}
+  if(a==='tk-add'){(d.taches=d.taches||[]).push({t:'',resp:S.me||'amel',due:(d.debut||'').slice(0,10),fait:false});drawRender();const all=document.querySelectorAll('#drawer [data-k$=".t"]');const last=all[all.length-1];if(last)last.focus();return}
+  if(a==='tk-del'){d.taches.splice(i,1);return drawRender()}
+  if(a==='tk-tpl'){const have=new Set((d.taches||[]).map(x=>x.t));d.taches=[...(d.taches||[]),...tplTasks(d).filter(x=>!have.has(x.t))];return drawRender()}
+  if(a==='jr-add'){(d.journal=d.journal||[]).unshift({dt:toLocal(new Date()),type:'entretien',km:d.km||'',cout:'',desc:''});return drawRender()}
+  if(a==='jr-del'){d.journal.splice(i,1);return drawRender()}
+  if(a==='jr-ph'){DR.jIdx=i;$('#jIn').click();return}
+}
+async function journalPhoto(files){files=[...files].filter(isImg);if(!files.length||!assets||!DR.open||DR.kind!=='vehicule')return;readForm();const r=await uploadFiles(files.slice(0,1));if(r.ids[0]&&DR.draft.journal&&DR.draft.journal[DR.jIdx]){DR.draft.journal[DR.jIdx].photo=r.ids[0];await persistVeh();toast('Photo ajoutée au journal')}else toast(upMsg(r))}
+function conciergeChange(t){const key=t.dataset.k;
+  if(key.startsWith('devis.')){readForm();const el=document.getElementById('dvTot');if(el)el.innerHTML=dvTotHTML(DR.draft.devis);return true}
+  if(key.startsWith('commissions.')){readForm();if(key.endsWith('.partenaireId')){const i=+key.split('.')[1];const c=DR.draft.commissions[i];const p=byId(partners(),c.partenaireId);if(p&&(c.pct===''||c.pct==null)&&+p.commission){c.pct=+p.commission;const inp=document.querySelector(`#drawer [data-k="commissions.${i}.pct"]`);if(inp)inp.value=c.pct}}
+    document.querySelectorAll('#drawer .ln.com').forEach((row,i)=>{const c=DR.draft.commissions[i];const sp=row.querySelector('.due');if(c&&sp)sp.textContent=fmtE2((+c.base||0)*(+c.pct||0)/100)});return true}
+  if(key.startsWith('journal.')&&(key.endsWith('.dt')||key.endsWith('.type'))){readForm();const i=+key.split('.')[1];const b=document.getElementById('pv'+i);if(b)b.innerHTML=pvHTML(DR.draft,i);return true}
+  if(key.startsWith('taches.')&&key.endsWith('.fait')){readForm();const row=t.closest('.ln.tk');if(row)row.classList.toggle('done',t.checked);if(DR.id&&!DR.draft._demo)saveDrawer();return true}
+  return false}
 /* Glisser-déposer maison : souris, stylet, et doigt (appui long). Fonctionne dans le lecteur claude.ai. */
 const DRAG={el:null,id:null,pid:null,sx:0,sy:0,ox:0,oy:0,started:false,touch:false,timer:0,ghost:null,over:null,suppress:false};
 async function moveMission(id,statut){

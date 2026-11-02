@@ -1,7 +1,7 @@
 // Mock window.claude: db (in-memory, live snapshots), assets, sample, downloads
 window.__log=[];
 (function(){
-  const store={};const subs={};
+  const store={};const subs={};const leases={};window.__leases=leases;
   const snap=c=>{const docs=Object.entries(store[c]||{}).map(([id,d])=>({id,exists:true,data:()=>JSON.parse(JSON.stringify(d)),metadata:{fromCache:false,hasPendingWrites:false}}));return {docs,size:docs.length,empty:!docs.length,docChanges:()=>[],metadata:{}}};
   const emit=c=>setTimeout(()=>(subs[c]||[]).forEach(f=>f(snap(c))),15);
   const coll=c=>({path:c,
@@ -9,7 +9,8 @@ window.__log=[];
       get:async()=>({id,exists:!!(store[c]||{})[id],data:()=>(store[c]||{})[id]}),
       set:async(d)=>{const s=JSON.stringify(d);if(s.includes('"__undef'))throw{code:'invalid_argument'};JSON.parse(s);(store[c]=store[c]||{})[id]=JSON.parse(s);window.__log.push(['set',c,id]);emit(c)},
       update:async(d)=>{if(!(store[c]||{})[id])throw{code:'invalid_argument'};Object.assign(store[c][id],JSON.parse(JSON.stringify(d)));emit(c)},
-      delete:async()=>{if(store[c])delete store[c][id];window.__log.push(['del',c,id]);emit(c)}}},
+      delete:async()=>{if(store[c])delete store[c][id];window.__log.push(['del',c,id]);emit(c)},
+      acquire:async({holder,ttlMs})=>{const k=c+'/'+id,now=Date.now(),l=leases[k];if(l&&l.holder!==holder&&l.until>now)return {acquired:false,holder:l.holder,expiresAt:l.until};leases[k]={holder,until:now+(ttlMs||10000)};window.__log.push(['acquire',k]);return {acquired:true,expiresAt:leases[k].until}}}},
     onSnapshot:(f,e)=>{(subs[c]=subs[c]||[]).push(f);emit(c);return()=>{}},
     add:async(d)=>{const r=coll(c).doc();await r.set(d);return r}});
   window.__store=store;
@@ -27,7 +28,7 @@ window.__log=[];
   const sample=async(input,opts)=>{window.__log.push(['sample',String(input).slice(0,60)]);const t='Bonjour Monsieur, nous avons le plaisir de vous confirmer votre demande. Amane';if(opts&&opts.onText){opts.onText({text:t.slice(0,20),delta:t.slice(0,20)})}return {text:t,truncated:false}};
   sample.json=async(input)=>{window.__log.push(['samplejson']);return {client:{nom:'Khalid Al-Mansoori',tel:'+971 50 123 4567',email:'',langue:'AR',pays:'Émirats arabes unis',hotel:'Plaza Athénée'},mission:{titre:'Van + chauffeur, 12 au 15',service:'van',vehicule:'Classe V',debut:'2026-11-12T10:00',fin:'2026-11-15T20:00',lieu:'Plaza Athénée',budget:3000,notes:'Famille de 5'},priorite:'haute',reponse:'مرحباً، شكراً لرسالتكم. Amane'}};
   sample.limits=async()=>({images:false});
-  const downloads={save:async r=>{window.__log.push(['save',r.filename,String(r.data).length]);return {}}};
+  window.__saved={};const downloads={save:async r=>{window.__saved[r.filename]=String(r.data);window.__log.push(['save',r.filename,String(r.data).length]);return {}}};
   const map={db,assets,sample,downloads};
   window.claude={use:async n=>map[n]||null};
 })();
