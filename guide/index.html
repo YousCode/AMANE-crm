@@ -3,126 +3,124 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Jost:wght@300;400;500&display=swap">
 <style>
-/* Un carnet de bord aux couleurs de la charte : bordeaux Velours Garnier en maître (motif Arcades ton sur ton), pierre pour les sections de lecture, noir laqué en pied de page, or en filets. Thème unique assumé. */
+/* Maison : ivoire et blanc en alternance, une seule section pierre, noir pour le texte et le pied de page, champagne en accent rare. Une colonne large, beaucoup d'air. Thème clair unique, assumé. */
 :root{
-  --noir:#5B1622; --nuit:#3B0C15; --ombre:#4A1019; --laque:#15110F; --pierre:#EFE7DA; --creme:#F6F1E8; --encre:#15110F;
-  --gris:rgba(239,231,218,.58); --gris-c:rgba(239,231,218,.8); --gris-s:#5E4A43; --or:#B8955C; --or-c:#C9A770; --or-s:#86683A; --bx:#7A2232;
-  --l-c:rgba(184,149,92,.26); --l-s:rgba(91,22,34,.16);
+  --ivoire:#FAF8F4; --blanc:#FFFFFF; --pierre:#EDE7DD; --encre:#111111; --second:#4A443E; --doux:#7A736B;
+  --champ:#8A6A3B; --filet:rgba(17,17,17,.12); --filet-c:rgba(17,17,17,.07);
   --display:'Bodoni Moda',"Didot","Bodoni 72",Georgia,serif;
   --body:'Jost',"Futura","Avenir Next","Helvetica Neue",Arial,sans-serif;
-  color-scheme:dark;
+  color-scheme:light;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--noir);color:var(--pierre);font-family:var(--body);font-weight:300;font-size:16.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--nuit)}
-.arc{position:relative;isolation:isolate}
-.arc::before{content:"";position:absolute;inset:0;z-index:-1;background:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDc2MCI+PGRlZnM+PHBhdHRlcm4gaWQ9ImFyYyIgd2lkdGg9IjM2MCIgaGVpZ2h0PSIzODAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxyZWN0IHdpZHRoPSIzNjAiIGhlaWdodD0iMzgwIiBmaWxsPSIjNUIxNjIyIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAwKSI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOEUzMDQzIiBzdHJva2Utd2lkdGg9IjIuMiIgb3BhY2l0eT0iMC45Ij48cGF0aCBkPSJNMTQgMTkwIFY2NCBBNDYgNDYgMCAwIDEgMTA2IDY0IFYxOTAiLz48cGF0aCBkPSJNMjIgMTkwIFY2NCBBMzggMzggMCAwIDEgOTggNjQgVjE5MCIgc3Ryb2tlLXdpZHRoPSIuOCIvPjwvZz48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTIwIDApIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiM4RTMwNDMiIHN0cm9rZS13aWR0aD0iMi4yIiBvcGFjaXR5PSIwLjkiPjxwYXRoIGQ9Ik0xNCAxOTAgVjY0IEE0NiA0NiAwIDAgMSAxMDYgNjQgVjE5MCIvPjxwYXRoIGQ9Ik0yMiAxOTAgVjY0IEEzOCAzOCAwIDAgMSA5OCA2NCBWMTkwIiBzdHJva2Utd2lkdGg9Ii44Ii8+PC9nPjxnIGZpbGw9IiM4RTMwNDMiIG9wYWNpdHk9IjAuOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNjAgMTEyKSI+PGNpcmNsZSByPSI4Ii8+PHBhdGggZD0iTS0zLjQgNSBIMy40IEw3IDI2IEgtN1oiLz48L2c+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDI0MCAwKSI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOEUzMDQzIiBzdHJva2Utd2lkdGg9IjIuMiIgb3BhY2l0eT0iMC45Ij48cGF0aCBkPSJNMTQgMTkwIFY2NCBBNDYgNDYgMCAwIDEgMTA2IDY0IFYxOTAiLz48cGF0aCBkPSJNMjIgMTkwIFY2NCBBMzggMzggMCAwIDEgOTggNjQgVjE5MCIgc3Ryb2tlLXdpZHRoPSIuOCIvPjwvZz48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNjAgMTkwKSI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOEUzMDQzIiBzdHJva2Utd2lkdGg9IjIuMiIgb3BhY2l0eT0iMC45Ij48cGF0aCBkPSJNMTQgMTkwIFY2NCBBNDYgNDYgMCAwIDEgMTA2IDY0IFYxOTAiLz48cGF0aCBkPSJNMjIgMTkwIFY2NCBBMzggMzggMCAwIDEgOTggNjQgVjE5MCIgc3Ryb2tlLXdpZHRoPSIuOCIvPjwvZz48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTgwIDE5MCkiPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhFMzA0MyIgc3Ryb2tlLXdpZHRoPSIyLjIiIG9wYWNpdHk9IjAuOSI+PHBhdGggZD0iTTE0IDE5MCBWNjQgQTQ2IDQ2IDAgMCAxIDEwNiA2NCBWMTkwIi8+PHBhdGggZD0iTTIyIDE5MCBWNjQgQTM4IDM4IDAgMCAxIDk4IDY0IFYxOTAiIHN0cm9rZS13aWR0aD0iLjgiLz48L2c+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDMwMCAxOTApIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiM4RTMwNDMiIHN0cm9rZS13aWR0aD0iMi4yIiBvcGFjaXR5PSIwLjkiPjxwYXRoIGQ9Ik0xNCAxOTAgVjY0IEE0NiA0NiAwIDAgMSAxMDYgNjQgVjE5MCIvPjxwYXRoIGQ9Ik0yMiAxOTAgVjY0IEEzOCAzOCAwIDAgMSA5OCA2NCBWMTkwIiBzdHJva2Utd2lkdGg9Ii44Ii8+PC9nPjxnIGZpbGw9IiM4RTMwNDMiIG9wYWNpdHk9IjAuOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNjAgMTEyKSI+PGNpcmNsZSByPSI4Ii8+PHBhdGggZD0iTS0zLjQgNSBIMy40IEw3IDI2IEgtN1oiLz48L2c+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC02MCAxOTApIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiM4RTMwNDMiIHN0cm9rZS13aWR0aD0iMi4yIiBvcGFjaXR5PSIwLjkiPjxwYXRoIGQ9Ik0xNCAxOTAgVjY0IEE0NiA0NiAwIDAgMSAxMDYgNjQgVjE5MCIvPjxwYXRoIGQ9Ik0yMiAxOTAgVjY0IEEzOCAzOCAwIDAgMSA5OCA2NCBWMTkwIiBzdHJva2Utd2lkdGg9Ii44Ii8+PC9nPjwvZz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9Ijc2MCIgZmlsbD0idXJsKCNhcmMpIi8+PC9zdmc+) center top/360px;opacity:.38;pointer-events:none}
-h1,h2,h3{font-family:var(--display);font-weight:400;line-height:1.1;text-wrap:balance;margin:0}
-em{font-family:var(--display);font-style:italic;color:var(--or-c)}
-a{color:var(--or-c);text-underline-offset:3px}
+body{margin:0;background:var(--ivoire);color:var(--encre);font-family:var(--body);font-weight:300;font-size:16.5px;line-height:1.75;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--blanc)}
+h1,h2,h3{font-family:var(--display);font-weight:400;line-height:1.1;text-wrap:balance;margin:0;color:var(--encre)}
+em{font-family:var(--display);font-style:italic;color:var(--champ)}
+a{color:var(--encre);text-decoration-color:var(--champ);text-underline-offset:3px}
 p{margin:0}
-.wrap{max-width:1080px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
-.label{display:inline-flex;align-items:center;gap:14px;font-size:11px;font-weight:400;letter-spacing:.3em;text-transform:uppercase;color:var(--or)}
-.label::before{content:"";width:28px;height:1px;background:currentColor;opacity:.7}
-section{padding-block:clamp(64px,9vw,110px)}
-.light{background:var(--pierre);color:var(--encre)}
-.lie{background:var(--nuit)}
-.light .label{color:var(--or-s)}
-.light em{color:var(--or-s)}
-.light a{color:#6E4F22}
-.sec-h{display:grid;gap:18px;margin-bottom:clamp(36px,5vw,56px);max-width:44rem}
+b{font-weight:500}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.label{display:inline-flex;align-items:center;gap:14px;font-size:11px;font-weight:400;letter-spacing:.3em;text-transform:uppercase;color:var(--champ)}
+.label::before{content:"";width:28px;height:1px;background:currentColor;opacity:.6}
+section{padding-block:clamp(80px,11vw,140px)}
+.blanc{background:var(--blanc)}
+.ivoire{background:var(--ivoire)}
+.pierre{background:var(--pierre)}
+.sec-h{display:grid;gap:18px;margin-bottom:clamp(40px,6vw,64px);max-width:44rem}
 .sec-h h2{font-size:clamp(32px,4.2vw,54px)}
-.sec-h p{color:var(--gris-c);max-width:58ch}
-.light .sec-h p{color:var(--gris-s)}
+.sec-h p{color:var(--second);max-width:58ch}
 
 /* Nav */
-nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:rgba(59,12,21,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--l-c)}
-nav.top .wrap{display:flex;align-items:center;gap:24px;height:62px;overflow-x:auto;scrollbar-width:none}
+nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--filet-c)}
+nav.top .wrap{display:flex;align-items:center;gap:24px;height:64px;overflow-x:auto;scrollbar-width:none}
 nav.top .wrap::-webkit-scrollbar{display:none}
-nav.top .brand{display:flex;align-items:center;gap:12px;color:var(--pierre);text-decoration:none;font-family:'Bodoni Moda',Georgia,serif;font-size:16px;letter-spacing:.32em;flex:0 0 auto}
-nav.top .brand svg{width:18px;height:auto;color:var(--or-c)}
-nav.top .links{display:flex;gap:22px;margin-left:auto;flex:0 0 auto}
-nav.top .links a{color:var(--gris-c);text-decoration:none;font-size:11px;letter-spacing:.24em;text-transform:uppercase;white-space:nowrap}
-nav.top .links a:hover{color:var(--pierre)}
+nav.top .brand{display:flex;align-items:center;color:var(--encre);text-decoration:none;flex:0 0 auto}
+nav.top .brand svg{width:20px;height:auto}
+nav.top .links{display:flex;gap:26px;margin-left:auto;flex:0 0 auto}
+nav.top .links a{color:var(--second);text-decoration:none;font-size:11px;letter-spacing:.24em;text-transform:uppercase;white-space:nowrap}
+nav.top .links a:hover{color:var(--encre)}
 
 /* Ouverture */
-.hero{padding-block:clamp(72px,11vw,140px) clamp(56px,7vw,90px)}
-.hero h1{font-size:clamp(44px,7vw,96px);margin:22px 0 26px;max-width:12ch}
-.hero .lead{font-size:clamp(17px,1.5vw,20px);color:var(--gris-c);max-width:54ch}
-.links2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:clamp(40px,6vw,64px)}
-.lk{display:grid;gap:12px;padding:28px;border:1px solid var(--l-c);background:var(--nuit);text-decoration:none;color:var(--pierre);transition:border-color .3s}
-.lk:hover{border-color:var(--or)}
-.lk .k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--or)}
+.hero{padding-block:clamp(88px,13vw,170px) clamp(64px,8vw,110px)}
+.hero h1{font-size:clamp(44px,7vw,96px);margin:24px 0 28px;max-width:12ch}
+.hero .lead{font-size:clamp(17px,1.5vw,20px);color:var(--second);max-width:54ch}
+.links2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:clamp(48px,7vw,76px)}
+.lk{display:grid;gap:12px;padding:32px;border:1px solid var(--filet);background:var(--blanc);text-decoration:none;color:var(--encre);transition:border-color .3s}
+.lk:hover{border-color:var(--encre)}
+.lk .k{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--champ)}
 .lk h3{font-size:30px}
-.lk p{color:var(--gris-c);font-size:15px}
-.lk .url{font-size:13px;color:var(--gris);word-break:break-all}
-.lk .go{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--or-c)}
-.repo{margin-top:16px;font-size:14.5px;color:var(--gris)}
+.lk p{color:var(--second);font-size:15px}
+.lk .url{font-size:13px;color:var(--doux);word-break:break-all}
+.lk .go{font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--encre)}
+.repo{margin-top:18px;font-size:14.5px;color:var(--second)}
 
 /* Accès */
-.access{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-top:1px solid var(--l-s)}
-.access>div{padding:30px 30px 6px 0;display:grid;gap:14px;align-content:start;min-width:0}
-.access>div+div{padding-left:30px;border-left:1px solid var(--l-s)}
+.access{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--filet)}
+.access>div{padding:32px 32px 6px 0;display:grid;gap:14px;align-content:start;min-width:0}
+.access>div+div{padding-left:32px;border-left:1px solid var(--filet)}
 .access h3{font-size:25px}
-.access ol,.access ul{margin:0;padding-left:20px;display:grid;gap:8px;color:#3F3731;font-size:15.5px}
-.access li::marker{color:var(--or-s);font-family:var(--display)}
-.note{margin-top:28px;padding:18px 22px;border:1px solid var(--l-s);border-left:2px solid var(--or);font-size:15px;color:var(--gris-s);background:var(--creme)}
-.note b{font-weight:500;color:var(--encre)}
+.access ol,.access ul{margin:0;padding-left:20px;display:grid;gap:8px;color:var(--second);font-size:15.5px}
+.access li::marker{color:var(--champ);font-family:var(--display)}
+.access b{color:var(--encre)}
+.note{margin-top:32px;padding:20px 24px;border:1px solid var(--filet);font-size:15px;color:var(--second);background:var(--ivoire)}
+.note b{color:var(--encre)}
 
 /* Parcours */
-.flow{display:grid;gap:0;border-top:1px solid var(--l-c);counter-reset:f}
-.fs{display:grid;grid-template-columns:76px minmax(0,1fr) 180px;gap:24px;align-items:baseline;padding:22px 0;border-bottom:1px solid var(--l-c)}
-.fs .n{font-family:var(--display);font-size:30px;color:var(--or-c);line-height:1}
+.flow{display:grid;border-top:1px solid var(--filet)}
+.fs{display:grid;grid-template-columns:76px minmax(0,1fr) 180px;gap:24px;align-items:baseline;padding:24px 0;border-bottom:1px solid var(--filet)}
+.fs .n{font-family:var(--display);font-size:28px;color:var(--champ);line-height:1}
 .fs h3{font-size:22px;margin-bottom:4px}
-.fs p{color:var(--gris-c);font-size:15px}
-.fs .who{justify-self:end;display:flex;gap:8px;align-items:center;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gris-c);white-space:nowrap}
-.av{width:24px;height:28px;border-radius:12px 12px 3px 3px;display:inline-grid;place-items:center;font-family:'Bodoni Moda',Georgia,serif;font-size:13px;color:#F6F2EA;letter-spacing:0}
-.av.amel{background:linear-gradient(160deg,#9C3A4D,#5B1622)}.av.youssouf{background:linear-gradient(160deg,#3B4A5E,#1C2430)}.av.aziz{background:linear-gradient(160deg,#B8955C,#6E5531)}.av.client{background:var(--ombre);color:var(--gris-c);border:1px solid var(--l-c)}
+.fs p{color:var(--second);font-size:15px}
+.fs .who{justify-self:end;display:flex;gap:8px;align-items:center;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--second);white-space:nowrap}
+.av{width:24px;height:28px;border-radius:12px 12px 3px 3px;display:inline-grid;place-items:center;font-family:'Bodoni Moda',Georgia,serif;font-size:13px;color:#FFFFFF;letter-spacing:0}
+.av.amel{background:#111111}.av.youssouf{background:#6E675F}.av.aziz{background:#8A6A3B}.av.client{background:var(--blanc);color:var(--second);border:1px solid var(--filet)}
 
 /* Routine */
-.team{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.mb{background:var(--creme);border:1px solid var(--l-s);padding:28px;display:grid;gap:16px;align-content:start;min-width:0}
+.team{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.mb{background:var(--blanc);border:1px solid var(--filet-c);padding:30px;display:grid;gap:18px;align-content:start;min-width:0}
 .mb header{display:flex;gap:14px;align-items:center}
 .mb .av{width:38px;height:44px;border-radius:19px 19px 4px 4px;font-size:20px}
 .mb h3{font-size:24px}
-.mb .role{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--gris-s)}
-.mb dl{margin:0;display:grid;gap:12px}
-.mb dt{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--or-s)}
-.mb dd{margin:4px 0 0;font-size:15px;color:#3F3731}
+.mb .role{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--second)}
+.mb dl{margin:0;display:grid;gap:14px}
+.mb dt{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--champ)}
+.mb dd{margin:4px 0 0;font-size:15px;color:var(--second)}
 
 /* Écrans */
-.shots{display:grid;gap:clamp(40px,5vw,64px)}
-figure{margin:0;display:grid;gap:16px}
-figure img{width:100%;height:auto;display:block;border:1px solid var(--l-c);background:var(--ombre)}
+.shots{display:grid;gap:clamp(48px,6vw,72px)}
+figure{margin:0;display:grid;gap:18px}
+figure img{width:100%;height:auto;display:block;border:1px solid var(--filet);background:var(--ivoire);box-shadow:0 30px 60px -40px rgba(17,17,17,.35)}
 figcaption{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:24px}
-figcaption b{font-family:var(--display);font-weight:400;font-size:22px;color:var(--pierre);line-height:1.2}
-figcaption span{color:var(--gris-c);font-size:15px}
-.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+figcaption b{font-family:var(--display);font-weight:400;font-size:22px;color:var(--encre);line-height:1.2}
+figcaption span{color:var(--second);font-size:15px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:24px}
 .pair figcaption{grid-template-columns:1fr;gap:6px}
 
 /* Démo */
-.demo{display:grid;gap:0;border-top:1px solid var(--l-s)}
-.dm{display:grid;grid-template-columns:110px minmax(0,1fr);gap:24px;padding:22px 0;border-bottom:1px solid var(--l-s)}
-.dm .t{font-family:var(--display);font-size:24px;color:var(--or-s);font-variant-numeric:tabular-nums}
+.demo{display:grid;border-top:1px solid var(--filet)}
+.dm{display:grid;grid-template-columns:110px minmax(0,1fr);gap:24px;padding:24px 0;border-bottom:1px solid var(--filet)}
+.dm .t{font-family:var(--display);font-size:24px;color:var(--champ);font-variant-numeric:tabular-nums}
 .dm h3{font-size:22px;margin-bottom:6px}
-.dm p{color:#3F3731;font-size:15.5px}
-.dm .say{margin-top:10px;padding-left:16px;border-left:1px solid var(--or);font-family:var(--display);font-style:italic;font-size:17px;color:var(--encre)}
+.dm p{color:var(--second);font-size:15.5px}
+.dm .say{margin-top:12px;padding-left:16px;border-left:1px solid var(--champ);font-family:var(--display);font-style:italic;font-size:17px;color:var(--encre)}
 
 /* Limites */
-.limits{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.lm{border:1px solid var(--l-c);padding:24px;display:grid;gap:10px;align-content:start;background:var(--noir)}
+.limits{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.lm{border:1px solid var(--filet);padding:26px;display:grid;gap:10px;align-content:start;background:var(--ivoire)}
 .lm h3{font-size:21px}
-.lm p{color:var(--gris-c);font-size:15px}
-.lm .fix{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--or-c)}
+.lm p{color:var(--second);font-size:15px}
+.lm:last-child:nth-child(odd){grid-column:1/-1}
+.lm .fix{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--champ)}
 
-footer{background:var(--laque);border-top:1px solid var(--l-c);padding-block:40px calc(40px + env(safe-area-inset-bottom,0px));color:var(--gris);font-size:13.5px}
-footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-:focus-visible{outline:1px solid var(--or-c);outline-offset:3px}
+footer{background:#111111;color:rgba(255,255,255,.62);padding-block:48px calc(48px + env(safe-area-inset-bottom,0px));font-size:13.5px}
+footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+footer svg{width:16px;height:auto;color:#FFFFFF}
+:focus-visible{outline:1px solid var(--champ);outline-offset:3px}
 
 @media(max-width:860px){
   nav.top .links{display:none}
   .links2,.access,.team,.limits,.pair{grid-template-columns:1fr}
-  .access>div,.access>div+div{padding:24px 0;border-left:0;border-bottom:1px solid var(--l-s)}
+  .access>div,.access>div+div{padding:26px 0;border-left:0;border-bottom:1px solid var(--filet)}
   .fs{grid-template-columns:52px minmax(0,1fr)}
   .fs .who{grid-column:2;justify-self:start}
   figcaption{grid-template-columns:1fr;gap:6px}
@@ -132,12 +130,12 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 
 <nav class="top" aria-label="Sommaire">
   <div class="wrap">
-    <a class="brand" href="#debut"><svg viewBox="40 -60 940 1120" aria-hidden="true"><path fill="currentColor" d="M452 -6 L560 -6 L831.93 912 Q856.67 982 930.67 982 L930.67 1000 L653.17 1000 L653.17 982 Q715.17 982 698.38 912 Z M452 -6 L486 40 L217.73 922 Q201.48 982 261.48 982 L261.48 1000 L97.19 1000 L97.19 982 Q165.19 982 184.49 922 Z M301.5 632.5 L627.38 632.5 L627.38 647.5 L301.5 647.5 Z M406.44 636 A58 58 0 1 1 522.44 636 A58 58 0 1 1 406.44 636 Z M442.44 676 L486.44 676 L510.44 832 Q512.44 842 502.44 842 L426.44 842 Q416.44 842 418.44 832 Z"/></svg>AMANE</a>
+    <a class="brand" href="#debut" aria-label="Amane"><svg viewBox="40 -60 940 1120" aria-hidden="true"><path fill="currentColor" d="M452 -6 L560 -6 L831.93 912 Q856.67 982 930.67 982 L930.67 1000 L653.17 1000 L653.17 982 Q715.17 982 698.38 912 Z M452 -6 L486 40 L217.73 922 Q201.48 982 261.48 982 L261.48 1000 L97.19 1000 L97.19 982 Q165.19 982 184.49 922 Z M301.5 632.5 L627.38 632.5 L627.38 647.5 L301.5 647.5 Z M406.44 636 A58 58 0 1 1 522.44 636 A58 58 0 1 1 406.44 636 Z M442.44 676 L486.44 676 L510.44 832 Q512.44 842 502.44 842 L426.44 842 Q416.44 842 418.44 832 Z"/></svg></a>
     <div class="links"><a href="#acces">Accès</a><a href="#parcours">Parcours</a><a href="#routine">Routine</a><a href="#ecrans">Écrans</a><a href="#demo">Démo</a><a href="#limites">Limites</a></div>
   </div>
 </nav>
 
-<header class="hero arc" id="debut">
+<header class="hero ivoire" id="debut">
   <div class="wrap">
     <span class="label">Amane · Guide de l'équipe</span>
     <h1>Prise en main <em>d'Amane.</em></h1>
@@ -162,7 +160,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   </div>
 </header>
 
-<section class="light" id="acces" aria-labelledby="acces-t">
+<section class="blanc" id="acces" aria-labelledby="acces-t">
   <div class="wrap">
     <div class="sec-h"><span class="label">Accès</span><h2 id="acces-t">Qui voit quoi, <em>et comment l'ouvrir.</em></h2><p>Les deux liens sont privés tant que Youssouf ne les partage pas. Le partage se règle depuis le bouton Share, en haut de chaque page dans claude.ai.</p></div>
     <div class="access">
@@ -197,7 +195,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   </div>
 </section>
 
-<section class="arc" id="parcours" aria-labelledby="parcours-t">
+<section class="ivoire" id="parcours" aria-labelledby="parcours-t">
   <div class="wrap">
     <div class="sec-h"><span class="label">Le parcours d'une demande</span><h2 id="parcours-t">Du premier message <em>au solde encaissé.</em></h2><p>Chaque étape a un responsable. Le Salon du CRM affiche à chacun ce qui l'attend, dans l'onglet «&nbsp;À faire&nbsp;».</p></div>
     <div class="flow">
@@ -214,7 +212,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   </div>
 </section>
 
-<section class="light" id="routine" aria-labelledby="routine-t">
+<section class="pierre" id="routine" aria-labelledby="routine-t">
   <div class="wrap">
     <div class="sec-h"><span class="label">La routine</span><h2 id="routine-t">Dix minutes chacun, <em>chaque matin.</em></h2><p>Ouvrir le CRM, choisir son prénom, et traiter son onglet «&nbsp;À faire&nbsp;» dans le Salon jusqu'à ce qu'il soit vide.</p></div>
     <div class="team">
@@ -234,7 +232,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   </div>
 </section>
 
-<section id="ecrans" aria-labelledby="ecrans-t">
+<section class="blanc" id="ecrans" aria-labelledby="ecrans-t">
   <div class="wrap">
     <div class="sec-h"><span class="label">Les écrans</span><h2 id="ecrans-t">Le CRM, <em>vue par vue.</em></h2><p>Captures réelles avec votre flotte et des photos d'illustration. Les clients et les missions visibles sont des exemples : ils disparaissent dès la première vraie fiche.</p></div>
     <div class="shots">
@@ -251,7 +249,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   </div>
 </section>
 
-<section class="light" id="demo" aria-labelledby="demo-t">
+<section class="ivoire" id="demo" aria-labelledby="demo-t">
   <div class="wrap">
     <div class="sec-h"><span class="label">Pour demain</span><h2 id="demo-t">La démo <em>en cinq minutes.</em></h2><p>À faire depuis un ordinateur, connecté à claude.ai, les deux liens ouverts dans deux onglets.</p></div>
     <div class="demo">
@@ -266,7 +264,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   </div>
 </section>
 
-<section class="lie" id="limites" aria-labelledby="limites-t">
+<section class="blanc" id="limites" aria-labelledby="limites-t">
   <div class="wrap">
     <div class="sec-h"><span class="label">À savoir</span><h2 id="limites-t">Ce qui reste <em>à compléter.</em></h2><p>Ce qui fonctionne aujourd'hui, et ce qu'il faut régler avant d'ouvrir aux clients.</p></div>
     <div class="limits">
@@ -275,9 +273,10 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
       <div class="lm"><h3>Numéro WhatsApp et e-mail</h3><p>Le site affiche encore des emplacements à remplir à leur place.</p><span class="fix">À fournir</span></div>
       <div class="lm"><h3>Le contrat est un modèle de travail</h3><p>Le contrat généré par le CRM contient des mentions entre crochets (raison sociale, SIREN, kilométrage inclus, annulation). Il doit être validé par votre avocat avant le premier client.</p><span class="fix">À faire valider</span></div>
       <div class="lm"><h3>Le Majordome ne fonctionne que dans claude.ai</h3><p>Il demande une autorisation à la première utilisation, et son usage est décompté de l'abonnement de la personne qui l'utilise.</p><span class="fix">Fonctionne tel quel</span></div>
+      <div class="lm"><h3>Modifications simultanées</h3><p>Si deux personnes modifient la même fiche au même moment, c'est le dernier enregistrement qui l'emporte. Prévenez-vous avant de retoucher une fiche ouverte par quelqu'un d'autre.</p><span class="fix">À savoir</span></div>
       <div class="lm"><h3>Photos d'illustration</h3><p>Les photos de la flotte sont générées et leurs logos floutés. Remplacez-les par les vraies photos des voitures : Flotte → Importer un dossier photos.</p><span class="fix">À remplacer</span></div>
     </div>
   </div>
 </section>
 
-<footer><div class="wrap"><span>Amane · Conciergerie · Paris VIII</span><span>Guide interne, novembre 2026</span></div></footer>
+<footer><div class="wrap"><svg viewBox="40 -60 940 1120" aria-hidden="true"><path fill="currentColor" d="M452 -6 L560 -6 L831.93 912 Q856.67 982 930.67 982 L930.67 1000 L653.17 1000 L653.17 982 Q715.17 982 698.38 912 Z M452 -6 L486 40 L217.73 922 Q201.48 982 261.48 982 L261.48 1000 L97.19 1000 L97.19 982 Q165.19 982 184.49 922 Z M301.5 632.5 L627.38 632.5 L627.38 647.5 L301.5 647.5 Z M406.44 636 A58 58 0 1 1 522.44 636 A58 58 0 1 1 406.44 636 Z M442.44 676 L486.44 676 L510.44 832 Q512.44 842 502.44 842 L426.44 842 Q416.44 842 418.44 832 Z"/></svg><span>Amane · Conciergerie · Paris VIII</span><span>Guide interne, novembre 2026</span></div></footer>
