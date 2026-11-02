@@ -3,18 +3,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Jost:wght@300;400;500&display=swap">
 <style>
-/* Un carnet de bord : colonne de lecture étroite, sections noir et pierre en alternance, filets or pour structurer, captures du CRM en pleine largeur. Thème unique assumé. */
+/* Un carnet de bord aux couleurs de la charte : bordeaux Velours Garnier en maître (motif Arcades ton sur ton), pierre pour les sections de lecture, noir laqué en pied de page, or en filets. Thème unique assumé. */
 :root{
-  --noir:#0E0C0B; --nuit:#16130F; --ombre:#201C17; --pierre:#ECE5D8; --creme:#F6F2EA; --encre:#1B1613;
-  --gris:#91887D; --gris-c:#BDB4A8; --gris-s:#5C534A; --or:#B8955C; --or-c:#D4B783; --or-s:#86683A; --bx:#7A2232;
-  --l-c:rgba(236,229,216,.13); --l-s:rgba(27,22,19,.14);
+  --noir:#5B1622; --nuit:#3B0C15; --ombre:#4A1019; --laque:#15110F; --pierre:#EFE7DA; --creme:#F6F1E8; --encre:#15110F;
+  --gris:rgba(239,231,218,.58); --gris-c:rgba(239,231,218,.8); --gris-s:#5E4A43; --or:#B8955C; --or-c:#C9A770; --or-s:#86683A; --bx:#7A2232;
+  --l-c:rgba(184,149,92,.26); --l-s:rgba(91,22,34,.16);
   --display:'Bodoni Moda',"Didot","Bodoni 72",Georgia,serif;
   --body:'Jost',"Futura","Avenir Next","Helvetica Neue",Arial,sans-serif;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--noir);color:var(--pierre);font-family:var(--body);font-weight:300;font-size:16.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--noir)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--nuit)}
+.arc{position:relative;isolation:isolate}
+.arc::before{content:"";position:absolute;inset:0;z-index:-1;background:url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDc2MCI+PGRlZnM+PHBhdHRlcm4gaWQ9ImFyYyIgd2lkdGg9IjM2MCIgaGVpZ2h0PSIzODAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxyZWN0IHdpZHRoPSIzNjAiIGhlaWdodD0iMzgwIiBmaWxsPSIjNUIxNjIyIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAwKSI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOEUzMDQzIiBzdHJva2Utd2lkdGg9IjIuMiIgb3BhY2l0eT0iMC45Ij48cGF0aCBkPSJNMTQgMTkwIFY2NCBBNDYgNDYgMCAwIDEgMTA2IDY0IFYxOTAiLz48cGF0aCBkPSJNMjIgMTkwIFY2NCBBMzggMzggMCAwIDEgOTggNjQgVjE5MCIgc3Ryb2tlLXdpZHRoPSIuOCIvPjwvZz48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTIwIDApIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiM4RTMwNDMiIHN0cm9rZS13aWR0aD0iMi4yIiBvcGFjaXR5PSIwLjkiPjxwYXRoIGQ9Ik0xNCAxOTAgVjY0IEE0NiA0NiAwIDAgMSAxMDYgNjQgVjE5MCIvPjxwYXRoIGQ9Ik0yMiAxOTAgVjY0IEEzOCAzOCAwIDAgMSA5OCA2NCBWMTkwIiBzdHJva2Utd2lkdGg9Ii44Ii8+PC9nPjxnIGZpbGw9IiM4RTMwNDMiIG9wYWNpdHk9IjAuOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNjAgMTEyKSI+PGNpcmNsZSByPSI4Ii8+PHBhdGggZD0iTS0zLjQgNSBIMy40IEw3IDI2IEgtN1oiLz48L2c+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDI0MCAwKSI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOEUzMDQzIiBzdHJva2Utd2lkdGg9IjIuMiIgb3BhY2l0eT0iMC45Ij48cGF0aCBkPSJNMTQgMTkwIFY2NCBBNDYgNDYgMCAwIDEgMTA2IDY0IFYxOTAiLz48cGF0aCBkPSJNMjIgMTkwIFY2NCBBMzggMzggMCAwIDEgOTggNjQgVjE5MCIgc3Ryb2tlLXdpZHRoPSIuOCIvPjwvZz48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNjAgMTkwKSI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOEUzMDQzIiBzdHJva2Utd2lkdGg9IjIuMiIgb3BhY2l0eT0iMC45Ij48cGF0aCBkPSJNMTQgMTkwIFY2NCBBNDYgNDYgMCAwIDEgMTA2IDY0IFYxOTAiLz48cGF0aCBkPSJNMjIgMTkwIFY2NCBBMzggMzggMCAwIDEgOTggNjQgVjE5MCIgc3Ryb2tlLXdpZHRoPSIuOCIvPjwvZz48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTgwIDE5MCkiPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhFMzA0MyIgc3Ryb2tlLXdpZHRoPSIyLjIiIG9wYWNpdHk9IjAuOSI+PHBhdGggZD0iTTE0IDE5MCBWNjQgQTQ2IDQ2IDAgMCAxIDEwNiA2NCBWMTkwIi8+PHBhdGggZD0iTTIyIDE5MCBWNjQgQTM4IDM4IDAgMCAxIDk4IDY0IFYxOTAiIHN0cm9rZS13aWR0aD0iLjgiLz48L2c+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDMwMCAxOTApIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiM4RTMwNDMiIHN0cm9rZS13aWR0aD0iMi4yIiBvcGFjaXR5PSIwLjkiPjxwYXRoIGQ9Ik0xNCAxOTAgVjY0IEE0NiA0NiAwIDAgMSAxMDYgNjQgVjE5MCIvPjxwYXRoIGQ9Ik0yMiAxOTAgVjY0IEEzOCAzOCAwIDAgMSA5OCA2NCBWMTkwIiBzdHJva2Utd2lkdGg9Ii44Ii8+PC9nPjxnIGZpbGw9IiM4RTMwNDMiIG9wYWNpdHk9IjAuOSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNjAgMTEyKSI+PGNpcmNsZSByPSI4Ii8+PHBhdGggZD0iTS0zLjQgNSBIMy40IEw3IDI2IEgtN1oiLz48L2c+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC02MCAxOTApIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiM4RTMwNDMiIHN0cm9rZS13aWR0aD0iMi4yIiBvcGFjaXR5PSIwLjkiPjxwYXRoIGQ9Ik0xNCAxOTAgVjY0IEE0NiA0NiAwIDAgMSAxMDYgNjQgVjE5MCIvPjxwYXRoIGQ9Ik0yMiAxOTAgVjY0IEEzOCAzOCAwIDAgMSA5OCA2NCBWMTkwIiBzdHJva2Utd2lkdGg9Ii44Ii8+PC9nPjwvZz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9Ijc2MCIgZmlsbD0idXJsKCNhcmMpIi8+PC9zdmc+) center top/360px;opacity:.38;pointer-events:none}
 h1,h2,h3{font-family:var(--display);font-weight:400;line-height:1.1;text-wrap:balance;margin:0}
 em{font-family:var(--display);font-style:italic;color:var(--or-c)}
 a{color:var(--or-c);text-underline-offset:3px}
@@ -24,6 +26,7 @@ p{margin:0}
 .label::before{content:"";width:28px;height:1px;background:currentColor;opacity:.7}
 section{padding-block:clamp(64px,9vw,110px)}
 .light{background:var(--pierre);color:var(--encre)}
+.lie{background:var(--nuit)}
 .light .label{color:var(--or-s)}
 .light em{color:var(--or-s)}
 .light a{color:#6E4F22}
@@ -33,7 +36,7 @@ section{padding-block:clamp(64px,9vw,110px)}
 .light .sec-h p{color:var(--gris-s)}
 
 /* Nav */
-nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:rgba(14,12,11,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--l-c)}
+nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:rgba(59,12,21,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--l-c)}
 nav.top .wrap{display:flex;align-items:center;gap:24px;height:62px;overflow-x:auto;scrollbar-width:none}
 nav.top .wrap::-webkit-scrollbar{display:none}
 nav.top .brand{display:flex;align-items:center;gap:12px;color:var(--pierre);text-decoration:none;font-family:'Bodoni Moda',Georgia,serif;font-size:16px;letter-spacing:.32em;flex:0 0 auto}
@@ -63,7 +66,7 @@ nav.top .links a:hover{color:var(--pierre)}
 .access h3{font-size:25px}
 .access ol,.access ul{margin:0;padding-left:20px;display:grid;gap:8px;color:#3F3731;font-size:15.5px}
 .access li::marker{color:var(--or-s);font-family:var(--display)}
-.note{margin-top:28px;padding:18px 22px;border:1px solid var(--l-s);font-size:15px;color:var(--gris-s);background:rgba(255,255,255,.35)}
+.note{margin-top:28px;padding:18px 22px;border:1px solid var(--l-s);border-left:2px solid var(--or);font-size:15px;color:var(--gris-s);background:var(--creme)}
 .note b{font-weight:500;color:var(--encre)}
 
 /* Parcours */
@@ -107,12 +110,12 @@ figcaption span{color:var(--gris-c);font-size:15px}
 
 /* Limites */
 .limits{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.lm{border:1px solid var(--l-c);padding:24px;display:grid;gap:10px;align-content:start;background:var(--nuit)}
+.lm{border:1px solid var(--l-c);padding:24px;display:grid;gap:10px;align-content:start;background:var(--noir)}
 .lm h3{font-size:21px}
 .lm p{color:var(--gris-c);font-size:15px}
 .lm .fix{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--or-c)}
 
-footer{border-top:1px solid var(--l-c);padding-block:40px calc(40px + env(safe-area-inset-bottom,0px));color:var(--gris);font-size:13.5px}
+footer{background:var(--laque);border-top:1px solid var(--l-c);padding-block:40px calc(40px + env(safe-area-inset-bottom,0px));color:var(--gris);font-size:13.5px}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 :focus-visible{outline:1px solid var(--or-c);outline-offset:3px}
 
@@ -134,7 +137,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   </div>
 </nav>
 
-<header class="hero" id="debut">
+<header class="hero arc" id="debut">
   <div class="wrap">
     <span class="label">Amane · Guide de l'équipe</span>
     <h1>Prise en main <em>d'Amane.</em></h1>
@@ -194,7 +197,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   </div>
 </section>
 
-<section id="parcours" aria-labelledby="parcours-t">
+<section class="arc" id="parcours" aria-labelledby="parcours-t">
   <div class="wrap">
     <div class="sec-h"><span class="label">Le parcours d'une demande</span><h2 id="parcours-t">Du premier message <em>au solde encaissé.</em></h2><p>Chaque étape a un responsable. Le Salon du CRM affiche à chacun ce qui l'attend, dans l'onglet «&nbsp;À faire&nbsp;».</p></div>
     <div class="flow">
@@ -263,7 +266,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   </div>
 </section>
 
-<section id="limites" aria-labelledby="limites-t">
+<section class="lie" id="limites" aria-labelledby="limites-t">
   <div class="wrap">
     <div class="sec-h"><span class="label">À savoir</span><h2 id="limites-t">Ce qui reste <em>à compléter.</em></h2><p>Ce qui fonctionne aujourd'hui, et ce qu'il faut régler avant d'ouvrir aux clients.</p></div>
     <div class="limits">
