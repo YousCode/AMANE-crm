@@ -1,0 +1,17 @@
+{
+  "name": "amane",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Amane — conciergerie à Paris : site, CRM et serveur (Vercel + MongoDB Atlas + WhatsApp)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "FAKE_DB=1 node dev/server.js",
+    "test:api": "node tests/api/run.js"
+  },
+  "dependencies": {
+    "mongodb": "^6.10.0"
+  }
+}
