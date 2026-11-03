@@ -1,0 +1,4 @@
+src*.html
+build*.py
+make_vercel.py
+LISEZMOI.md
