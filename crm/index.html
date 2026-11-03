@@ -1187,7 +1187,7 @@ function importJSON(){
   inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;let data;try{data=JSON.parse(await f.text())}catch(e){toast('Fichier illisible : choisissez une sauvegarde Amane (.json).');return}
     if(!data||!COLS.some(c=>Array.isArray(data[c]))){toast('Ce fichier n’est pas une sauvegarde Amane.');return}
     const n=COLS.reduce((t,c)=>t+((data[c]||[]).length),0);
-    if(!confirm(`Remplacer les données de cet appareil par cette sauvegarde (${n} fiches) ?`))return;
+    if(!confirm(S.mode==='server'?`Importer ${n} fiches dans la base de l’équipe ? Les fiches de même identifiant seront remplacées.`:`Remplacer les données de cet appareil par cette sauvegarde (${n} fiches) ?`))return;
     if(S.mode==='device'&&db.replaceAll){db.replaceAll(data);toast('Sauvegarde restaurée.')}
     else{for(const c of COLS)for(const o of (data[c]||[])){if(o&&o.id&&!o._demo)await save(c,o)}toast('Sauvegarde importée.')}};
   inp.click()}
@@ -1465,7 +1465,7 @@ function tabProg(d){const ps=partners();(d.programme||[]).sort((a,b)=>(parse(a.d
   const rows=(d.programme||[]).map((x,i)=>`<div class="pst"><div class="ln pr"><input aria-label="Date et heure" type="datetime-local" data-k="programme.${i}.dt" value="${esc(x.dt)}"><select aria-label="Type d’étape" data-k="programme.${i}.type">${opt(PROG_TYPES,x.type)}</select><input aria-label="Lieu" data-k="programme.${i}.lieu" value="${esc(x.lieu)}" placeholder="Lieu"><button type="button" class="x-s" data-act="pr-del" data-i="${i}" aria-label="Supprimer l’étape">${ico('close')}</button></div><div class="ln pr2"><select aria-label="Partenaire" data-k="programme.${i}.partenaireId"><option value="">Partenaire (optionnel)</option>${opt(ps.map(p=>({id:p.id,label:p.nom+' · '+label(PART_TYPES,p.type)})),x.partenaireId)}</select><input aria-label="Note pour le client" data-k="programme.${i}.client" value="${esc(x.client)}" placeholder="Note pour le client"><input aria-label="Note interne" data-k="programme.${i}.interne" value="${esc(x.interne)}" placeholder="Note interne"></div></div>`).join('');
   return `<div class="note-box">Le programme se partage avec le client dans sa langue (${esc(docLang(c))}) : message WhatsApp ou carnet à télécharger. Les notes internes ne sont jamais partagées.</div>${rows||'<div class="empty"><div class="arch"></div>Aucune étape pour l’instant.</div>'}
   <div><button class="btn sm" type="button" data-act="pr-add">${ico('plus')}Étape</button></div>
-  <div class="sec-t">Envoyer au client</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" type="button" data-act="pr-text">Préparer le message</button><button class="btn sm" type="button" data-act="pr-ai" ${sampleFn?'':'disabled title="Disponible dans claude.ai"'}>${ico('spark')}Rédiger avec le Majordome</button><button class="btn sm" type="button" data-act="pr-dl" ${dl?'':'disabled title="Disponible dans claude.ai"'}>${ico('down')}Carnet de séjour</button></div>
+  <div class="sec-t">Envoyer au client</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" type="button" data-act="pr-text">Préparer le message</button><button class="btn sm" type="button" data-act="pr-ai" ${sampleFn?'':naAttr()}>${ico('spark')}Rédiger avec le Majordome</button><button class="btn sm" type="button" data-act="pr-dl" ${dl?'':'disabled title="Disponible dans claude.ai"'}>${ico('down')}Carnet de séjour</button></div>
   <div id="prOutW" ${DR.prog?'':'hidden'}><div class="f full"><label for="prOut">Message</label><textarea id="prOut" dir="auto" style="min-height:200px">${esc(DR.prog||'')}</textarea></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn sm" type="button" data-act="pr-copy">${ico('copy')}Copier</button><a class="btn sm" id="prWa" href="${esc(waLink(c.tel,DR.prog||''))}" target="_blank" rel="noopener">Ouvrir dans WhatsApp</a></div><p class="muted-s">${c.tel?'WhatsApp s’ouvre sur la conversation du client, message prêt.':'Ajoutez le téléphone du client pour ouvrir directement sa conversation.'}</p></div>`}
 function tabTaches(d){const ts=d.taches||[];const now=sod(new Date());
   return `${ts.map((x,i)=>{const due=parse(x.due);const late=!x.fait&&due&&due<now;return `<div class="ln tk ${x.fait?'done':''}"><label class="tkc"><input type="checkbox" data-k="taches.${i}.fait" ${x.fait?'checked':''} aria-label="Fait"></label><input aria-label="Tâche" data-k="taches.${i}.t" value="${esc(x.t)}" placeholder="Tâche"><select aria-label="Responsable" data-k="taches.${i}.resp">${opt(TEAM.map(t=>({id:t.id,label:t.nom})),x.resp)}</select><input aria-label="Échéance" type="date" data-k="taches.${i}.due" value="${esc(x.due)}" ${late?'class="late"':''}><button type="button" class="x-s" data-act="tk-del" data-i="${i}" aria-label="Supprimer la tâche">${ico('close')}</button></div>`}).join('')||'<div class="empty"><div class="arch"></div>Aucune tâche.</div>'}
@@ -1542,7 +1542,7 @@ function render(){
   renderNav();renderHello();renderBanner();
   const v=$('#view');const r=S.route;
   const bc=document.body.classList;[...bc].filter(x=>x.startsWith('route-')).forEach(x=>bc.remove(x));bc.add('route-'+r);
-  bc.toggle('has-thread',r==='messages'&&!!S.convId&&isM());bc.toggle('no-fab',r==='messages'||r==='reglages'||r==='aide');
+  bc.toggle('has-thread',r==='messages'&&!!S.convId&&!!byId(S.conversations||[],S.convId)&&isM());bc.toggle('no-fab',r==='messages'||r==='reglages'||r==='aide');
   // Garder la saisie et la position de défilement quand la synchronisation redessine l'écran
   const ae=document.activeElement;const keep=ae&&ae.id&&v.contains(ae)?{id:ae.id,s:ae.selectionStart,e:ae.selectionEnd}:null;
   const sc={};v.querySelectorAll('[data-keep-scroll]').forEach(el=>{sc[el.dataset.keepScroll]=[el.scrollTop,el.scrollHeight-el.clientHeight-el.scrollTop<40]});
@@ -1650,13 +1650,13 @@ function vContrats(){
 function vAide(){
   const me=teamOf(S.me);
   const steps=[
-    ['Choisissez qui vous êtes','Le bouton en arche en bas du rail (ou en bas à droite sur téléphone) : Amel, Youssouf ou Aziz. Le Salon affiche alors vos tâches et votre prénom. Ce choix est retenu sur cet appareil.',`<button class="btn sm" type="button" data-act="who">${me?'Vous êtes '+esc(me.nom)+' · changer':'Choisir maintenant'}</button>`],
+    S.mode==='server'?['Connectez-vous','Chacun entre avec son prénom et son code personnel (4 à 8 chiffres). Sur téléphone, installez l’application sur l’écran d’accueil : appeler, écrire sur WhatsApp ou lancer l’itinéraire se fait en un geste depuis chaque fiche.',`<button class="btn sm" type="button" data-act="plus">${me?'Connecté : '+esc(me.nom):'Mon compte'}</button>`]:['Choisissez qui vous êtes','Le bouton en arche en bas du rail (ou « Plus » sur téléphone) : Amel, Youssouf ou Aziz. Le Salon affiche alors vos tâches et votre prénom. Ce choix est retenu sur cet appareil.',`<button class="btn sm" type="button" data-act="who">${me?'Vous êtes '+esc(me.nom)+' · changer':'Choisir maintenant'}</button>`],
     ['Créez une demande','« Nouvelle demande » en haut, ou le Majordome : collez le message WhatsApp du client, il crée la fiche client, la demande et un brouillon de réponse dans sa langue.',`<button class="btn sm" type="button" data-act="new-mission">${ico('plus')}Nouvelle demande</button> <button class="btn sm" type="button" data-act="mj">${ico('spark')}Majordome</button>`],
     ['Faites-la avancer','Dans Demandes, glissez la carte de colonne en colonne : Nouvelle → Proposition → Confirmée → En cours → Terminée (ou Perdue). Le Planning montre la voiture occupée et signale les doubles réservations en rouge.',`<button class="btn sm" type="button" data-route="demandes">Ouvrir les demandes</button>`],
     ['Bouclez le dossier','Dès qu’une demande est confirmée, elle apparaît dans Contrats : contrat (à rédiger, envoyé, signé), pièces du client, caution, état des lieux au départ et au retour, paiement. Le contrat se télécharge pré-rempli depuis la fiche, onglet « Contrat & dossier ».',`<button class="btn sm" type="button" data-route="contrats">Ouvrir les contrats</button>`],
     ['Tenez la flotte à jour','Dans Flotte : photos de chaque voiture (glisser-déposer ou import d’un dossier entier), « Qui est libre ? » sur une période, révisions et entretien. Les photos actuelles sont des illustrations à remplacer par les vraies.',`<button class="btn sm" type="button" data-route="flotte">Ouvrir la flotte</button>`]];
   const roles=[['amel','Répond aux demandes, relance les propositions, tient les fiches clients et les goûts de chacun.'],['youssouf','Attribue les véhicules, prépare les départs, suit révisions, photos et doubles réservations.'],['aziz','Contrats, pièces d’identité, cautions, états des lieux, encaissement des soldes.']];
-  const live=S.mode==='live';
+  const live=S.mode==='live'||S.mode==='server';
   return `<div class="view-h"><div><div class="label">Prise en main</div><h2>Comment fonctionne le CRM</h2></div></div>
   <div class="aide">
     <div class="glass panel"><div class="panel-h"><h2>En cinq étapes</h2><span class="sub">de la demande à la remise des clés</span></div>
@@ -1675,7 +1675,7 @@ function vAide(){
           <div><i>·</i><span><b style="font-weight:500;color:var(--fg)">Journal de flotte</b> (Youssouf) : entretiens, dommages, coûts, échéances assurance et contrôle. Pour un PV, la date suffit : le conducteur à désigner est retrouvé, et Aziz le voit dans « À faire ».</span></div>
           <div><i>·</i><span><b style="font-weight:500;color:var(--fg)">Finances</b> (Aziz) : facturé, encaissé, factures en retard, commissions, coûts de la flotte, export CSV.</span></div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sm" type="button" data-act="export-json" ${dl?'':'disabled title="Disponible dans claude.ai"'}>${ico('down')}Sauvegarder toutes les données (JSON)</button>${S.mode==='device'?`<button class="btn sm ghost" type="button" data-act="import-json">${ico('up')}Restaurer une sauvegarde</button>`:''}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sm" type="button" data-act="export-json" ${dl?'':'disabled title="Disponible dans claude.ai"'}>${ico('down')}Sauvegarder toutes les données (JSON)</button>${S.mode==='device'||S.mode==='server'?`<button class="btn sm ghost" type="button" data-act="import-json">${ico('up')}${S.mode==='server'?'Importer une sauvegarde':'Restaurer une sauvegarde'}</button>`:''}</div>
       </div>
       <div class="glass panel"><div class="panel-h"><h2>Raccourcis</h2></div>
         <ul class="kb"><li><kbd>⌘K</kbd><kbd>Ctrl K</kbd>chercher un client, une demande, une voiture, ou lancer une action</li><li><kbd>Échap</kbd>fermer une fiche ou une fenêtre</li><li><b style="font-weight:500;color:var(--fg)">Majordome</b> : analyse un message client et rédige les réponses (proposition, confirmation, relance, remerciement)</li></ul>
@@ -1683,10 +1683,10 @@ function vAide(){
       <div class="glass panel"><div class="panel-h"><h2>Ce qui est enregistré</h2><span class="sub">${live?'base partagée active':S.mode==='device'?'enregistré dans ce navigateur':'mode local : rien n’est enregistré ici'}</span></div>
         <div class="facts">
           <div><i>·</i><span>Clients, demandes, devis, carnet, flotte, services et photos sont enregistrés dans une base commune. Ce que l’un modifie apparaît chez les autres en quelques secondes.</span></div>
-          <div><i>·</i><span>Seules les personnes invitées avec le droit « peut modifier » voient les données. Avec « peut voir », la page reste vide : c’est voulu.</span></div>
+          <div><i>·</i><span>${S.mode==='server'?'Seules Amel, Youssouf et Aziz, connectés avec leur code, voient les données. Hors connexion, vos modifications attendent sur le téléphone et partent au retour du réseau.':'Seules les personnes invitées avec le droit « peut modifier » voient les données. Avec « peut voir », la page reste vide : c’est voulu.'}</span></div>
           <div><i>·</i><span>« Qui êtes-vous ? » et vos filtres restent sur votre appareil.</span></div>
           <div><i>·</i><span>Les exemples affichés tant que la base est vide ne sont pas enregistrés et disparaissent à la première vraie fiche.</span></div>
-          <div><i>·</i><span>Le Majordome demande votre accord à sa première utilisation et ne fonctionne que dans claude.ai.</span></div>
+          <div><i>·</i><span>${S.mode==='server'?'Le Majordome passe par le serveur Amane : il analyse les messages WhatsApp et rédige les brouillons, sans jamais envoyer seul.':'Le Majordome demande votre accord à sa première utilisation et ne fonctionne que dans claude.ai.'}</span></div>
         </div>
       </div>
     </div>
@@ -1698,6 +1698,220 @@ function vServices(){
   <p style="margin:-8px 0 16px;color:var(--fg-3);font-size:13px;max-width:70ch">Tarifs internes, jamais publiés sur le site. Ils servent de repère quand Amel prépare une proposition.</p>
   <div class="svc">${services().map(s=>{const n=ms.filter(m=>m.service===s.id).length;const ca=ms.filter(m=>m.service===s.id&&ACTIVE.includes(m.statut)).reduce((x,m)=>x+(+m.montant||0),0);return `<button class="glass lit scard" type="button" data-open="service:${s.id}"><span class="ic">${ico(SVC_ICON[s.id]||'spark')}</span><h3>${esc(s.nom)}</h3><p>${esc(s.description||'')}</p><span class="tf">${esc(s.tarif||'')}</span><span class="us">${n} demande${n>1?'s':''} · ${fmtK(ca)} signés</span></button>`}).join('')}</div>`;
 }
+
+/* ---------- Aujourd'hui (téléphone) ---------- */
+function nextMission(){const now=new Date();const ms=list('missions').filter(m=>BOOK.includes(m.statut)&&parse(m.debut));
+  const up=ms.filter(m=>parse(m.debut)>now).sort((a,b)=>parse(a.debut)-parse(b.debut))[0];
+  const cur=ms.filter(m=>parse(m.debut)<=now&&(parse(m.fin)||parse(m.debut))>now).sort((a,b)=>(parse(a.fin)||0)-(parse(b.fin)||0))[0];
+  if(up&&(!cur||parse(up.debut)-now<3*36e5))return {m:up};if(cur)return {m:cur,cur:true};return null}
+function todoBtn(x){return `<button class="todo" type="button" data-open="${x.cid?'client:'+x.cid:x.vid?'vehicule:'+x.vid+(x.vtab?':'+x.vtab:''):'mission:'+x.id+(x.tab?':'+x.tab:'')}"><span class="sev" style="background:var(--${x.sev})"></span><span><div class="tt">${esc(x.t)}</div><div class="td">${esc(x.d)}</div></span></button>`}
+function heroHTML(){const now=new Date();const nx=nextMission();
+  if(!nx)return `<article class="hero none"><div class="lb">Prochaine mission</div><h3>Aucune mission confirmée à venir.</h3><p style="margin:8px 0 16px;color:var(--fg-3);font-size:13.5px">Dès qu’une demande est confirmée, elle apparaît ici avec l’appel au client et l’itinéraire en un geste.</p><button class="btn sm primary" type="button" data-act="new-mission">${ico('plus')}Nouvelle demande</button></article>`;
+  const m=nx.m,c=clientOf(m)||{},v=byId(vehicles(),m.vehiculeId),ch=byId(partners(),m.chauffeurId);const a=parse(m.debut),b=parse(m.fin);
+  const when=nx.cur?'En cours · fin prévue':sameDay(a,now)?'Aujourd’hui':sameDay(a,addD(now,1))?'Demain':a.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  const cell=(href,ic,l,k,blank)=>href?`<a href="${esc(href)}" ${blank?'target="_blank" rel="noopener"':''} data-ct="${k}">${ico(ic)}<span>${l}</span></a>`:`<span class="dis" aria-hidden="true">${ico(ic)}<span>${l}</span></span>`;
+  return `<article class="hero" aria-label="${nx.cur?'Mission en cours':'Prochaine mission'}"><div class="lb">${nx.cur?'Mission en cours':'Prochaine mission'}</div><div class="tm"><span class="num" style="font-family:var(--f-display)">${fmtTime(nx.cur?b:a)}</span><small>${esc(when)}</small></div><h3>${esc(m.titre)}</h3>
+    <dl>${c.nom?`<dt>Client</dt><dd>${esc(c.nom)}</dd>`:''}${v?`<dt>Voiture</dt><dd>${esc(v.nom)}</dd>`:''}${m.lieu?`<dt>Lieu</dt><dd>${esc(m.lieu)}</dd>`:''}${ch||m.chauffeur?`<dt>Chauffeur</dt><dd>${esc(ch?ch.nom:m.chauffeur)}</dd>`:''}</dl>
+    <div class="ha">${cell(telHref(c.tel),'phone','Appeler','tel')}${cell(waHref(c.tel,helloTxt(c)),'wa','WhatsApp','wa',1)}${cell(mapsHref(m.lieu),'nav','Itinéraire','maps',1)}<button class="go" type="button" data-open="mission:${m.id}">${ico('right')}<span>Ouvrir</span></button></div></article>`}
+function vSalonM(){
+  const now=new Date(),ms=list('missions'),vs=vehicles();
+  const t0=sod(now),t1=addD(t0,1);const items=[];
+  ms.filter(m=>m.statut!=='perdue'&&parse(m.debut)&&parse(m.debut)<t1&&(parse(m.fin)||parse(m.debut))>=t0).forEach(m=>{const a=parse(m.debut);items.push({t:a>=t0?a:null,m});(m.programme||[]).forEach(p=>{const d=parse(p.dt);if(d&&d>=t0&&d<t1)items.push({t:d,m,p})})});
+  items.sort((x,y)=>(x.t?+x.t:0)-(y.t?+y.t:0));
+  const tl=items.map(x=>{const m=x.m,c=clientOf(m)||{};
+    if(x.p){const pt=byId(partners(),x.p.partenaireId);const lieu=x.p.lieu||(pt&&pt.adresse)||'';return `<div class="tl-i sub" role="button" tabindex="0" data-open="mission:${m.id}:prog"><span class="t">${fmtTime(x.t)}</span><span style="min-width:0"><div class="ti">${esc(label(PROG_TYPES,x.p.type))}${pt?' — '+esc(pt.nom):''}</div><div class="meta">${esc([c.nom,lieu].filter(Boolean).join(' · '))}</div></span>${qaHTML({tel:pt&&pt.tel,noWa:1,lieu,who:pt&&pt.nom,keep:1})}</div>`}
+    const v=byId(vs,m.vehiculeId);return `<div class="tl-i" role="button" tabindex="0" data-open="mission:${m.id}"><span class="t">${x.t?fmtTime(x.t):'suite'}</span><span style="min-width:0"><div class="ti">${esc(m.titre)}</div><div class="meta">${esc([c.nom,v&&v.nom,m.lieu].filter(Boolean).join(' · ')||svcName(m.service))}</div></span>${qaHTML({tel:c.tel,wa:helloTxt(c),lieu:m.lieu,who:c.nom,keep:1})}</div>`}).join('');
+  const T=todos();const sel=S.filters.todo||S.me||'amel';const mine=T[sel]||[];const sh=S.filters.todoAll?mine:mine.slice(0,5);
+  const tdo=`<div class="todo-tabs" role="group" aria-label="À faire par personne">${TEAM.map(p=>`<button type="button" data-todo="${p.id}" aria-pressed="${sel===p.id}">${av(p.id)}${esc(p.nom)} <span class="n">${T[p.id].length}</span></button>`).join('')}</div>`+
+    (sh.length?sh.map(todoBtn).join('')+(mine.length>sh.length?`<button class="more-l" type="button" data-act="todo-all">Voir les ${mine.length-sh.length} autres</button>`:''):`<div class="empty"><div class="arch"></div>Rien en attente pour ${esc(teamOf(sel).nom)}.</div>`);
+  const pipe=ms.filter(m=>['nouvelle','proposition'].includes(m.statut)).reduce((s,m)=>s+(+m.montant||0),0);
+  const unread=convs().filter(cv=>+cv.unread>0).slice(0,4);
+  return `${heroHTML()}
+    <div class="m-sec"><h2>Aujourd’hui</h2><span class="sub">${now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</span></div><div class="glass m-card"><div class="tl">${tl||'<div class="empty" style="padding:18px 4px">Rien de prévu aujourd’hui.</div>'}</div></div>
+    <div class="m-sec"><h2>À faire</h2><span class="sub">${(T[sel]||[]).length} en attente</span></div><div class="glass m-card" style="padding-top:12px;padding-bottom:6px">${tdo}</div>
+    ${S.mode==='server'?`<div class="m-sec"><h2>Messages</h2><button class="lnk" type="button" data-route="messages">Tout voir</button></div>${unread.length?`<div class="glass" style="overflow:hidden">${unread.map(convRow).join('')}</div>`:'<div class="glass m-card"><div class="empty" style="padding:16px 4px">Aucun message non lu.</div></div>'}
+    <div class="m-sec"><h2>Fil de l’équipe</h2><span class="sub">en direct</span></div><div class="glass m-card">${feedRows(5)}</div>`:''}
+    <div class="m-sec"><h2>Ce mois</h2></div><div class="m-kpi"><div class="glass kpi"><div class="label">Chiffre</div><div class="v num">${fmtK(caMois(now))}</div></div><div class="glass kpi"><div class="label">En négociation</div><div class="v num">${fmtK(pipe)}</div></div></div>`;
+}
+function unreadPanel(n){const u=convs().filter(cv=>+cv.unread>0).slice(0,n);return `<div class="glass panel"><div class="panel-h"><h2>Messages</h2><button class="lnk" type="button" data-route="messages">Tout voir</button></div>${u.length?`<div style="margin:0 -22px">${u.map(convRow).join('')}</div>`:'<div class="empty" style="padding:14px 4px">Aucun message non lu.</div>'}</div>`}
+function feedPanel(n){return `<div class="glass panel"><div class="panel-h"><h2>Fil de l’équipe</h2><span class="sub">dernières modifications</span></div>${feedRows(n)}</div>`}
+
+/* ---------- Historique et fil de l'équipe ---------- */
+const ACT={};
+const actVerb=x=>({create:'création',update:'modification',delete:'suppression',whatsapp:'message WhatsApp',lead:'demande du site'})[x]||'modification';
+function whoName(u){const t=teamOf(u);return t?t.nom:({whatsapp:'WhatsApp',site:'Site',ia:'Majordome'}[u]||'Système')}
+function whoAv(u){if(teamOf(u))return av(u);return `<span class="av sys" title="${esc(whoName(u))}">${({whatsapp:'W',site:'S',ia:'✦'})[u]||'·'}</span>`}
+function actTarget(a){const k={missions:'mission',clients:'client',vehicules:'vehicule',partenaires:'partenaire'}[a.col];if(k&&byId(S[a.col]||[],a.docId))return `data-open="${k}:${esc(a.docId)}"`;
+  if(a.col==='conversations'||a.col==='messages'||a.action==='whatsapp'){const cv=byId(S.conversations||[],a.docId)||byId(S.conversations||[],(byId(S.messages||[],a.docId)||{}).convId);if(cv)return `data-conv="${esc(cv.id)}"`}return ''}
+function actDoc(a){const d=byId(S[a.col]||[],a.docId);if(!d)return '';return a.col==='missions'?d.titre:a.col==='conversations'?convName(d):(d.nom||'')}
+function actRow(a,withDoc){const tgt=withDoc?actTarget(a):'';const doc=withDoc?actDoc(a):'';
+  const inner=`${whoAv(a.user)}<span class="w" style="min-width:0"><b>${esc(whoName(a.user))}</b> · ${esc(a.resume||actVerb(a.action))}${doc?`<small>${esc(doc)}</small>`:''}</span><span class="d">${esc(relTime(a.at))}</span>`;
+  return tgt?`<button class="act-i" type="button" ${tgt}>${inner}</button>`:`<div class="act-i">${inner}</div>`}
+function feedRows(n){if(!SV.feed)return '<div class="empty" style="padding:16px 4px">Chargement…</div>';const it=SV.feed.slice(0,n);return it.length?`<div class="act">${it.map(a=>actRow(a,true)).join('')}</div>`:'<div class="empty" style="padding:16px 4px">Aucune activité récente.</div>'}
+async function loadAct(id){if(!id||S.mode!=='server')return;const p=ACT[id]||{};if(p.loading)return;ACT[id]={...p,loading:true};
+  try{const r=await api('GET','/api/activity?docId='+encodeURIComponent(id)+'&limit=50');ACT[id]={items:r.items||[],at:Date.now()}}catch(e){ACT[id]={items:p.items||[],at:Date.now(),err:true}}
+  if(DR.open&&DR.id===id&&(DR.tab==='act'||DR.tab==='hist')){readForm();drawRender()}}
+function actHTML(id){const a=ACT[id];if(!a||!a.items){loadAct(id);return '<div class="empty">Chargement de l’historique…</div>'}if(Date.now()-a.at>20000)loadAct(id);
+  return a.items.length?`<div class="act">${a.items.map(x=>actRow(x,false)).join('')}</div>`:`<div class="empty">${a.err?'Historique indisponible hors connexion.':'Aucune modification enregistrée pour l’instant.'}</div>`}
+
+/* ---------- Demandes en liste (balayage) et planning jour par jour ---------- */
+const OPEN_ST=['nouvelle','proposition','confirmee','encours'];
+function lcardHTML(m){const c=clientOf(m),v=byId(vehicles(),m.vehiculeId);const i=STATUTS.findIndex(x=>x.id===m.statut);const prev=STATUTS[i-1],next=STATUTS[i+1];const cl=clashes(m,list('missions')).length;
+  return `<div class="sw" data-sw="${m.id}"><div class="sw-bg" aria-hidden="true"><span class="p">${prev?'‹ '+esc(prev.label):''}</span><span class="n">${next?esc(next.label)+' ›':''}</span></div>
+    <div class="lcard" role="button" tabindex="0" data-open="mission:${m.id}" data-lid="${m.id}"><div class="top"><span class="ct2">${esc(m.titre)}</span>${m._demo?'<span class="ex-s">Exemple</span>':''}</div>
+    <div class="cm">${ico('user')}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c?c.nom:'Client à préciser')}</span></div><div class="cm">${ico(SVC_ICON[m.service]||'spark')}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(svcName(m.service))}${v?' · '+esc(v.nom):''}</span></div><div class="cm">${ico('clock')}${fmtDT(parse(m.debut))}</div>${cl?`<div class="cm" style="color:var(--bad)">${ico('alert')}Véhicule déjà réservé</div>`:''}
+    <div class="bt">${av(m.responsable)}<span class="amt">${m.montant?fmtE(m.montant):'—'}</span>${qaHTML({tel:c&&c.tel,wa:helloTxt(c),lieu:m.lieu,who:c&&c.nom})}</div>
+    <div class="mv"><button type="button" data-move="${m.id}:-1" aria-label="Étape précédente" ${prev?'':'disabled'}>‹</button><span>${prev||next?'Balayer ou':''} déplacer</span><button type="button" data-move="${m.id}:1" aria-label="Étape suivante" ${next?'':'disabled'}>›</button></div></div></div>`}
+function vDemandesList(ms){const f=S.filters.lst||'open';const cnt=id=>ms.filter(m=>m.statut===id).length;
+  const chips=`<div class="dl-f" role="group" aria-label="Statut"><button type="button" data-lst="open" aria-pressed="${f==='open'}">Ouvertes<span class="n">${ms.filter(m=>OPEN_ST.includes(m.statut)).length}</span></button>${STATUTS.map(s=>`<button type="button" data-lst="${s.id}" aria-pressed="${f===s.id}">${s.label}<span class="n">${cnt(s.id)}</span></button>`).join('')}</div>`;
+  const body=STATUTS.filter(s=>f==='open'?OPEN_ST.includes(s.id):s.id===f).map(s=>{const it=ms.filter(m=>m.statut===s.id).sort((a,b)=>(parse(a.debut)||0)-(parse(b.debut)||0));if(!it.length)return '';const tot=it.reduce((x,m)=>x+(+m.montant||0),0);
+    return `<section class="lgrp"><div class="lgrp-h">${chip(s.id)}<span class="s">${it.length} · ${fmtK(tot)}</span></div>${it.map(lcardHTML).join('')}</section>`}).join('');
+  return `${chips}<p style="margin:0 0 14px;color:var(--fg-3);font-size:13px">Balayez une demande vers la gauche pour l’avancer d’une étape, vers la droite pour la reculer.</p>${body||'<div class="glass empty"><div class="arch"></div>Aucune demande ici.</div>'}`}
+function vPlanningList(days,ms){const today=sod(new Date());const vs=vehicles();
+  return days.map(d=>{const e=addD(d,1);const it=ms.filter(m=>parse(m.debut)&&parse(m.debut)<e&&(parse(m.fin)||parse(m.debut))>=d).sort((a,b)=>parse(a.debut)-parse(b.debut));
+    const lab=sameDay(d,today)?'Aujourd’hui':sameDay(d,addD(today,1))?'Demain':d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    return `<div class="pl-day"><div class="day-sep">${esc(lab)}</div><div class="glass m-card"><div class="tl">${it.length?it.map(m=>{const c=clientOf(m)||{},v=byId(vs,m.vehiculeId),ch=byId(partners(),m.chauffeurId);const a=parse(m.debut),b=parse(m.fin);
+      return `<div class="tl-i" role="button" tabindex="0" data-open="mission:${m.id}"><span class="t">${sameDay(a,d)?fmtTime(a):b&&sameDay(b,d)?'→ '+fmtTime(b):'suite'}</span><span style="min-width:0"><div class="ti">${esc(m.titre)}</div><div class="meta">${esc([label(STATUTS,m.statut),c.nom,v&&v.nom,ch?ch.nom:m.chauffeur,m.lieu].filter(Boolean).join(' · '))}</div></span>${qaHTML({tel:c.tel,wa:helloTxt(c),lieu:m.lieu,who:c.nom,keep:1})}</div>`}).join(''):'<div class="empty" style="padding:14px 4px">Libre.</div>'}</div></div></div>`}).join('')}
+
+/* ---------- Messages WhatsApp ---------- */
+const MSG={draft:{},closed:{},tpl:{},q:'',pushed:false};
+const WA_TPL='amane_suivi';const TPL_LANG={FR:'fr',EN:'en',AR:'ar',ES:'es',RU:'ru',IT:'it',DE:'de',ZH:'zh_CN'};
+const QR_L=['Accusé de réception','Disponibilités','Dates et adresse','Caution','Confirmation','Remerciement'];
+const QR={
+  FR:[n=>`Bonjour${n?' '+n:''}, merci pour votre message. Nous nous occupons de votre demande et revenons vers vous très rapidement.`,
+      ()=>`Nous vérifions la disponibilité pour vos dates et revenons vers vous dans l’heure avec une proposition.`,
+      ()=>`Pourriez-vous nous préciser vos dates et horaires, ainsi que l’adresse de prise en charge ? Nous vous préparons ensuite une proposition sur mesure.`,
+      ()=>`Pour toute location, un dépôt de garantie est demandé par pré-autorisation bancaire : aucun montant n’est débité, l’empreinte est libérée au retour du véhicule.`,
+      ()=>`C’est confirmé : votre réservation est enregistrée. La veille, nous vous communiquerons le nom de votre chauffeur et l’heure exacte de prise en charge.`,
+      n=>`Merci${n?' '+n:''} pour votre confiance. Ce fut un plaisir de vous accompagner ; nous restons à votre disposition pour votre prochain séjour à Paris.`],
+  EN:[n=>`Hello${n?' '+n:''}, thank you for your message. We are taking care of your request and will come back to you very shortly.`,
+      ()=>`We are checking availability for your dates and will come back to you within the hour with a proposal.`,
+      ()=>`Could you kindly share your dates and times, as well as the pick-up address? We will then prepare a tailored proposal for you.`,
+      ()=>`For any rental, a security deposit is held by card pre-authorisation: nothing is charged, and the hold is released when the car is returned.`,
+      ()=>`Your booking is confirmed. The day before, we will send you your chauffeur’s name and the exact pick-up time.`,
+      n=>`Thank you${n?' '+n:''} for your trust. It was a pleasure to look after you; we remain at your disposal for your next stay in Paris.`],
+  AR:[n=>`مرحباً${n?' '+n:''}، شكراً لرسالتكم. نحن نتابع طلبكم وسنعود إليكم في أقرب وقت.`,
+      ()=>`نتحقق الآن من التوفر في التواريخ المطلوبة، وسنعود إليكم خلال ساعة بعرض مناسب.`,
+      ()=>`هل يمكنكم تزويدنا بالتواريخ والأوقات المطلوبة وعنوان الاستقبال؟ سنُعدّ لكم بعدها عرضاً خاصاً.`,
+      ()=>`لكل عملية تأجير، يُطلب مبلغ تأمين عبر حجز مسبق على البطاقة البنكية: لا يُخصم أي مبلغ، ويُلغى الحجز عند إعادة السيارة.`,
+      ()=>`تم تأكيد حجزكم. سنرسل إليكم في اليوم السابق اسم السائق والموعد الدقيق للاستقبال.`,
+      n=>`شكراً${n?' '+n:''} على ثقتكم. سعدنا بخدمتكم، ونبقى في خدمتكم في زيارتكم القادمة إلى باريس.`],
+  ES:[n=>`Hola${n?' '+n:''}, gracias por su mensaje. Nos ocupamos de su solicitud y le respondemos muy pronto.`,
+      ()=>`Estamos comprobando la disponibilidad para sus fechas y le enviaremos una propuesta en la próxima hora.`,
+      ()=>`¿Podría indicarnos sus fechas y horarios, así como la dirección de recogida? A continuación le prepararemos una propuesta a medida.`,
+      ()=>`Para cualquier alquiler se solicita un depósito de garantía mediante preautorización bancaria: no se cobra ningún importe y la retención se libera a la devolución del vehículo.`,
+      ()=>`Su reserva está confirmada. La víspera le enviaremos el nombre de su chófer y la hora exacta de recogida.`,
+      n=>`Gracias${n?' '+n:''} por su confianza. Ha sido un placer atenderle; quedamos a su disposición para su próxima estancia en París.`]};
+const MEDIA_L={image:'Photo',audio:'Message vocal',voice:'Message vocal',video:'Vidéo',document:'Document',sticker:'Autocollant',location:'Position',contacts:'Contact'};
+const TICKS={sending:['…',''],sent:['✓',''],delivered:['✓✓',''],read:['✓✓','read'],failed:['!','fail']};
+const TK_L={sending:'Envoi en cours',sent:'Envoyé',delivered:'Distribué',read:'Lu',failed:'Échec de l’envoi'};
+function convs(){return [...(S.conversations||[])].sort((a,b)=>String(b.lastAt||'').localeCompare(String(a.lastAt||'')))}
+function convClient(cv){if(!cv)return null;return byId(S.clients,cv.clientId)||S.clients.find(c=>(c.telNorm&&String(c.telNorm)===String(cv.id))||(normTel(c.tel)&&normTel(c.tel).slice(1)===String(cv.id)))||null}
+function convName(cv){const c=convClient(cv);return (c&&c.nom)||cv.nom||fmtPhone(cv.phone||cv.id)}
+const byNew=(a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''));
+function convMission(cv){const ms=S.missions;const c=convClient(cv);return byId(ms,cv.missionId)||ms.filter(m=>m.convId===cv.id).sort(byNew)[0]||(c?ms.filter(m=>m.clientId===c.id&&OPEN_ST.includes(m.statut)).sort(byNew)[0]:null)||null}
+function convLang(cv){return String((cv&&cv.lang)||((convClient(cv)||{}).langue)||'FR').toUpperCase().slice(0,2)}
+function winOpen(cv){const w=parse(cv&&cv.windowUntil);return !!w&&w>new Date()}
+function convMsgs(id){return (S.messages||[]).filter(m=>m.convId===id).sort((a,b)=>String(a.at||'').localeCompare(String(b.at||'')))}
+function convByClient(c){if(!c||S.mode!=='server')return null;const n=normTel(c.tel).slice(1);return (S.conversations||[]).find(cv=>(c.id&&cv.clientId===c.id)||(n&&String(cv.id)===n))||null}
+function qrName(cv){const n=convName(cv);return /^\+?[\d\s]+$/.test(n)?'':n}
+function autoGrow(el){if(!el)return;el.style.height='auto';el.style.height=Math.min(160,el.scrollHeight+2)+'px'}
+function convRow(cv){const n=+cv.unread||0;const nm=convName(cv);
+  return `<button class="cv${n?' unread':''}" type="button" data-conv="${esc(cv.id)}" aria-current="${S.route==='messages'&&S.convId===cv.id}"><span class="pic">${esc(initial(nm))}</span><span style="min-width:0"><div class="nm">${esc(nm)}<span class="lg-t">${esc(convLang(cv))}</span></div><div class="pv" dir="auto">${cv.lastDir==='out'?'Vous : ':''}${esc(cv.lastText||'')}</div>${winOpen(cv)?'':'<div class="wc">Fenêtre fermée</div>'}</span><span class="rt"><span>${esc(shortTime(cv.lastAt))}</span>${n?`<span class="ub" aria-label="${n} non lu${n>1?'s':''}">${n}</span>`:''}</span></button>`}
+function bubble(x){const out=x.dir==='out';const d=parse(x.at);const tk=out?(TICKS[x.status]||TICKS.sent):null;const by=out&&teamOf(x.by)?teamOf(x.by).nom:out&&x.by==='ia'?'Réponse automatique':'';
+  const media=(x.type&&!['text','template'].includes(x.type))||x.media?`<div class="media">${esc(MEDIA_L[x.type]||'Pièce jointe')}</div>`:'';
+  const txt=x.text?`<div dir="auto" class="${x.type==='template'?'tpl':''}">${esc(x.text)}</div>`:'';
+  return `<div class="bub ${out?'out':'in'}${x.status==='sending'?' sending':''}">${media}${txt||(media?'':'<div class="media">Message</div>')}<div class="mt">${by?esc(by)+' · ':''}${d?fmtTime(d):''}${tk?`<span class="tk ${tk[1]}" title="${esc(TK_L[x.status]||'Envoyé')}" aria-label="${esc(TK_L[x.status]||'Envoyé')}">${tk[0]}</span>`:''}</div></div>`}
+function aiFieldsRows(f){f=f||{};const dt=x=>parse(x)?fmtDT(parse(x)):x;const svc=f.service&&(services().find(s=>s.id===f.service)||{}).nom;
+  return [['Service',svc||f.service],['Véhicule',f.vehicule],['Du',f.debut&&dt(f.debut)],['Au',f.fin&&dt(f.fin)],['Lieu',f.lieu],['Passagers',f.passagers],['Budget',+f.budget?fmtE(f.budget):f.budget],['Urgence',f.urgence]].filter(x=>x[1]!=null&&x[1]!==''&&x[1]!==0)}
+function aiCard(cv,m){const rows=aiFieldsRows(cv.aiFields);if(!cv.aiSummary&&!rows.length)return '';
+  return `<div class="ai-card"><div class="label">${ico('spark')}Analyse du Majordome</div>${cv.aiSummary?`<p dir="auto">${esc(cv.aiSummary)}</p>`:''}${rows.length?`<dl>${rows.map(([a,b])=>`<div><dt>${a}</dt><dd>${esc(b)}</dd></div>`).join('')}</dl><button class="btn sm" type="button" data-act="cv-apply">${m?'Appliquer à la demande':'Créer la demande avec ces informations'}</button>`:''}</div>`}
+function threadHTML(cv){const nm=convName(cv),c=convClient(cv),m=convMission(cv),L=convLang(cv),open=winOpen(cv);
+  let day='',body='';convMsgs(cv.id).forEach(x=>{const d=parse(x.at);const k=d?d.toDateString():'';if(k!==day){day=k;body+=`<div class="dsep">${esc(dayLabel(d))}</div>`}body+=bubble(x)});
+  const tel='+'+String(cv.id).replace(/\D/g,'');const closed=MSG.closed[cv.id]===true||!open;
+  const qn=qrName(cv);const qk=QR[L]?L:'EN';
+  return `<section class="th" aria-label="Conversation avec ${esc(nm)}"><header class="th-h"><button class="x back" type="button" data-act="cv-back" aria-label="Retour aux conversations">${ico('left')}</button><span class="pic">${esc(initial(nm))}</span><div style="min-width:0;flex:1"><h3>${esc(nm)}</h3><div class="s">${esc(fmtPhone(cv.id))} · ${esc(L)} · ${open?'fenêtre ouverte jusqu’à '+esc(fmtTime(parse(cv.windowUntil))):'fenêtre fermée'}</div></div></header>
+    <div class="th-a"><a class="ct dark" href="tel:${esc(tel)}" data-ct="tel">${ico('phone')}Appeler</a><a class="ct" href="https://wa.me/${esc(tel.slice(1))}" target="_blank" rel="noopener" data-ct="wa">${ico('wa')}WhatsApp</a><button class="ct" type="button" data-act="cv-client">${ico('user')}${c?'Fiche client':'Créer la fiche'}</button><button class="ct" type="button" data-act="cv-mission">${ico('demandes')}${m?'Demande':'Créer la demande'}</button></div>
+    <div class="th-s" data-keep-scroll="ths-${esc(cv.id)}" data-bottom="1">${aiCard(cv,m)}${body||'<div class="th-empty">Aucun message dans cette conversation.</div>'}</div>
+    <div class="cmp">${closed?`<div class="wbox">${ico('clock')}<span>${MSG.tpl[cv.id]?'<b>Modèle envoyé.</b> Vous pourrez écrire librement dès que le client aura répondu.':'<b>Fenêtre de 24 h fermée.</b> WhatsApp n’autorise un message libre que dans les 24 h qui suivent le dernier message du client. Envoyez le modèle approuvé pour reprendre contact ; vous pourrez écrire librement dès sa réponse.'}</span><button class="btn sm ${MSG.tpl[cv.id]?'':'primary'}" type="button" data-act="cv-tpl">${MSG.tpl[cv.id]?'Renvoyer le modèle':'Envoyer le modèle'}</button></div>`:''}
+    <div class="qr" role="group" aria-label="Réponses rapides (${qk})">${cv.aiDraft?`<button type="button" class="ai" data-act="cv-draft">${ico('spark')}Utiliser le brouillon IA</button>`:''}${QR[qk].map((f,i)=>`<button type="button" data-qr="${i}" title="${esc(f(qn))}">${QR_L[i]}</button>`).join('')}</div>
+    <div class="cmp-r"><textarea id="cmpIn" rows="1" dir="auto" placeholder="Votre message…" aria-label="Message à ${esc(nm)}">${esc(MSG.draft[cv.id]||'')}</textarea><button class="send" type="button" data-act="cv-send" aria-label="Envoyer">${ico('send')}</button></div></div></section>`}
+function vMessages(){
+  const q=(MSG.q||'').toLowerCase().trim();const all=convs();const cur=S.convId?byId(all,S.convId):null;
+  const cs=all.filter(cv=>!q||[convName(cv),cv.id,cv.nom,cv.lastText].join(' ').toLowerCase().includes(q));const nU=unreadTotal();const off=SV.health&&SV.health.whatsapp===false;
+  const rows=cs.map(convRow).join('')||`<div class="empty"><div class="arch"></div>${q?'Aucune conversation ne correspond.':'Aucune conversation pour l’instant. Les messages WhatsApp reçus par Amane arrivent ici.'}</div>`;
+  return `<div class="view-h"><div><div class="label">WhatsApp${nU?` · ${nU} non lu${nU>1?'s':''}`:''}</div><h2>Messages</h2></div></div>
+  ${off?`<div class="banner">${ico('alert')}<span><b>WhatsApp n’est pas encore relié au serveur.</b> Les conversations restent consultables ; l’envoi fonctionnera dès que les clés WhatsApp seront renseignées.</span></div>`:''}
+  <div class="glass msgs"><div class="cv-side"><div class="cv-search"><input id="cvQ" type="search" placeholder="Nom, numéro, message…" value="${esc(MSG.q)}" aria-label="Rechercher une conversation" autocomplete="off"></div><div class="cv-list" data-keep-scroll="cvl">${rows}</div></div>
+  ${cur?threadHTML(cur):isM()?'':`<div class="th"><div class="th-empty"><div class="empty" style="padding:0"><div class="arch"></div></div>Choisissez une conversation.</div></div>`}</div>`}
+function markRead(id){const cv=byId(S.conversations||[],id);if(!cv||!(+cv.unread)||!db||!db.local)return;const o={...cv};delete o.id;o.unread=0;db.local('conversations',id,o);api('POST','/api/whatsapp/read',{convId:id}).catch(()=>{})}
+function openConv(id){if(DR.open)closeDrawer();$('#plusM').hidden=true;markRead(id);S.convId=id;S.route='messages';const h='messages/'+encodeURIComponent(id);if(location.hash!=='#'+h){MSG.pushed=true;location.hash=h}render();if(!isM()){const t=$('#cmpIn');if(t)t.focus({preventScroll:true})}}
+function setConv(id,patch){const cv=byId(S.conversations||[],id);if(!cv)return;const o={...cv,...patch};delete o.id;db.local('conversations',id,o)}
+async function sendMsg(){const cv=byId(S.conversations||[],S.convId);const ta=$('#cmpIn');if(!cv||!ta)return;const text=ta.value.trim();if(!text){ta.focus();return}
+  const tmp='tmp_'+uid(),at=nowISO();MSG.draft[cv.id]='';ta.value='';db.local('messages',tmp,{convId:cv.id,dir:'out',type:'text',text,at,status:'sending',by:S.me});
+  try{const r=await api('POST','/api/whatsapp/send',{convId:cv.id,text});db.localDel('messages',tmp);db.local('messages',r.id||tmp,{convId:cv.id,dir:'out',type:'text',text,at,status:'sent',by:S.me});setConv(cv.id,{lastAt:at,lastText:text,lastDir:'out'});MSG.closed[cv.id]=false;db.kick()}
+  catch(e){db.localDel('messages',tmp);MSG.draft[cv.id]=text;
+    if(e.code==='window_closed'||e.status===409){MSG.closed[cv.id]=true;toast('Fenêtre de 24 h fermée : envoyez le modèle approuvé.')}
+    else if(e.code==='whatsapp_off'||e.status===503)toast('WhatsApp n’est pas encore relié au serveur.');
+    else if(e.code==='offline')toast('Hors ligne : message non envoyé, il reste dans la zone de saisie.');else toast(e.message||'Envoi impossible pour l’instant.');render()}}
+async function sendTpl(){const cv=byId(S.conversations||[],S.convId);if(!cv)return;const L=convLang(cv);const tmp='tmp_'+uid(),at=nowISO();const label='Modèle de reprise de contact';
+  db.local('messages',tmp,{convId:cv.id,dir:'out',type:'template',text:label,at,status:'sending',by:S.me});
+  try{const r=await api('POST','/api/whatsapp/send',{convId:cv.id,template:{name:WA_TPL,lang:TPL_LANG[L]||'en',params:[qrName(cv)||'']}});db.localDel('messages',tmp);db.local('messages',r.id||tmp,{convId:cv.id,dir:'out',type:'template',text:label,at,status:'sent',by:S.me});setConv(cv.id,{lastAt:at,lastText:label,lastDir:'out'});MSG.tpl[cv.id]=true;toast('Modèle envoyé. Vous pourrez écrire librement dès la réponse du client.');db.kick()}
+  catch(e){db.localDel('messages',tmp);toast(e.code==='offline'?'Hors ligne : modèle non envoyé.':e.status===503?'WhatsApp n’est pas encore relié au serveur.':(e.message||'Envoi du modèle impossible.'))}}
+function insertCmp(text){const ta=$('#cmpIn');if(!ta)return;const cur=ta.value.trim();ta.value=cur?cur+(/[.!?…。؟]$/.test(cur)?' ':'\n')+text:text;MSG.draft[S.convId]=ta.value;autoGrow(ta);ta.focus();try{ta.setSelectionRange(ta.value.length,ta.value.length)}catch(_){}}
+function aiPatch(cv,d){const f=cv.aiFields||{};const p={};
+  if(f.service){const s=services().find(s=>s.id===f.service||norm(s.nom)===norm(f.service));if(s)p.service=s.id}
+  if(f.vehicule){const q=norm(f.vehicule);const v=vehicles().filter(v=>!v._demo).find(v=>{const n=norm(v.nom);return n&&(q.includes(n)||n.includes(q))});if(v)p.vehiculeId=v.id}
+  if(parse(f.debut))p.debut=toLocal(parse(f.debut));if(parse(f.fin))p.fin=toLocal(parse(f.fin));
+  if(f.lieu)p.lieu=f.lieu;if(+f.budget&&!(+d.montant))p.montant=+f.budget;
+  const extra=[f.passagers?`Passagers : ${f.passagers}`:'',f.urgence?`Urgence : ${f.urgence}`:''].filter(Boolean).join(' · ');
+  if(extra&&!String(d.notes||'').includes(extra))p.notes=[d.notes,extra].filter(Boolean).join('\n');
+  return p}
+async function convClientEnsure(cv){const c=convClient(cv);if(c)return c;const L=convLang(cv);
+  const id=await save('clients',{...blank('client'),nom:cv.nom||fmtPhone(cv.id),tel:fmtPhone(cv.id),canal:'WhatsApp',langue:LANGUES.includes(L)?L:'FR',statut:'prospect',responsable:S.me||'amel'});return byId(S.clients,id)||{id}}
+async function cvMission(apply){const cv=byId(S.conversations||[],S.convId);if(!cv)return;const m=convMission(cv);
+  if(m){openDrawer('mission',m.id,'main');if(apply){Object.assign(DR.draft,aiPatch(cv,DR.draft));drawRender();toast('Analyse appliquée : vérifiez puis enregistrez.')}return}
+  const c=await convClientEnsure(cv);const last=String((convMsgs(cv.id).filter(x=>x.dir==='in').pop()||{}).text||cv.lastText||'').replace(/\s+/g,' ').trim();
+  const base={titre:'WhatsApp — '+(last?(last.length>46?last.slice(0,45)+'…':last):convName(cv)),clientId:c.id,convId:cv.id,source:'whatsapp',responsable:S.me||'amel',notes:cv.aiSummary?'Résumé : '+cv.aiSummary:''};
+  openDrawer('mission',null,'main',{...base,...aiPatch(cv,{...blank('mission'),...base})});
+  if(cv.aiFields&&Object.keys(cv.aiFields).length)toast('Demande pré-remplie par le Majordome : vérifiez puis enregistrez.')}
+
+/* ---------- Réglages (réponse automatique WhatsApp) ---------- */
+const RG_LANGS=['FR','EN','AR','ES','RU'];
+const RG_DEF={autoReply:true,horaires:{debut:'09:00',fin:'21:00'},fuseau:'Europe/Paris',textes:{
+  FR:{jour:'Bonjour {prenom}, merci pour votre message. Un membre de l’équipe Amane vous répond dans quelques minutes.',nuit:'Bonsoir {prenom}, merci pour votre message. Notre équipe vous répondra dès 9 h ; en cas d’urgence, indiquez-le simplement ici.'},
+  EN:{jour:'Hello {prenom}, thank you for your message. A member of the Amane team will reply within a few minutes.',nuit:'Good evening {prenom}, thank you for your message. Our team will reply from 9 am; if it is urgent, simply let us know here.'},
+  AR:{jour:'مرحباً {prenom}، شكراً لرسالتكم. سيرد عليكم أحد أعضاء فريق Amane خلال دقائق.',nuit:'مساء الخير {prenom}، شكراً لرسالتكم. سيرد عليكم فريقنا ابتداءً من الساعة التاسعة صباحاً، وفي حال الاستعجال يُرجى إعلامنا هنا.'},
+  ES:{jour:'Hola {prenom}, gracias por su mensaje. Un miembro del equipo Amane le responderá en unos minutos.',nuit:'Buenas noches {prenom}, gracias por su mensaje. Nuestro equipo le responderá a partir de las 9 h; si es urgente, indíquenoslo aquí.'},
+  RU:{jour:'Здравствуйте, {prenom}! Благодарим за ваше сообщение. Сотрудник Amane ответит вам в течение нескольких минут.',nuit:'Добрый вечер, {prenom}! Благодарим за ваше сообщение. Наша команда ответит вам с 9:00; если вопрос срочный, просто напишите об этом здесь.'}}};
+const RG={draft:null,lang:'FR',dirty:false};
+function rgCurrent(){const d=byId(S.reglages||[],'general')||{};const r=JSON.parse(JSON.stringify(RG_DEF));if(typeof d.autoReply==='boolean')r.autoReply=d.autoReply;if(d.horaires)Object.assign(r.horaires,d.horaires);if(d.fuseau)r.fuseau=d.fuseau;
+  Object.entries(d.textes||{}).forEach(([L,t])=>{r.textes[L]={...(r.textes[L]||{}),...Object.fromEntries(Object.entries(t||{}).filter(([,v])=>v))}});return r}
+function rgPreview(){const r=RG.draft,L=RG.lang,t=r.textes[L]||{};const nm={AR:'سارة',RU:'Анна'}[L]||'Sophie';const now=new Date();const hm=pad(now.getHours())+':'+pad(now.getMinutes());const jour=hm>=r.horaires.debut&&hm<r.horaires.fin;
+  const b=k=>`<div class="bub out" style="max-width:94%"><div dir="auto">${esc(String(t[k]||'').replace(/\{prenom\}/g,nm))}</div></div>`;
+  return `<div class="pv-ph"><div class="cap">Ouvert · ${esc(r.horaires.debut)} – ${esc(r.horaires.fin)}${jour?' · maintenant':''}</div>${b('jour')}<div class="cap">Fermé${jour?'':' · maintenant'}</div>${b('nuit')}${r.autoReply?'':'<div class="cap" style="color:var(--warn)">Réponse automatique désactivée</div>'}</div>`}
+function vReglages(){if(!RG.draft||!RG.dirty)RG.draft=rgCurrent();const r=RG.draft,L=RG.lang;const exists=!!byId(S.reglages||[],'general');const h=SV.health||{};const me=teamOf(S.me);const st=db&&db.state?db.state():{};
+  const yn=(v,a,b)=>v===true?`<b style="color:var(--ok)">${a}</b>`:v===false?`<b style="color:var(--warn)">${b}</b>`:'<b>—</b>';
+  return `<div class="view-h"><div><div class="label">Serveur Amane</div><h2>Réglages</h2></div><div class="tools"><button class="btn sm primary" type="button" data-act="rg-save" ${RG.dirty?'':'disabled'}>${ico('check')}Enregistrer</button></div></div>
+  <div class="rg"><div class="stack">
+    <div class="glass panel"><div class="panel-h"><h2>Réponse automatique</h2><span class="sub">WhatsApp</span></div>
+      <div class="rg-row"><span><b>Répondre automatiquement</b><span class="h">Au premier message d’un client, si personne ne lui a écrit depuis 12 h. Jamais de prix ni d’engagement.</span></span><label class="tog"><input type="checkbox" id="rgAuto" data-rg="autoReply" ${r.autoReply?'checked':''} aria-label="Réponse automatique"><span></span></label></div>
+      <div class="fg"><div class="f"><label for="rgDeb">Ouverture</label><input id="rgDeb" type="time" data-rg="horaires.debut" value="${esc(r.horaires.debut)}"></div><div class="f"><label for="rgFin">Fermeture</label><input id="rgFin" type="time" data-rg="horaires.fin" value="${esc(r.horaires.fin)}"></div></div>
+      <p class="muted-s">Entre l’ouverture et la fermeture, le texte « ouvert » part ; en dehors, le texte « fermé ». Fuseau : ${esc(r.fuseau||'Europe/Paris')}.${exists?'':' Valeurs par défaut affichées : rien n’est encore enregistré.'}</p></div>
+    <div class="glass panel"><div class="panel-h"><h2>Textes</h2><span class="sub">{prenom} = prénom du client</span></div>
+      <div class="seg wrap" role="group" aria-label="Langue" style="margin-bottom:14px">${RG_LANGS.map(x=>`<button type="button" data-rglang="${x}" aria-pressed="${L===x}">${x}</button>`).join('')}</div>
+      <div class="fg">${['jour','nuit'].map(k=>`<div class="f full"><label for="rgT_${k}">${k==='jour'?'Heures d’ouverture':'En dehors des heures d’ouverture'} · ${L}</label><textarea id="rgT_${k}" dir="auto" data-rg="textes.${L}.${k}">${esc((r.textes[L]||{})[k]||'')}</textarea></div>`).join('')}</div>
+      <div style="margin-top:12px"><button class="btn sm ghost" type="button" data-act="rg-reset">Revenir aux textes par défaut (${L})</button></div></div>
+  </div><div class="stack">
+    <div class="glass panel"><div class="panel-h"><h2>Aperçu</h2><span class="sub">${L} · tel que le client le reçoit</span></div><div id="rgPrev">${rgPreview()}</div></div>
+    <div class="glass panel"><div class="panel-h"><h2>Serveur</h2><span class="sub">${esc(h.version?'version '+h.version:'')}</span></div>
+      <div class="stat"><span>Base de données</span>${yn(h.db===undefined?undefined:!!h.db,'Connectée','Indisponible')}</div><div class="stat"><span>WhatsApp</span>${yn(h.whatsapp===undefined?undefined:!!h.whatsapp,'Actif','Non configuré')}</div><div class="stat"><span>Majordome (IA)</span>${yn(h.ia===undefined?undefined:!!h.ia,'Actif','Non configuré')}</div><div class="stat"><span>Synchronisation</span><b>${st.offline?'Hors ligne':st.pending?st.pending+' en attente':'À jour'}</b></div></div>
+    <div class="glass panel"><div class="panel-h"><h2>Votre compte</h2></div><div class="sh-user" style="border:0;padding:0 0 12px">${me?av(me.id):''}<span><b>${me?esc(me.nom):''}</b><span class="r">${me?esc(me.role):''}</span></span><button class="btn sm" type="button" data-act="logout">${ico('logout')}Se déconnecter</button></div>
+      <p class="muted-s">Installer sur le téléphone : sur iPhone, bouton Partager puis « Sur l’écran d’accueil » ; sur Android, menu ⋮ puis « Installer l’application ».</p></div>
+  </div></div>`}
+function rgInput(el){const k=el.dataset.rg;setK(RG.draft,k,el.type==='checkbox'?el.checked:el.value);RG.dirty=true;const p=$('#rgPrev');if(p)p.innerHTML=rgPreview();const b=document.querySelector('[data-act="rg-save"]');if(b)b.disabled=false}
+async function rgSave(){const base=byId(S.reglages||[],'general')||{};const o={...JSON.parse(JSON.stringify(base)),...JSON.parse(JSON.stringify(RG.draft)),id:'general'};delete o.updatedBy;
+  try{await save('reglages',o);RG.dirty=false;toast('Réglages enregistrés');render()}catch(e){}}
 
 /* ---------- Tiroir (fiches) ---------- */
 const DR={open:false,kind:null,id:null,tab:'main',draft:null,confirmDel:false,refresh(){drawRender()}};
@@ -1727,7 +1941,7 @@ function drawRender(){
   const d=DR.draft;const k=DR.kind;const isNew=!DR.id;const demo=!!d._demo;let title='',eyebrow='',tabs=[],body='',foot='';
   if(k==='mission'){
     eyebrow=isNew?'Nouvelle demande':`${label(STATUTS,d.statut)} · ${svcName(d.service)}`;title=d.titre||'Demande sans titre';
-    const nT=(d.taches||[]).filter(x=>!x.fait).length;tabs=[['main','Demande'],['devis','Devis & facture'],['prog','Programme'],['taches','Tâches'+(nT?' ('+nT+')':'')],['contrat','Contrat & dossier'],['ia','Message client']];
+    const nT=(d.taches||[]).filter(x=>!x.fait).length;tabs=[['main','Demande'],['devis','Devis & facture'],['prog','Programme'],['taches','Tâches'+(nT?' ('+nT+')':'')],['contrat','Contrat & dossier'],['ia','Message client']];if(S.mode==='server'&&!isNew)tabs.push(['act','Historique']);
     const cl=clashes(d,list('missions'));
     if(DR.tab==='main')body=`<div class="fg">
       ${fld('titre','Titre',d.titre,'text',{full:1,ph:'Ex. G 63 — anniversaire de mariage'})}
@@ -1751,10 +1965,11 @@ function drawRender(){
     if(DR.tab==='devis')body=tabDevis(d);
     if(DR.tab==='prog')body=tabProg(d);
     if(DR.tab==='taches')body=tabTaches(d);
+    if(DR.tab==='act')body=`<p class="muted-s" style="margin:0">Qui a modifié cette demande, et quand.</p>${actHTML(DR.id)}`;
     if(DR.tab==='ia'){const c=byId(list('clients'),d.clientId);body=`<div class="note-box">Le majordome rédige un message pour ${esc(c?c.nom:'le client')} dans sa langue (${esc(c&&c.langue||'FR')}), au ton Amane : vouvoiement, sobriété, un seul interlocuteur.</div>
       <div class="seg" role="group" aria-label="Type de message">${[['proposition','Proposition'],['confirmation','Confirmation'],['relance','Relance'],['merci','Remerciement']].map(([x,l])=>`<button type="button" data-aitype="${x}" aria-pressed="${(DR.aiType||'proposition')===x}">${l}</button>`).join('')}</div>
       <div class="f full"><label for="aiOut">Message</label><textarea id="aiOut" style="min-height:220px">${esc(DR.ai||'')}</textarea></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" type="button" data-act="ai-write" ${sampleFn?'':'disabled title="Disponible dans claude.ai"'}>${ico('spark')}Rédiger</button><button class="btn sm" type="button" data-act="ai-copy">${ico('copy')}Copier</button></div>`}
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" type="button" data-act="ai-write" ${sampleFn?'':naAttr()}>${ico('spark')}Rédiger</button><button class="btn sm" type="button" data-act="ai-copy">${ico('copy')}Copier</button></div>`}
   }
   if(k==='client'){
     eyebrow=isNew?'Nouveau client':label(CLIENT_STATUTS,d.statut);title=d.nom||'Client sans nom';tabs=[['main','Fiche'],['hist','Historique']];
@@ -1763,7 +1978,7 @@ function drawRender(){
       ${fld('statut','Statut',d.statut,'select',{opts:opt(CLIENT_STATUTS,d.statut)})}${fld('responsable','Interlocuteur',d.responsable,'select',{opts:opt(TEAM.map(t=>({id:t.id,label:t.nom})),d.responsable)})}${fld('naissance','Date de naissance',d.naissance,'date')}${fld('nationalite','Nationalité',d.nationalite)}<div class="f full"><span class="lab">Documents reçus</span><div class="checks">${[['passeport','Passeport'],['permis','Permis'],['domicile','Justificatif de domicile']].map(([x,l])=>`<label><input type="checkbox" data-k="docs.${x}" ${(d.docs||{})[x]?'checked':''}>${l}</label>`).join('')}</div></div><div class="f full"><span class="lab">Étiquettes</span><div class="checks">${CLIENT_TAGS.map(([x,l])=>`<label><input type="checkbox" data-k="tags.${x}" ${(d.tags||{})[x]?'checked':''}>${l}</label>`).join('')}</div></div>
       ${fld('prefs','Goûts et préférences',d.prefs,'textarea',{full:1})}${fld('notes','Notes internes',d.notes,'textarea',{full:1})}</div>`;
     if(DR.tab==='hist'){const ms=list('missions').filter(m=>m.clientId===DR.id).sort((a,b)=>(parse(b.debut)||0)-(parse(a.debut)||0));const ca=ms.filter(m=>ACTIVE.includes(m.statut)).reduce((s,m)=>s+(+m.montant||0),0);
-      body=`<div class="kv"><div><span>Chiffre total</span><b>${fmtE(ca)}</b></div><div><span>Missions</span><b>${ms.length}</b></div></div><div class="hist">${ms.map(m=>`<button type="button" data-open="mission:${m.id}"><span>${esc(m.titre)}<div class="sub-t" style="font-size:12px;color:var(--fg-3)">${fmtDay(parse(m.debut))}</div></span><span>${chip(m.statut)}</span></button>`).join('')||'<div class="empty">Aucune mission.</div>'}</div>${!isNew?`<button class="btn sm primary" type="button" data-act="new-mission-for">${ico('plus')}Nouvelle demande pour ce client</button>`:''}`}
+      body=`<div class="kv"><div><span>Chiffre total</span><b>${fmtE(ca)}</b></div><div><span>Missions</span><b>${ms.length}</b></div></div><div class="hist">${ms.map(m=>`<button type="button" data-open="mission:${m.id}"><span>${esc(m.titre)}<div class="sub-t" style="font-size:12px;color:var(--fg-3)">${fmtDay(parse(m.debut))}</div></span><span>${chip(m.statut)}</span></button>`).join('')||'<div class="empty">Aucune mission.</div>'}</div>${!isNew?`<button class="btn sm primary" type="button" data-act="new-mission-for">${ico('plus')}Nouvelle demande pour ce client</button>`:''}${S.mode==='server'&&!isNew?`<div class="sec-t">Modifications de la fiche</div>${actHTML(DR.id)}`:''}`}
   }
   if(k==='vehicule'){
     eyebrow=isNew?'Nouveau véhicule':nowLine(d);title=d.nom||'Véhicule';tabs=isNew?[['main','Fiche']]:[['main','Fiche'],['photos','Photos'+((d.photos||[]).length?' ('+d.photos.length+')':'')],['dispo','Disponibilités'],['journal','Journal'+((d.journal||[]).length?' ('+d.journal.length+')':'')]];
@@ -1786,11 +2001,21 @@ function drawRender(){
   }
   const canDel=!isNew&&!demo&&!(k==='service'&&!S.services.length);
   const del=canDel?(DR.confirmDel?`<span class="confirm">Supprimer définitivement ? <button class="btn sm danger" type="button" data-act="del-yes">Oui, supprimer</button><button class="btn sm ghost" type="button" data-act="del-no">Annuler</button></span>`:`<button class="btn sm ghost danger" type="button" data-act="del">Supprimer</button>`):'';
-  $('#drawer').innerHTML=`<div class="dr-h"><div style="min-width:0"><div class="label">${esc(eyebrow)}${demo?' · Exemple':''}</div><h2 id="drTitle">${esc(title)}</h2></div><button class="x" type="button" data-act="close" aria-label="Fermer">${ico('close')}</button></div>
+  const ctc=drContact();
+  $('#drawer').innerHTML=`<div class="dr-h"><div style="min-width:0"><div class="label">${esc(eyebrow)}${demo?' · Exemple':''}</div><h2 id="drTitle">${esc(title)}</h2></div><button class="x" type="button" data-act="close" aria-label="Fermer">${ico('close')}</button></div>${ctc?`<div class="dr-c"><div class="ctc" role="group" aria-label="Contacter">${ctc}</div></div>`:''}
     ${tabs.length>1?`<div class="tabs" role="tablist">${tabs.map(([t,l])=>`<button type="button" role="tab" data-tab="${t}" aria-selected="${DR.tab===t}">${l}</button>`).join('')}</div>`:''}
     <div class="dr-b">${demo?'<div class="note-box">Fiche d’exemple, en lecture seule.</div>':''}${body}</div>
     <div class="dr-f">${del}${foot}<span class="grow"></span><button class="btn sm ghost" type="button" data-act="close">Fermer</button><button class="btn sm primary" type="button" data-act="save" ${demo?'disabled':''}>Enregistrer</button></div>`;
 }
+function drContact(){const d=DR.draft,k=DR.kind;if(!d)return '';
+  if(k==='client')return DR.id?ctBtns({tel:d.tel,email:d.email,lieu:d.hotel,wa:helloTxt(d)})+convBtn(convByClient({...d,id:DR.id})):'';
+  if(k==='partenaire')return DR.id?ctBtns({tel:d.tel,email:d.email,lieu:d.adresse,wa:'Bonjour '+String(d.contact||d.nom||'').trim()+', '}):'';
+  if(k==='mission'){const c=clientOf(d)||{};const ch=byId(partners(),d.chauffeurId);const a=parse(d.debut);
+    let h=ctBtns({tel:c.tel,email:c.email,lieu:d.lieu,wa:helloTxt(c)});
+    if(ch&&normTel(ch.tel))h+=ctBtns({tel:ch.tel,telLabel:'Chauffeur',waLabel:'WhatsApp chauffeur',noSms:1,k:'-ch',wa:`Bonjour ${ch.nom}, mission « ${d.titre||svcName(d.service)} »${a?' le '+fmtDT(a):''}${d.lieu?', prise en charge : '+d.lieu:''}${c.nom?'. Client : '+c.nom:''}.`});
+    return h+convBtn(convByClient(c)||(d.convId&&byId(S.conversations||[],d.convId)))}
+  return ''}
+function convBtn(cv){return cv?`<button class="ct" type="button" data-conv="${esc(cv.id)}">${ico('messages')}Conversation${+cv.unread?` <span class="ub">${+cv.unread}</span>`:''}</button>`:''}
 function readForm(){
   document.querySelectorAll('#drawer [data-k]').forEach(el=>{const k=el.dataset.k;let v=el.type==='checkbox'?el.checked:el.value;if(el.type==='number')v=el.value===''?'':+el.value;setK(DR.draft,k,v)});
 }
@@ -1839,7 +2064,7 @@ function mjRender(){
   const r=MJ.res;
   $('#mjBody').innerHTML=`<div class="mj-h"><span class="orb ${MJ.busy?'busy':''}"></span><div><h2 id="mjTitle">Majordome</h2><div style="color:var(--fg-3);font-size:13px">Collez un message reçu (WhatsApp, e-mail, Instagram). Il en tire la fiche client, la demande et un brouillon de réponse.</div></div><button class="btn sm ghost" type="button" data-act="mj-close" style="margin-left:auto" aria-label="Fermer">${ico('close')}</button></div>
   <div class="f"><label for="mjIn">Message reçu</label><textarea id="mjIn" style="min-height:130px" placeholder="Ex. Bonjour, je serai à Paris du 12 au 15 avec ma famille au Plaza, nous aimerions un van avec chauffeur et un G 63 pour le samedi soir…">${esc(MJ.text)}</textarea></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" type="button" data-act="mj-run" ${sampleFn&&!MJ.busy?'':'disabled'}>${ico('spark')}${MJ.busy?'Analyse en cours…':'Analyser'}</button>${sampleFn?'':'<span style="color:var(--fg-3);font-size:12.5px;align-self:center">Disponible quand la page est ouverte dans claude.ai.</span>'}</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" type="button" data-act="mj-run" ${sampleFn&&!MJ.busy?'':'disabled'}>${ico('spark')}${MJ.busy?'Analyse en cours…':'Analyser'}</button>${sampleFn?'':`<span style="color:var(--fg-3);font-size:12.5px;align-self:center">${S.mode==='server'?'Le Majordome n’est pas activé sur le serveur (clé IA absente).':'Disponible quand la page est ouverte dans claude.ai.'}</span>`}</div>
   ${MJ.err?`<div class="warn-box">${ico('alert')}<span>${esc(MJ.err)}</span></div>`:''}
   ${r?`<div class="mj-res"><div class="glass"><div class="label">Client</div><dl>${[['Nom',r.client.nom],['Téléphone',r.client.tel],['E-mail',r.client.email],['Langue',r.client.langue],['Pays',r.client.pays],['Hôtel',r.client.hotel]].filter(x=>x[1]).map(([a,b])=>`<dt>${a}</dt><dd>${esc(b)}</dd>`).join('')}</dl></div>
     <div class="glass"><div class="label">Demande</div><dl>${[['Titre',r.mission.titre],['Service',svcName(r.mission.service)],['Véhicule',r.mission.vehicule],['Début',r.mission.debut&&fmtDT(parse(r.mission.debut))],['Fin',r.mission.fin&&fmtDT(parse(r.mission.fin))],['Lieu',r.mission.lieu],['Budget',r.mission.budget&&fmtE(r.mission.budget)],['Urgence',r.priorite]].filter(x=>x[1]).map(([a,b])=>`<dt>${a}</dt><dd>${esc(b)}</dd>`).join('')}</dl></div></div>
@@ -1858,7 +2083,7 @@ Règles : n'invente aucune information absente du message (laisse vide). Dates r
 Message client :
 """${MJ.text}"""`;
   try{const r=await sampleFn.json(prompt,{modelTier:'default'});MJ.res={client:r.client||{},mission:r.mission||{},priorite:r.priorite||'',reponse:r.reponse||''}}
-  catch(e){MJ.err=e&&e.code==='not_granted'?'Le majordome n’est pas autorisé sur cette page.':e&&e.code==='rate_limited'?'Trop de demandes : réessayez dans une minute.':'Analyse impossible. Réessayez avec un message plus court.'}
+  catch(e){MJ.err=e&&e.code==='ia_off'?'Le Majordome n’est pas activé sur le serveur (clé IA absente).':e&&e.code==='offline'?'Hors ligne : le Majordome a besoin de la connexion.':e&&e.code==='not_granted'?'Le majordome n’est pas autorisé sur cette page.':e&&e.code==='rate_limited'?'Trop de demandes : réessayez dans une minute.':'Analyse impossible. Réessayez avec un message plus court.'}
   MJ.busy=false;mjRender();
 }
 async function mjCreate(){
@@ -1890,7 +2115,7 @@ const PAL={items:[],i:0};
 function openPal(){$('#pal').hidden=false;const inp=$('#palIn');inp.value='';palBuild('');inp.focus()}
 function palBuild(q){
   q=q.toLowerCase().trim();const it=[];
-  const acts=[['act','new-mission','Nouvelle demande','plus'],['act','mj','Ouvrir le majordome','spark'],['act','new-client','Nouveau client','user'],['act','new-partenaire','Nouveau partenaire','carnet'],['act','new-vehicule','Ajouter un véhicule','flotte'],...ROUTES.map(([k,l])=>['route',k,'Aller à '+l,k])];
+  const acts=[['act','new-mission','Nouvelle demande','plus'],['act','mj','Ouvrir le majordome','spark'],['act','new-client','Nouveau client','user'],['act','new-partenaire','Nouveau partenaire','carnet'],['act','new-vehicule','Ajouter un véhicule','flotte'],...visibleRoutes().map(([k,l])=>['route',k,'Aller à '+l,k]),...(S.mode==='server'?[['act','logout','Se déconnecter','logout']]:[])];
   acts.forEach(([t,v,l,ic])=>{if(!q||l.toLowerCase().includes(q))it.push({g:'Actions',t,v,l,ic,k:''})});
   if(q){list('clients').filter(c=>[c.nom,c.tel,c.email,c.hotel].join(' ').toLowerCase().includes(q)).slice(0,6).forEach(c=>it.push({g:'Clients',t:'open',v:'client:'+c.id,l:c.nom,ic:'user',k:label(CLIENT_STATUTS,c.statut)}));
     list('missions').filter(m=>[m.titre,m.lieu,(clientOf(m)||{}).nom].join(' ').toLowerCase().includes(q)).slice(0,6).forEach(m=>it.push({g:'Demandes',t:'open',v:'mission:'+m.id,l:m.titre,ic:SVC_ICON[m.service]||'spark',k:label(STATUTS,m.statut)}));
@@ -1902,11 +2127,12 @@ function palRender(){let g='';$('#palList').innerHTML=PAL.items.map((x,i)=>{cons
 function palGo(i){const x=PAL.items[i];if(!x)return;$('#pal').hidden=true;if(x.t==='route')go(x.v);else if(x.t==='open'){const [k,id]=x.v.split(':');openDrawer(k,id)}else act(x.v)}
 
 /* ---------- Qui suis-je ---------- */
-function openWho(){$('#whoM').hidden=false;$('#whoBody').innerHTML=`<div class="mj-h"><div><h2 id="whoTitle">Qui êtes-vous ?</h2><div style="color:var(--fg-3);font-size:13px">Le salon s’adapte : vos tâches, vos demandes, votre prénom. Retenu sur cet appareil.</div></div></div><div style="display:grid;gap:10px">${TEAM.map(t=>`<button class="glass lit pal-it" type="button" data-who="${t.id}" style="padding:14px;box-shadow:none">${av(t.id)}<span><b style="font-weight:500">${t.nom}</b><div style="font-size:12.5px;color:var(--fg-3)">${t.role}</div></span>${S.me===t.id?'<span class="k">actuel</span>':''}</button>`).join('')}</div>`}
+function openWho(){if(S.mode==='server'||S.mode==='login'){openPlus();return}$('#whoM').hidden=false;$('#whoBody').innerHTML=`<div class="mj-h"><div><h2 id="whoTitle">Qui êtes-vous ?</h2><div style="color:var(--fg-3);font-size:13px">Le salon s’adapte : vos tâches, vos demandes, votre prénom. Retenu sur cet appareil.</div></div></div><div style="display:grid;gap:10px">${TEAM.map(t=>`<button class="glass lit pal-it" type="button" data-who="${t.id}" style="padding:14px;box-shadow:none">${av(t.id)}<span><b style="font-weight:500">${t.nom}</b><div style="font-size:12.5px;color:var(--fg-3)">${t.role}</div></span>${S.me===t.id?'<span class="k">actuel</span>':''}</button>`).join('')}</div>`}
 
 /* ---------- Navigation & événements ---------- */
-function go(r){if(!ROUTES.some(x=>x[0]===r))r='salon';S.route=r;if(location.hash!=='#'+r)location.hash=r;render();window.scrollTo({top:0})}
-window.addEventListener('hashchange',()=>{const r=location.hash.slice(1);if(r&&r!==S.route&&ROUTES.some(x=>x[0]===r)){S.route=r;render()}});
+function go(r){if(!routeOK(r))r='salon';S.route=r;$('#plusM').hidden=true;if(r==='messages'&&isM())S.convId=null;const h=r==='messages'&&S.convId?'messages/'+encodeURIComponent(S.convId):r;if(location.hash!=='#'+h)location.hash=h;render();window.scrollTo({top:0})}
+window.addEventListener('hashchange',()=>{const [r,sub]=location.hash.slice(1).split('/');if(!r||!routeOK(r))return;const cid=r==='messages'?(sub?decodeURIComponent(sub):null):S.convId;
+  if(r!==S.route||cid!==S.convId){const nr=r!==S.route;S.route=r;if(r==='messages'){if(cid&&cid!==S.convId)markRead(cid);S.convId=cid;if(!cid)MSG.pushed=false}render();if(nr)window.scrollTo({top:0})}});
 function act(a){
   if(a==='new-mission')openDrawer('mission');
   else if(a==='new-client')openDrawer('client');
@@ -1916,21 +2142,43 @@ function act(a){
   else if(a==='mj')openMj();
 }
 document.addEventListener('click',async e=>{
-  const t=e.target.closest('[data-pt],[data-fm],[data-move],[data-route],[data-open],[data-act],[data-tab],[data-week],[data-todo],[data-f-mine],[data-pi],[data-who],[data-aitype]');if(!t)return;
-  if(t.dataset.route){go(t.dataset.route);return}
+  if(e.target.closest('a[href]'))return;
+  const t=e.target.closest('[data-pt],[data-fm],[data-move],[data-route],[data-open],[data-act],[data-tab],[data-week],[data-todo],[data-f-mine],[data-pi],[data-who],[data-aitype],[data-conv],[data-qr],[data-rglang],[data-lst],[data-dview],[data-pview]');if(!t||t.closest('#login'))return;
+  if(t.dataset.route){if(t.dataset.route==='messages'&&t.closest('.rail,.tabbar,#plusM'))S.convId=isM()?null:S.convId;go(t.dataset.route);return}
+  if(t.dataset.conv){openConv(t.dataset.conv);return}
+  if(t.dataset.qr!==undefined){const cv=byId(S.conversations||[],S.convId);if(cv){const L=convLang(cv);const f=(QR[L]||QR.EN)[+t.dataset.qr];if(f)insertCmp(f(qrName(cv)))}return}
+  if(t.dataset.rglang){readRg();RG.lang=t.dataset.rglang;render();return}
+  if(t.dataset.lst){S.filters.lst=t.dataset.lst;render();return}
+  if(t.dataset.dview){S.filters.dview=t.dataset.dview;render();return}
+  if(t.dataset.pview){S.filters.pview=t.dataset.pview;render();return}
   if(t.dataset.pt!==undefined){S.filters.pt=t.dataset.pt;render();return}
   if(t.dataset.fm!==undefined){const f=+t.dataset.fm;S.filters.fm=f===0?0:(S.filters.fm||0)+f;render();return}
   if(t.dataset.move){const [mid,dir]=t.dataset.move.split(':');const m=byId(list('missions'),mid);if(m){const i=STATUTS.findIndex(x=>x.id===m.statut)+(+dir);if(i>=0&&i<STATUTS.length)moveMission(mid,STATUTS[i].id)}return}
-  if(t.dataset.open){if(t.classList.contains('card')&&DRAG.suppress)return;const [k,id,tab]=t.dataset.open.split(':');if(DR.open&&k!==DR.kind)readForm();openDrawer(k,id,tab);return}
+  if(t.dataset.open){if(t.classList.contains('card')&&DRAG.suppress)return;if(t.classList.contains('lcard')&&SWP.suppress)return;$('#plusM').hidden=true;const [k,id,tab]=t.dataset.open.split(':');if(DR.open&&k!==DR.kind)readForm();openDrawer(k,id,tab);return}
   if(t.dataset.tab){readForm();DR.tab=t.dataset.tab;drawRender();return}
   if(t.dataset.week){const w=+t.dataset.week;S.filters.week=w===0?0:S.filters.week+w;render();return}
-  if(t.dataset.todo){S.filters.todo=t.dataset.todo;render();return}
+  if(t.dataset.todo){S.filters.todo=t.dataset.todo;S.filters.todoAll=false;render();return}
   if(t.dataset.fMine){S.filters.mine=t.dataset.fMine==='1';render();return}
   if(t.dataset.pi){palGo(+t.dataset.pi);return}
   if(t.dataset.who){S.me=t.dataset.who;lsSet('amane.me',S.me);S.filters.todo='';$('#whoM').hidden=true;render();toast('Bienvenue, '+teamOf(S.me).nom);return}
   if(t.dataset.aitype){readForm();DR.aiType=t.dataset.aitype;DR.ai=($('#aiOut')||{}).value||DR.ai;drawRender();return}
   const a=t.dataset.act;
+  if(t.closest('#plusM')&&a!=='logout')$('#plusM').hidden=true;
   if(a==='close')closeDrawer();
+  else if(a==='plus')openPlus();
+  else if(a==='logout')logout();
+  else if(a==='pal')openPal();
+  else if(a==='copy')copyText(t.dataset.copy||'');
+  else if(a==='todo-all'){S.filters.todoAll=true;render()}
+  else if(a==='cv-back'){if(MSG.pushed){MSG.pushed=false;history.back()}else{S.convId=null;location.hash='messages';render()}}
+  else if(a==='cv-send')sendMsg();
+  else if(a==='cv-tpl')sendTpl();
+  else if(a==='cv-draft'){const cv=byId(S.conversations||[],S.convId);if(cv&&cv.aiDraft){const ta=$('#cmpIn');if(ta&&ta.value.trim()&&!confirm('Remplacer votre texte par le brouillon du Majordome ?'))return;if(ta)ta.value='';insertCmp(cv.aiDraft);toast('Brouillon inséré : relisez avant d’envoyer.')}}
+  else if(a==='cv-client'){const cv=byId(S.conversations||[],S.convId);if(cv){const c=convClient(cv);if(c)openDrawer('client',c.id);else{const L=convLang(cv);openDrawer('client',null,'main',{nom:cv.nom||'',tel:fmtPhone(cv.id),canal:'WhatsApp',langue:LANGUES.includes(L)?L:'FR'})}}}
+  else if(a==='cv-mission')cvMission(false);
+  else if(a==='cv-apply')cvMission(true);
+  else if(a==='rg-save')rgSave();
+  else if(a==='rg-reset'){readRg();RG.draft.textes[RG.lang]=JSON.parse(JSON.stringify(RG_DEF.textes[RG.lang]||{jour:'',nuit:''}));RG.dirty=true;render()}
   else if(a==='save')saveDrawer();
   else if(a==='del'){DR.confirmDel=true;readForm();drawRender()}
   else if(a==='del-no'){DR.confirmDel=false;drawRender()}
@@ -1967,23 +2215,28 @@ document.addEventListener('change',e=>{
   if(DR.open&&t.closest&&t.closest('#drawer')&&t.dataset&&t.dataset.k&&conciergeChange(t))return;
   if(t.id==='availFrom'||t.id==='availTo'){S.filters[t.id==='availFrom'?'from':'to']=t.value;if(!(parse(S.filters.to)>parse(S.filters.from)))S.filters.to=toLocal(new Date(+(parse(S.filters.from)||new Date())+864e5));render();return}
   if(t.dataset&&t.dataset.imp!=null){IMP.groups[+t.dataset.imp].target=t.value;impRender();return}
+  if(t.dataset&&t.dataset.rg!==undefined){rgInput(t);return}
   if(t.id==='fSvc'){S.filters.svc=t.value;render()}
   if(t.id==='f_clientId'&&t.value==='__new'){readForm();DR.draft.clientId='';const pm={...DR.draft};delete pm.id;openDrawer('client');DR.pendingMission=pm}
   else if(DR.open&&DR.kind==='mission'&&t.closest('#drawer')&&t.dataset.k&&['vehiculeId','debut','fin','montant','service','chauffeurId'].includes(t.dataset.k)){readForm();const h=document.getElementById('drHints');if(h)h.innerHTML=missionHints(DR.draft);const cs=document.getElementById('f_chauffeurId');if(cs)[...cs.options].forEach(o=>{const p=byId(partners(),o.value);if(p)o.textContent=p.nom+chSuffix(p,DR.draft)});const vs=document.getElementById('f_vehiculeId');if(vs)[...vs.options].forEach(o=>{const v=byId(vehicles(),o.value);if(v)o.textContent=v.nom+vehSuffix(v,DR.draft)})}
 });
+function readRg(){document.querySelectorAll('#view [data-rg]').forEach(el=>{if(RG.draft)setK(RG.draft,el.dataset.rg,el.type==='checkbox'?el.checked:el.value)})}
+document.addEventListener('input',e=>{const tg=e.target;if(tg.id==='cmpIn'){MSG.draft[S.convId]=tg.value;autoGrow(tg);return}if(tg.id==='cvQ'){MSG.q=tg.value;render();return}if(tg.dataset&&tg.dataset.rg!==undefined){rgInput(tg);return}});
 document.addEventListener('input',e=>{if(e.target.id==='fPQ'){S.filters.pq=e.target.value;const pos=e.target.selectionStart;render();const el=$('#fPQ');el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}return}if(e.target.id==='prOut'){DR.prog=e.target.value;const w=$('#prWa');if(w)w.href=waLink((clientOf(DR.draft)||{}).tel,DR.prog);return}if(e.target.id==='fQ'){S.filters.q=e.target.value;const pos=e.target.selectionStart;render();const el=$('#fQ');el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}if(e.target.id==='palIn')palBuild(e.target.value);if(e.target.id==='mjIn')MJ.text=e.target.value});
 document.addEventListener('keydown',e=>{
+  if(!$('#login').hidden){if(LG.step==='pin'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){if(/^\d$/.test(e.key)){e.preventDefault();const b=document.querySelector(`#login [data-key="${e.key}"]`);if(b){b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),120)}lgKey(e.key)}else if(e.key==='Backspace'){e.preventDefault();lgKey('del')}else if(e.key==='Enter'){e.preventDefault();lgKey('ok')}}return}
+  if(e.key==='Enter'&&e.target.id==='cmpIn'&&!e.shiftKey&&!isM()&&!e.isComposing){e.preventDefault();sendMsg();return}
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#pal').hidden?openPal():($('#pal').hidden=true);return}
-  if(e.key==='Escape'){if(!$('#pal').hidden)$('#pal').hidden=true;else if(!$('#mj').hidden)$('#mj').hidden=true;else if(!$('#whoM').hidden)$('#whoM').hidden=true;else if(!$('#imp').hidden){if(!IMP.busy)$('#imp').hidden=true}else if(DR.open)closeDrawer();return}
+  if(e.key==='Escape'){if(!$('#plusM').hidden)$('#plusM').hidden=true;else if(!$('#pal').hidden)$('#pal').hidden=true;else if(!$('#mj').hidden)$('#mj').hidden=true;else if(!$('#whoM').hidden)$('#whoM').hidden=true;else if(!$('#imp').hidden){if(!IMP.busy)$('#imp').hidden=true}else if(DR.open)closeDrawer();return}
   if(!$('#pal').hidden){if(e.key==='ArrowDown'){e.preventDefault();PAL.i=Math.min(PAL.items.length-1,PAL.i+1);palRender()}else if(e.key==='ArrowUp'){e.preventDefault();PAL.i=Math.max(0,PAL.i-1);palRender()}else if(e.key==='Enter'){e.preventDefault();palGo(PAL.i)}}
-  if(e.key==='Enter'&&e.target.classList&&e.target.classList.contains('card')){e.target.click()}
+  if(e.key==='Enter'&&e.target.matches&&e.target.matches('[role="button"][data-open]')){e.target.click()}
 });
-['pal','mj','whoM','imp'].forEach(id=>$('#'+id).addEventListener('click',e=>{if(e.target.id===id&&!(id==='imp'&&IMP.busy))$('#'+id).hidden=true}));
+['pal','mj','whoM','imp','plusM'].forEach(id=>$('#'+id).addEventListener('click',e=>{if(e.target.id===id&&!(id==='imp'&&IMP.busy))$('#'+id).hidden=true}));
 document.addEventListener('dragover',e=>{const z=e.target.closest&&e.target.closest('.drop');if(z){e.preventDefault();z.classList.add('over')}});
 document.addEventListener('dragleave',e=>{const z=e.target.closest&&e.target.closest('.drop');if(z&&!z.contains(e.relatedTarget))z.classList.remove('over')});
 document.addEventListener('drop',e=>{const z=e.target.closest&&e.target.closest('.drop');if(!z)return;e.preventDefault();z.classList.remove('over');addPhotos(e.dataTransfer.files)});
 $('#scrim').addEventListener('click',closeDrawer);
-$('#palBtn').addEventListener('click',openPal);$('#helpBtn').addEventListener('click',()=>go('aide'));$('#mjBtn').addEventListener('click',openMj);$('#newBtn').addEventListener('click',()=>openDrawer('mission'));$('#meBtn').addEventListener('click',openWho);
+$('#palBtn').addEventListener('click',openPal);$('#helpBtn').addEventListener('click',()=>go('aide'));$('#mjBtn').addEventListener('click',openMj);$('#newBtn').addEventListener('click',()=>openDrawer('mission'));$('#meBtn').addEventListener('click',()=>S.mode==='server'?openPlus():openWho());$('#fab').addEventListener('click',()=>openDrawer('mission'));
 document.addEventListener('pointermove',e=>{const g=e.target.closest&&e.target.closest('.lit');if(!g)return;const r=g.getBoundingClientRect();g.style.setProperty('--mx',(e.clientX-r.left)+'px');g.style.setProperty('--my',(e.clientY-r.top)+'px')},{passive:true});
 
 function wireKanban(){}
@@ -2072,6 +2325,35 @@ document.addEventListener('pointerup',e=>{
   const r=dragEnd();if(r){DRAG.suppress=true;setTimeout(()=>{DRAG.suppress=false},80);if(r.col&&r.col.dataset.col)moveMission(r.id,r.col.dataset.col)}
 });
 document.addEventListener('pointercancel',()=>{if(DRAG.el)dragEnd()});
+
+/* Balayage d'une demande (vue liste) : gauche = étape suivante, droite = étape précédente */
+const SWP={el:null,id:null,pid:null,x0:0,y0:0,dx:0,on:false,suppress:false};
+function swReset(el){if(!el)return;el.classList.remove('dragx');el.style.transform='';if(el.parentElement)el.parentElement.classList.remove('to-next','to-prev','go')}
+document.addEventListener('pointerdown',e=>{if(e.button>0)return;const c=e.target.closest&&e.target.closest('.lcard[data-lid]');if(!c||e.target.closest('a,button,input,select,textarea'))return;
+  Object.assign(SWP,{el:c,id:c.dataset.lid,pid:e.pointerId,x0:e.clientX,y0:e.clientY,dx:0,on:false})});
+document.addEventListener('pointermove',e=>{if(!SWP.el||e.pointerId!==SWP.pid)return;const dx=e.clientX-SWP.x0,dy=e.clientY-SWP.y0;
+  if(!SWP.on){if(Math.abs(dy)>14&&Math.abs(dy)>Math.abs(dx)){SWP.el=null;return}if(Math.abs(dx)<12||Math.abs(dx)<Math.abs(dy)*1.3)return;SWP.on=true;SWP.el.classList.add('dragx');try{SWP.el.setPointerCapture(e.pointerId)}catch(_){}}
+  const m=byId(list('missions'),SWP.id);const i=m?STATUTS.findIndex(x=>x.id===m.statut):-1;const can=i>=0&&(dx<0?i<STATUTS.length-1:i>0);
+  SWP.dx=can?dx:dx*.22;SWP.el.style.transform=`translateX(${SWP.dx}px)`;const w=SWP.el.parentElement;w.classList.toggle('to-next',dx<0&&can);w.classList.toggle('to-prev',dx>0&&can);w.classList.toggle('go',can&&Math.abs(dx)>90)});
+document.addEventListener('pointerup',e=>{if(!SWP.el||e.pointerId!==SWP.pid)return;const el=SWP.el,dx=SWP.dx,on=SWP.on,id=SWP.id;SWP.el=null;if(!on)return;
+  SWP.suppress=true;setTimeout(()=>{SWP.suppress=false},150);el.classList.remove('dragx');
+  const m=byId(list('missions'),id);const i=m?STATUTS.findIndex(x=>x.id===m.statut):-1;const j=dx<0?i+1:i-1;
+  if(i>=0&&Math.abs(dx)>90&&j>=0&&j<STATUTS.length){el.style.transform=`translateX(${dx<0?-115:115}%)`;if(navigator.vibrate)try{navigator.vibrate(10)}catch(_){}setTimeout(()=>{moveMission(id,STATUTS[j].id);setTimeout(()=>{if(document.body.contains(el))swReset(el)},400)},200)}
+  else swReset(el)});
+document.addEventListener('pointercancel',e=>{if(SWP.el&&e.pointerId===SWP.pid){swReset(SWP.el);SWP.el=null}});
+/* Tirer vers le bas pour synchroniser (téléphone, mode serveur) */
+const PTR={y0:null,x0:0,dy:0,busy:false};
+function ptrShow(dy,back){const p=$('#ptr');p.classList.toggle('back',!!back);const k=Math.min(1,dy/72);p.style.transform=`translateY(${-80+Math.min(dy*.75,94)}px) rotate(${Math.round(k*300)}deg)`;p.style.opacity=dy?String(.25+k*.75):'0'}
+document.addEventListener('touchstart',e=>{PTR.y0=null;if(S.mode!=='server'||!isM()||PTR.busy||window.scrollY>2||DR.open||document.body.classList.contains('has-thread')||!$('#plusM').hidden||!$('#pal').hidden||!$('#mj').hidden||!$('#login').hidden||e.touches.length!==1)return;
+  if(e.target.closest&&e.target.closest('.cv-list,.th,.modal,.drawer'))return;PTR.y0=e.touches[0].clientY;PTR.x0=e.touches[0].clientX;PTR.dy=0},{passive:true});
+document.addEventListener('touchmove',e=>{if(PTR.y0==null)return;const dy=e.touches[0].clientY-PTR.y0,dx=Math.abs(e.touches[0].clientX-PTR.x0);
+  if(dy<=0||window.scrollY>2||(dx>dy&&dy<20)){if(PTR.dy){PTR.dy=0;ptrShow(0,true)}if(dx>dy)PTR.y0=null;return}PTR.dy=dy;ptrShow(dy);if(dy>8&&e.cancelable)e.preventDefault()},{passive:false});
+document.addEventListener('touchend',async()=>{if(PTR.y0==null)return;PTR.y0=null;const dy=PTR.dy;PTR.dy=0;
+  if(dy>72&&db&&db.syncNow){PTR.busy=true;const p=$('#ptr');p.classList.add('spin','back');p.style.transform='translateY(8px)';p.style.opacity='1';const t0=Date.now();await db.syncNow();loadFeed();await new Promise(r=>setTimeout(r,Math.max(0,500-(Date.now()-t0))));p.classList.remove('spin');PTR.busy=false;ptrShow(0,true);toast(db.state().offline?'Hors ligne : nouvel essai automatique.':'À jour')}
+  else ptrShow(0,true)});
+/* Hauteur visible réelle (clavier iOS) pour la conversation plein écran */
+if(window.visualViewport){const vv=()=>document.documentElement.style.setProperty('--vvh',window.visualViewport.height+'px');window.visualViewport.addEventListener('resize',vv);vv()}
+if(MQ.addEventListener)MQ.addEventListener('change',()=>{refresh();if(DR.open)drawRender()});
 
 /* ---------- Horloge ---------- */
 function tick(){$('#clock').textContent='Paris · '+new Date().toLocaleString('fr-FR',{timeZone:'Europe/Paris',weekday:'long',hour:'2-digit',minute:'2-digit'})}
