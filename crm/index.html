@@ -1064,7 +1064,7 @@ function serverDB(){
     async counter(key){const r=await api('POST','/api/counter',{key});const n=+r.n;if(!n)throw {code:'resource_exhausted'};meta.compteurs[key]=n;return n},
     local(c,id,v){(store[c]=store[c]||{})[id]=v;emit(c)},
     localDel(c,id){if(store[c]&&store[c][id]){delete store[c][id];emit(c)}},
-    state:()=>({offline:st.offline||navigator.onLine===false,pending:queue.length,syncing:st.syncing,ready}),
+    state:()=>({offline:st.offline,pending:queue.length,syncing:st.syncing,ready}),
     raw:()=>({meta:{compteurs:clone(meta.compteurs)}}),
     stop(){stopped=true;clearTimeout(timer);clearTimeout(cT)}
   };
@@ -1803,8 +1803,8 @@ const QR={
       ()=>`Su reserva está confirmada. La víspera le enviaremos el nombre de su chófer y la hora exacta de recogida.`,
       n=>`Gracias${n?' '+n:''} por su confianza. Ha sido un placer atenderle; quedamos a su disposición para su próxima estancia en París.`]};
 const MEDIA_L={image:'Photo',audio:'Message vocal',voice:'Message vocal',video:'Vidéo',document:'Document',sticker:'Autocollant',location:'Position',contacts:'Contact'};
-const TICKS={sending:['…',''],sent:['✓',''],delivered:['✓✓',''],read:['✓✓','read'],failed:['!','fail']};
-const TK_L={sending:'Envoi en cours',sent:'Envoyé',delivered:'Distribué',read:'Lu',failed:'Échec de l’envoi'};
+const TICKS={sending:['…',''],sent:['✓',''],envoye:['✓',''],delivered:['✓✓',''],distribue:['✓✓',''],read:['✓✓','read'],lu:['✓✓','read'],failed:['!','fail'],echec:['!','fail']};
+const TK_L={sending:'Envoi en cours',sent:'Envoyé',envoye:'Envoyé',delivered:'Distribué',distribue:'Distribué',read:'Lu',lu:'Lu',failed:'Échec de l’envoi',echec:'Échec de l’envoi'};
 function convs(){return [...(S.conversations||[])].sort((a,b)=>String(b.lastAt||'').localeCompare(String(a.lastAt||'')))}
 function convClient(cv){if(!cv)return null;return byId(S.clients,cv.clientId)||S.clients.find(c=>(c.telNorm&&String(c.telNorm)===String(cv.id))||(normTel(c.tel)&&normTel(c.tel).slice(1)===String(cv.id)))||null}
 function convName(cv){const c=convClient(cv);return (c&&c.nom)||cv.nom||fmtPhone(cv.phone||cv.id)}
@@ -1819,7 +1819,7 @@ function autoGrow(el){if(!el)return;el.style.height='auto';el.style.height=Math.
 function convRow(cv){const n=+cv.unread||0;const nm=convName(cv);
   return `<button class="cv${n?' unread':''}" type="button" data-conv="${esc(cv.id)}" aria-current="${S.route==='messages'&&S.convId===cv.id}"><span class="pic">${esc(initial(nm))}</span><span style="min-width:0"><div class="nm">${esc(nm)}<span class="lg-t">${esc(convLang(cv))}</span></div><div class="pv" dir="auto">${cv.lastDir==='out'?'Vous : ':''}${esc(cv.lastText||'')}</div>${winOpen(cv)?'':'<div class="wc">Fenêtre fermée</div>'}</span><span class="rt"><span>${esc(shortTime(cv.lastAt))}</span>${n?`<span class="ub" aria-label="${n} non lu${n>1?'s':''}">${n}</span>`:''}</span></button>`}
 function bubble(x){const out=x.dir==='out';const d=parse(x.at);const tk=out?(TICKS[x.status]||TICKS.sent):null;const by=out&&teamOf(x.by)?teamOf(x.by).nom:out&&x.by==='ia'?'Réponse automatique':'';
-  const media=(x.type&&!['text','template'].includes(x.type))||x.media?`<div class="media">${esc(MEDIA_L[x.type]||'Pièce jointe')}</div>`:'';
+  const media=((x.type&&!['text','template','button','interactive'].includes(x.type))||x.media)&&!/^\[/.test(x.text||'')?`<div class="media">${esc(MEDIA_L[x.type]||'Pièce jointe')}</div>`:'';
   const txt=x.text?`<div dir="auto" class="${x.type==='template'?'tpl':''}">${esc(x.text)}</div>`:'';
   return `<div class="bub ${out?'out':'in'}${x.status==='sending'?' sending':''}">${media}${txt||(media?'':'<div class="media">Message</div>')}<div class="mt">${by?esc(by)+' · ':''}${d?fmtTime(d):''}${tk?`<span class="tk ${tk[1]}" title="${esc(TK_L[x.status]||'Envoyé')}" aria-label="${esc(TK_L[x.status]||'Envoyé')}">${tk[0]}</span>`:''}</div></div>`}
 function aiFieldsRows(f){f=f||{};const dt=x=>parse(x)?fmtDT(parse(x)):x;const svc=f.service&&(services().find(s=>s.id===f.service)||{}).nom;
@@ -1849,14 +1849,14 @@ function openConv(id){if(DR.open)closeDrawer();$('#plusM').hidden=true;markRead(
 function setConv(id,patch){const cv=byId(S.conversations||[],id);if(!cv)return;const o={...cv,...patch};delete o.id;db.local('conversations',id,o)}
 async function sendMsg(){const cv=byId(S.conversations||[],S.convId);const ta=$('#cmpIn');if(!cv||!ta)return;const text=ta.value.trim();if(!text){ta.focus();return}
   const tmp='tmp_'+uid(),at=nowISO();MSG.draft[cv.id]='';ta.value='';db.local('messages',tmp,{convId:cv.id,dir:'out',type:'text',text,at,status:'sending',by:S.me});
-  try{const r=await api('POST','/api/whatsapp/send',{convId:cv.id,text});db.localDel('messages',tmp);db.local('messages',r.id||tmp,{convId:cv.id,dir:'out',type:'text',text,at,status:'sent',by:S.me});setConv(cv.id,{lastAt:at,lastText:text,lastDir:'out'});MSG.closed[cv.id]=false;db.kick()}
+  try{const r=await api('POST','/api/whatsapp/send',{convId:cv.id,text});db.localDel('messages',tmp);db.local('messages',r.id||tmp,{convId:cv.id,dir:'out',type:'text',text,at,status:'envoye',by:S.me});setConv(cv.id,{lastAt:at,lastText:text,lastDir:'out'});MSG.closed[cv.id]=false;db.kick()}
   catch(e){db.localDel('messages',tmp);MSG.draft[cv.id]=text;
     if(e.code==='window_closed'||e.status===409){MSG.closed[cv.id]=true;toast('Fenêtre de 24 h fermée : envoyez le modèle approuvé.')}
     else if(e.code==='whatsapp_off'||e.status===503)toast('WhatsApp n’est pas encore relié au serveur.');
     else if(e.code==='offline')toast('Hors ligne : message non envoyé, il reste dans la zone de saisie.');else toast(e.message||'Envoi impossible pour l’instant.');render()}}
 async function sendTpl(){const cv=byId(S.conversations||[],S.convId);if(!cv)return;const L=convLang(cv);const tmp='tmp_'+uid(),at=nowISO();const label='Modèle de reprise de contact';
   db.local('messages',tmp,{convId:cv.id,dir:'out',type:'template',text:label,at,status:'sending',by:S.me});
-  try{const r=await api('POST','/api/whatsapp/send',{convId:cv.id,template:{name:WA_TPL,lang:TPL_LANG[L]||'en',params:[qrName(cv)||'']}});db.localDel('messages',tmp);db.local('messages',r.id||tmp,{convId:cv.id,dir:'out',type:'template',text:label,at,status:'sent',by:S.me});setConv(cv.id,{lastAt:at,lastText:label,lastDir:'out'});MSG.tpl[cv.id]=true;toast('Modèle envoyé. Vous pourrez écrire librement dès la réponse du client.');db.kick()}
+  try{const r=await api('POST','/api/whatsapp/send',{convId:cv.id,template:{name:WA_TPL,lang:TPL_LANG[L]||'en',params:[qrName(cv)||'']}});db.localDel('messages',tmp);db.local('messages',r.id||tmp,{convId:cv.id,dir:'out',type:'template',text:label,at,status:'envoye',by:S.me});setConv(cv.id,{lastAt:at,lastText:label,lastDir:'out'});MSG.tpl[cv.id]=true;toast('Modèle envoyé. Vous pourrez écrire librement dès la réponse du client.');db.kick()}
   catch(e){db.localDel('messages',tmp);toast(e.code==='offline'?'Hors ligne : modèle non envoyé.':e.status===503?'WhatsApp n’est pas encore relié au serveur.':(e.message||'Envoi du modèle impossible.'))}}
 function insertCmp(text){const ta=$('#cmpIn');if(!ta)return;const cur=ta.value.trim();ta.value=cur?cur+(/[.!?…。؟]$/.test(cur)?' ':'\n')+text:text;MSG.draft[S.convId]=ta.value;autoGrow(ta);ta.focus();try{ta.setSelectionRange(ta.value.length,ta.value.length)}catch(_){}}
 function aiPatch(cv,d){const f=cv.aiFields||{};const p={};
@@ -1878,12 +1878,13 @@ async function cvMission(apply){const cv=byId(S.conversations||[],S.convId);if(!
 
 /* ---------- Réglages (réponse automatique WhatsApp) ---------- */
 const RG_LANGS=['FR','EN','AR','ES','RU'];
+/* Mêmes textes par défaut que le serveur (lib/autoreply.js) */
 const RG_DEF={autoReply:true,horaires:{debut:'09:00',fin:'21:00'},fuseau:'Europe/Paris',textes:{
-  FR:{jour:'Bonjour {prenom}, merci pour votre message. Un membre de l’équipe Amane vous répond dans quelques minutes.',nuit:'Bonsoir {prenom}, merci pour votre message. Notre équipe vous répondra dès 9 h ; en cas d’urgence, indiquez-le simplement ici.'},
-  EN:{jour:'Hello {prenom}, thank you for your message. A member of the Amane team will reply within a few minutes.',nuit:'Good evening {prenom}, thank you for your message. Our team will reply from 9 am; if it is urgent, simply let us know here.'},
-  AR:{jour:'مرحباً {prenom}، شكراً لرسالتكم. سيرد عليكم أحد أعضاء فريق Amane خلال دقائق.',nuit:'مساء الخير {prenom}، شكراً لرسالتكم. سيرد عليكم فريقنا ابتداءً من الساعة التاسعة صباحاً، وفي حال الاستعجال يُرجى إعلامنا هنا.'},
-  ES:{jour:'Hola {prenom}, gracias por su mensaje. Un miembro del equipo Amane le responderá en unos minutos.',nuit:'Buenas noches {prenom}, gracias por su mensaje. Nuestro equipo le responderá a partir de las 9 h; si es urgente, indíquenoslo aquí.'},
-  RU:{jour:'Здравствуйте, {prenom}! Благодарим за ваше сообщение. Сотрудник Amane ответит вам в течение нескольких минут.',nuit:'Добрый вечер, {prenom}! Благодарим за ваше сообщение. Наша команда ответит вам с 9:00; если вопрос срочный, просто напишите об этом здесь.'}}};
+  FR:{jour:'Bonjour {prenom}, merci pour votre message. Amel, de la maison Amane, vous répond personnellement dans quelques minutes.',nuit:'Bonjour {prenom}, merci pour votre message. Nous vous répondons personnellement dès 9 h demain matin. Pour une urgence, appelez-nous.'},
+  EN:{jour:'Hello {prenom}, thank you for your message. Amel, from the house of Amane, will reply to you personally within a few minutes.',nuit:'Hello {prenom}, thank you for your message. We will reply to you personally from 9 a.m. tomorrow morning. For anything urgent, please call us.'},
+  AR:{jour:'مرحباً {prenom}، شكراً لرسالتكم. ستردّ عليكم أمل من دار Amane شخصياً خلال دقائق.',nuit:'مرحباً {prenom}، شكراً لرسالتكم. سنردّ عليكم شخصياً ابتداءً من الساعة التاسعة صباح الغد. للحالات العاجلة، يُرجى الاتصال بنا.'},
+  ES:{jour:'Hola {prenom}, gracias por su mensaje. Amel, de la casa Amane, le responderá personalmente en unos minutos.',nuit:'Hola {prenom}, gracias por su mensaje. Le responderemos personalmente mañana a partir de las 9 h. Para cualquier urgencia, llámenos.'},
+  RU:{jour:'Здравствуйте, {prenom}! Благодарим вас за сообщение. Амель из дома Amane лично ответит вам в течение нескольких минут.',nuit:'Здравствуйте, {prenom}! Благодарим вас за сообщение. Мы лично ответим вам завтра с 9 утра. В срочных случаях, пожалуйста, позвоните нам.'}}};
 const RG={draft:null,lang:'FR',dirty:false};
 function rgCurrent(){const d=byId(S.reglages||[],'general')||{};const r=JSON.parse(JSON.stringify(RG_DEF));if(typeof d.autoReply==='boolean')r.autoReply=d.autoReply;if(d.horaires)Object.assign(r.horaires,d.horaires);if(d.fuseau)r.fuseau=d.fuseau;
   Object.entries(d.textes||{}).forEach(([L,t])=>{r.textes[L]={...(r.textes[L]||{}),...Object.fromEntries(Object.entries(t||{}).filter(([,v])=>v))}});return r}
