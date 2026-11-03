@@ -527,7 +527,7 @@ const I={
   services:'M4 18h16M6 18a6 6 0 0 1 12 0M12 9V7M10 7h4',
   aide:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.2h.01',
   plus:'M12 5v14M5 12h14', close:'M6 6l12 12M18 6L6 18', spark:'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z',
-  left:'M15 6l-6 6 6 6', right:'M9 6l6 6-6 6', copy:'M9 9h11v11H9zM5 15H4V4h11v1', down:'M12 4v11M7 10l5 5 5-5M5 20h14',
+  left:'M15 6l-6 6 6 6', right:'M9 6l6 6-6 6', copy:'M9 9h11v11H9zM5 15H4V4h11v1', down:'M12 4v11M7 10l5 5 5-5M5 20h14',up:'M12 15V4M7 9l5-5 5 5M5 20h14',
   alert:'M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z',
   user:'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21v-1a8 8 0 0 1 16 0v1',
   bag:'M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2', key:'M14.5 4a5.5 5.5 0 1 1-5.2 7.3L3 17.6V21h3.4v-2h2v-2h2l1.3-1.3A5.5 5.5 0 0 1 14.5 4zM16 8h.01',
@@ -608,9 +608,53 @@ async function boot(){
   if(db){
     S.mode='live';
     COLS.forEach(c=>db.collection(c).onSnapshot(snap=>{S[c]=snap.docs.map(d=>({id:d.id,...d.data()}));S.loaded.add(c);refresh()},err=>{S.mode='error';refresh()}));
-  }else{S.mode='local';COLS.forEach(c=>S.loaded.add(c));}
+  }else{
+    db=deviceDB();dl=browserDL();
+    if(db){S.mode='device';COLS.forEach(c=>db.collection(c).onSnapshot(snap=>{S[c]=snap.docs.map(d=>({id:d.id,...d.data()}));S.loaded.add(c);refresh()}))}
+    else{S.mode='local';COLS.forEach(c=>S.loaded.add(c))}
+  }
   refresh();
 }
+/* Hors de claude.ai : base enregistrée dans ce navigateur (localStorage), même interface que la base partagée. */
+const DEV_KEY='amane.crm.v1';
+/* Premier lancement sur un appareil : la flotte et les services d'Amane, comme dans la base partagée. */
+function DEV_SEED(){const t=new Date().toISOString(),w=o=>({...o,createdAt:t,updatedAt:t});return {
+  vehicules:{urus:w({nom:'Urus SE',categorie:'Super SUV',tarifJour:1000,loyerMois:2430,chargesMois:500,statut:'disponible',ordre:1}),
+    f296:w({nom:'Ferrari 296 GTB',categorie:'Supercar',tarifJour:1300,loyerMois:2240,chargesMois:500,statut:'disponible',ordre:2}),
+    g63:w({nom:'G 63',categorie:'SUV',tarifJour:650,loyerMois:1670,chargesMois:500,statut:'disponible',ordre:3}),
+    m5:w({nom:'M5 Touring',categorie:'Break sport',tarifJour:450,loyerMois:1480,chargesMois:500,statut:'disponible',ordre:4}),
+    classev:w({nom:'Classe V VIP',categorie:'Van 7-8 places',tarifJour:300,loyerMois:930,chargesMois:500,statut:'disponible',ordre:5})},
+  services:{location:w({nom:'Voiture d’exception',ordre:1}),chauffeur:w({nom:'Chauffeur VIP',ordre:2}),van:w({nom:'Van VIP',ordre:3}),transfert:w({nom:'Transfert aéroport',ordre:4}),shopping:w({nom:'Personal shopping',ordre:5}),sejour:w({nom:'Séjour clé en main',ordre:6}),conciergerie:w({nom:'Conciergerie sur demande',ordre:7}),clip:w({nom:'Clip souvenir',ordre:8})}}}
+function deviceDB(){
+  let store;try{const raw=localStorage.getItem(DEV_KEY);store=raw?(JSON.parse(raw)||{}):DEV_SEED();localStorage.setItem(DEV_KEY,JSON.stringify(store))}catch(e){return null}
+  const subs={};
+  const snap=c=>({docs:Object.entries(store[c]||{}).map(([id,v])=>({id,data:()=>JSON.parse(JSON.stringify(v))}))});
+  const emit=c=>(subs[c]||[]).forEach(f=>{try{f(snap(c))}catch(e){}});
+  const persist=()=>{try{localStorage.setItem(DEV_KEY,JSON.stringify(store))}catch(e){throw {code:'quota_exceeded'}}};
+  window.addEventListener('storage',e=>{if(e.key!==DEV_KEY)return;try{store=JSON.parse(e.newValue||'{}')||{}}catch(x){store={}}Object.keys(subs).forEach(emit)});
+  const docRef=(c,id)=>({
+    async get(){const v=(store[c]||{})[id];return {exists:!!v,id,data:()=>v?JSON.parse(JSON.stringify(v)):undefined}},
+    async set(v){(store[c]=store[c]||{})[id]=JSON.parse(JSON.stringify(v));persist();emit(c)},
+    async update(v){(store[c]=store[c]||{})[id]={...(store[c][id]||{}),...JSON.parse(JSON.stringify(v))};persist();emit(c)},
+    async delete(){if(store[c]){delete store[c][id];persist();emit(c)}}});
+  return {
+    collection:c=>({doc:id=>docRef(c,id),onSnapshot(f){(subs[c]=subs[c]||[]).push(f);setTimeout(()=>f(snap(c)),0);return()=>{subs[c]=subs[c].filter(x=>x!==f)}}}),
+    doc:path=>{const [c,id]=path.split('/');return docRef(c,id)},
+    replaceAll(data){store={};COLS.forEach(c=>{store[c]={};(data[c]||[]).forEach(o=>{if(!o||!o.id||o._demo)return;const b={...o};delete b.id;store[c][o.id]=b})});if(data.meta)store.meta=data.meta;persist();Object.keys(subs).forEach(emit)},
+    raw:()=>store};
+}
+function browserDL(){return {async save({filename,data}){
+  const blob=data instanceof Blob?data:new Blob([data],{type:/\.json$/.test(filename)?'application/json':/\.csv$/.test(filename)?'text/csv;charset=utf-8':/\.ics$/.test(filename)?'text/calendar':/\.html?$/.test(filename)?'text/html;charset=utf-8':'application/octet-stream'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}}}
+function importJSON(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='application/json,.json';
+  inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;let data;try{data=JSON.parse(await f.text())}catch(e){toast('Fichier illisible : choisissez une sauvegarde Amane (.json).');return}
+    if(!data||!COLS.some(c=>Array.isArray(data[c]))){toast('Ce fichier n’est pas une sauvegarde Amane.');return}
+    const n=COLS.reduce((t,c)=>t+((data[c]||[]).length),0);
+    if(!confirm(`Remplacer les données de cet appareil par cette sauvegarde (${n} fiches) ?`))return;
+    if(S.mode==='device'&&db.replaceAll){db.replaceAll(data);toast('Sauvegarde restaurée.')}
+    else{for(const c of COLS)for(const o of (data[c]||[])){if(o&&o.id&&!o._demo)await save(c,o)}toast('Sauvegarde importée.')}};
+  inp.click()}
 function computeDemo(){S.demoView=S.loaded.size===COLS.length&&S.clients.length===0&&S.missions.length===0}
 
 /* ---------- Données d'exemple (en mémoire, jamais écrites) ---------- */
@@ -859,7 +903,7 @@ function finCSV(fd){const rows=[['Facture','Devis','Client','Service','Véhicule
   list('missions').filter(m=>{const d=parse(m.debut);return d&&d>=fd.a&&d<addD(fd.b,1)}).forEach(m=>{const dv=m.devis,t=dvTotals(dv),c=clientOf(m)||{},v=byId(vehicles(),m.vehiculeId)||{};
     rows.push([dv&&dv.factureNumero||'',dv&&dv.numero||'',c.nom||'',svcName(m.service),v.nom||'',m.chauffeur||'',m.debut||'',m.fin||'',label(STATUTS,m.statut),dv?t.ttc:(+m.montant||0),dv?t.paid:(+m.acompte||0),dv?t.solde:r2((+m.montant||0)-(+m.acompte||0))])});
   return '\ufeff'+rows.map(r=>r.map(x=>{const y=typeof x==='number'?String(x).replace('.',','):String(x);const z=y.replace(/"/g,'""');return /[;"\n]/.test(z)?`"${z}"`:z}).join(';')).join('\r\n')}
-function exportJSON(){return JSON.stringify({exporte:new Date().toISOString(),clients:S.clients,missions:S.missions,vehicules:S.vehicules,services:S.services,partenaires:S.partenaires},null,2)}
+function exportJSON(){const meta=db&&db.raw?db.raw().meta:undefined;return JSON.stringify({exporte:new Date().toISOString(),meta,clients:S.clients,missions:S.missions,vehicules:S.vehicules,services:S.services,partenaires:S.partenaires},null,2)}
 function tplTasks(d){const a=sod(parse(d.debut)||new Date()),b=sod(parse(d.fin)||parse(d.debut)||new Date());return (TASK_TPL[d.service]||[]).map(([t,resp,off])=>{let base=a,o=off;if(typeof off==='string'){base=b;o=+(off.split('+')[1]||0)}return {t,resp,due:toLocal(addD(base,o)).slice(0,10),fait:false}})}
 
 /* Onglets de la fiche demande */
@@ -928,10 +972,11 @@ function renderHello(){
   const ms=list('missions');const today=ms.filter(m=>ACTIVE.includes(m.statut)&&overlapDays(m,new Date(),new Date())).length;const nw=ms.filter(m=>m.statut==='nouvelle').length;
   $('#hello').innerHTML=`${g}${me?`, <em>${esc(me.nom)}</em>`:''}.`;
   $('#stats').textContent=`${today?`${today} mission${today>1?'s':''} aujourd’hui`:'Aucune mission aujourd’hui'}${nw?` · ${nw} demande${nw>1?'s':''} à traiter`:''}.`;
-  const lv=$('#live');lv.className='live'+(S.mode==='live'?' on':'');lv.querySelector('span').textContent=S.mode==='live'?'Synchronisé':S.mode==='local'?'Mode local':S.mode==='error'?'Connexion perdue':'Connexion…';
+  const lv=$('#live');lv.className='live'+(S.mode==='live'||S.mode==='device'?' on':'');lv.querySelector('span').textContent=S.mode==='live'?'Synchronisé':S.mode==='device'?'Sur cet appareil':S.mode==='local'?'Mode local':S.mode==='error'?'Connexion perdue':'Connexion…';
 }
 function renderBanner(){
   let h='';
+  if(S.mode==='device'&&!lsGet('amane.devnote',''))h+=`<div class="banner">${ico('alert')}<span><b>Données enregistrées sur cet appareil.</b> Elles restent dans ce navigateur et ne sont pas partagées avec les autres. Pensez à « Sauvegarder (JSON) » dans Aide de temps en temps : vider le navigateur les efface.</span><button class="btn sm" type="button" data-act="devnote-ok">Compris</button></div>`;
   if(S.mode==='local')h+=`<div class="banner">${ico('alert')}<span><b>Mode local.</b> La base partagée n’est pas disponible ici : ouvrez cette page depuis claude.ai pour que vos fiches soient enregistrées et partagées entre Amel, Youssouf et Aziz.</span></div>`;
   if(S.mode==='error')h+=`<div class="banner">${ico('alert')}<span><b>Connexion à la base perdue.</b> Rechargez la page.</span></div>`;
   if(S.demoView)h+=`<div class="banner">${ico('spark')}<span><b>Vous regardez des exemples.</b> Ces clients et missions sont fictifs et ne sont pas enregistrés. Ils disparaissent dès que vous créez votre première fiche.</span><button class="btn sm gold" type="button" data-act="new-mission">Créer la première demande</button></div>`;
@@ -1063,12 +1108,12 @@ function vAide(){
           <div><i>·</i><span><b style="font-weight:500;color:var(--fg)">Journal de flotte</b> (Youssouf) : entretiens, dommages, coûts, échéances assurance et contrôle. Pour un PV, la date suffit : le conducteur à désigner est retrouvé, et Aziz le voit dans « À faire ».</span></div>
           <div><i>·</i><span><b style="font-weight:500;color:var(--fg)">Finances</b> (Aziz) : facturé, encaissé, factures en retard, commissions, coûts de la flotte, export CSV.</span></div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sm" type="button" data-act="export-json" ${dl?'':'disabled title="Disponible dans claude.ai"'}>${ico('down')}Sauvegarder toutes les données (JSON)</button></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sm" type="button" data-act="export-json" ${dl?'':'disabled title="Disponible dans claude.ai"'}>${ico('down')}Sauvegarder toutes les données (JSON)</button>${S.mode==='device'?`<button class="btn sm ghost" type="button" data-act="import-json">${ico('up')}Restaurer une sauvegarde</button>`:''}</div>
       </div>
       <div class="glass panel"><div class="panel-h"><h2>Raccourcis</h2></div>
         <ul class="kb"><li><kbd>⌘K</kbd><kbd>Ctrl K</kbd>chercher un client, une demande, une voiture, ou lancer une action</li><li><kbd>Échap</kbd>fermer une fiche ou une fenêtre</li><li><b style="font-weight:500;color:var(--fg)">Majordome</b> : analyse un message client et rédige les réponses (proposition, confirmation, relance, remerciement)</li></ul>
       </div>
-      <div class="glass panel"><div class="panel-h"><h2>Ce qui est enregistré</h2><span class="sub">${live?'base partagée active':'mode local : rien n’est enregistré ici'}</span></div>
+      <div class="glass panel"><div class="panel-h"><h2>Ce qui est enregistré</h2><span class="sub">${live?'base partagée active':S.mode==='device'?'enregistré dans ce navigateur':'mode local : rien n’est enregistré ici'}</span></div>
         <div class="facts">
           <div><i>·</i><span>Clients, demandes, devis, carnet, flotte, services et photos sont enregistrés dans une base commune. Ce que l’un modifie apparaît chez les autres en quelques secondes.</span></div>
           <div><i>·</i><span>Seules les personnes invitées avec le droit « peut modifier » voient les données. Avec « peut voir », la page reste vide : c’est voulu.</span></div>
@@ -1328,6 +1373,8 @@ document.addEventListener('click',async e=>{
   else if(a&&/^(dv|pay|com|pr|tk|jr)-/.test(a)){conciergeAct(a,t)}
   else if(a==='ics')dlSave('amane-planning.ics',planningICS());
   else if(a==='fin-csv'){const ref=monthOf(S.filters.fm||0);dlSave(`amane-finances-${ref.getFullYear()}-${pad(ref.getMonth()+1)}.csv`,finCSV(finData(ref)))}
+  else if(a==='import-json')importJSON();
+  else if(a==='devnote-ok'){lsSet('amane.devnote','1');refresh()}
   else if(a==='export-json')dlSave(`amane-sauvegarde-${today()}.json`,exportJSON());
   else if(a==='ai-write')aiWrite();
   else if(a==='ai-copy')copyText(($('#aiOut')||{}).value||'');
