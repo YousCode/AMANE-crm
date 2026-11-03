@@ -219,6 +219,7 @@ html[dir="rtl"] .f select{background-position:left 4px center}
 .preview pre{white-space:pre-wrap;font-family:var(--body);font-size:15px;line-height:1.65;color:var(--noir)}
 .preview .row{display:flex;gap:12px;flex-wrap:wrap}
 .preview .note{margin:0;font-size:13.5px}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .priv{font-size:13.5px;display:flex;gap:12px;align-items:flex-start}
 .priv::before{content:"";flex:0 0 auto;width:18px;height:1px;margin-top:11px;background:var(--champagne)}
 
@@ -390,12 +391,14 @@ footer .cp{margin-top:40px;padding-top:24px;border-top:1px solid rgba(var(--ivoi
             <div class="f"><label for="f-service" data-i18n="l3">Service</label><select id="f-service" name="service"></select></div>
             <div class="f"><label for="f-guests" data-i18n="l4">Passagers</label><select id="f-guests" name="guests"><option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8+</option></select></div>
           </div>
+          <div class="f cbf" hidden><label for="f-tel" data-i18n="l7">Téléphone, pour être rappelé</label><input id="f-tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" dir="ltr"></div>
+          <div class="hp" aria-hidden="true"><label for="f-web">Site web</label><input id="f-web" name="website" tabindex="-1" autocomplete="off"></div>
           <div class="f"><label for="f-lang" data-i18n="l5">Langue de contact</label><select id="f-lang" name="clang"><option>Français</option><option>English</option><option>Español</option><option>العربية</option></select></div>
           <div class="f"><label for="f-msg" data-i18n="l6">L'occasion, en quelques mots</label><textarea id="f-msg" name="msg" rows="3"></textarea></div>
           <div class="preview" aria-live="polite">
             <span class="k" data-i18n="pk">Votre message</span>
             <pre id="preview"></pre>
-            <div class="row"><a class="btn" id="wa" href="#" target="_blank" rel="noopener" data-i18n="send">Envoyer sur WhatsApp</a><button class="btn ghost" type="button" id="copy" data-i18n="copy">Copier le message</button></div>
+            <div class="row"><a class="btn" id="wa" href="#" target="_blank" rel="noopener" data-i18n="send">Envoyer sur WhatsApp</a><button class="btn ghost" type="button" id="copy" data-i18n="copy">Copier le message</button><button class="btn ghost" type="button" id="callback" data-i18n="cb" hidden>Être rappelé</button></div>
             <p class="note" data-i18n="wn"></p>
           </div>
           <p class="priv" data-i18n="priv"></p>
@@ -459,7 +462,7 @@ fr:{n1:"Services",n2:"Le rituel",n3:"La flotte",n4:"Questions",cta:"Faire une de
   ["Comment sont fixés les prix ?","Chaque prestation est sur devis, après un premier échange. La proposition détaille tout avant confirmation : aucune surprise."],
   ["Que faut-il pour louer une voiture sans chauffeur ?","Un permis de conduire valide, une pièce d'identité et un dépôt de garantie par empreinte bancaire. Les conditions exactes figurent dans la proposition."]],
  ak:"Faire une demande",at:"Dites-nous l'occasion. <em>Nous ouvrons la porte.</em>",ap:"Un message suffit. Un interlocuteur unique vous répond et compose la proposition.",
- l1:"Votre nom",l2:"Date",l3:"Service",l4:"Passagers",l5:"Langue de contact",l6:"L'occasion, en quelques mots",pk:"Votre message",send:"Envoyer sur WhatsApp",copy:"Copier le message",copied:"Message copié",
+ l1:"Votre nom",l2:"Date",l3:"Service",l4:"Passagers",l5:"Langue de contact",l6:"L'occasion, en quelques mots",l7:"Téléphone, pour être rappelé",cb:"Être rappelé",cbneed:"Indiquez votre numéro pour être rappelé.",cbok:"Merci. Nous vous rappelons très vite.",cberr:"Envoi impossible. Écrivez-nous sur WhatsApp.",priv2:"Le bouton WhatsApp n'enregistre rien sur ce site. Si vous demandez à être rappelé, votre nom et votre numéro sont transmis à la maison Amane, uniquement pour vous répondre.",pk:"Votre message",send:"Envoyer sur WhatsApp",copy:"Copier le message",copied:"Message copié",
  wn:"Le bouton ouvre WhatsApp avec ce message. Si rien ne s'ouvre, copiez-le.",priv:"Rien n'est enregistré sur ce site : votre message part depuis votre propre WhatsApp.",
  fo1:"Conciergerie privée · Paris VIII · Sur rendez-vous",fo2:"Nous ne publions ni tarifs ni catalogue.",
  msg:(n,s,d,g,l,m)=>`Bonjour Amane,\n${n?`je suis ${n}. `:''}Je souhaite faire une demande : ${s}${d?`, le ${d}`:''}${g?`, pour ${g} passager${g==='1'?'':'s'}`:''}.\n${l?`Langue de contact : ${l}.\n`:''}${m?m+'\n':''}Merci de me recontacter.`},
@@ -487,7 +490,7 @@ en:{n1:"Services",n2:"The ritual",n3:"The fleet",n4:"Questions",cta:"Make a requ
   ["How are prices set?","Every service is quoted after a first conversation. The proposal details everything before you confirm: no surprises."],
   ["What do I need to rent a car without a chauffeur?","A valid driving licence, an identity document and a security deposit by card pre-authorisation. The exact conditions are set out in the proposal."]],
  ak:"Make a request",at:"Tell us the occasion. <em>We open the door.</em>",ap:"One message is enough. A single contact answers you and composes the proposal.",
- l1:"Your name",l2:"Date",l3:"Service",l4:"Passengers",l5:"Contact language",l6:"The occasion, in a few words",pk:"Your message",send:"Send on WhatsApp",copy:"Copy the message",copied:"Message copied",
+ l1:"Your name",l2:"Date",l3:"Service",l4:"Passengers",l5:"Contact language",l6:"The occasion, in a few words",l7:"Phone, to be called back",cb:"Call me back",cbneed:"Enter your number to be called back.",cbok:"Thank you. We will call you back shortly.",cberr:"Could not send. Please write to us on WhatsApp.",priv2:"The WhatsApp button stores nothing on this website. If you ask to be called back, your name and number are sent to the Amane house, only to answer you.",pk:"Your message",send:"Send on WhatsApp",copy:"Copy the message",copied:"Message copied",
  wn:"The button opens WhatsApp with this message. If nothing opens, copy it.",priv:"Nothing is stored on this website: your message is sent from your own WhatsApp.",
  fo1:"Private concierge · Paris 8th · By appointment",fo2:"We publish neither prices nor a catalogue.",
  msg:(n,s,d,g,l,m)=>`Hello Amane,\n${n?`this is ${n}. `:''}I would like to make a request: ${s}${d?`, on ${d}`:''}${g?`, for ${g} passenger${g==='1'?'':'s'}`:''}.\n${l?`Contact language: ${l}.\n`:''}${m?m+'\n':''}Please get back to me.`},
@@ -515,7 +518,7 @@ es:{n1:"Servicios",n2:"El ritual",n3:"La flota",n4:"Preguntas",cta:"Hacer una so
   ["¿Cómo se fijan los precios?","Cada servicio se presupuesta tras una primera conversación. La propuesta lo detalla todo antes de la confirmación: sin sorpresas."],
   ["¿Qué se necesita para alquilar un coche sin chófer?","Un permiso de conducir válido, un documento de identidad y un depósito de garantía mediante preautorización bancaria. Las condiciones exactas figuran en la propuesta."]],
  ak:"Hacer una solicitud",at:"Cuéntenos la ocasión. <em>Nosotros abrimos la puerta.</em>",ap:"Basta un mensaje. Un único interlocutor le responde y compone la propuesta.",
- l1:"Su nombre",l2:"Fecha",l3:"Servicio",l4:"Pasajeros",l5:"Idioma de contacto",l6:"La ocasión, en pocas palabras",pk:"Su mensaje",send:"Enviar por WhatsApp",copy:"Copiar el mensaje",copied:"Mensaje copiado",
+ l1:"Su nombre",l2:"Fecha",l3:"Servicio",l4:"Pasajeros",l5:"Idioma de contacto",l6:"La ocasión, en pocas palabras",l7:"Teléfono, para que le llamemos",cb:"Que me llamen",cbneed:"Indique su número para que le llamemos.",cbok:"Gracias. Le llamamos muy pronto.",cberr:"No se pudo enviar. Escríbanos por WhatsApp.",priv2:"El botón de WhatsApp no guarda nada en este sitio. Si pide que le llamemos, su nombre y su número se envían a la casa Amane, solo para responderle.",pk:"Su mensaje",send:"Enviar por WhatsApp",copy:"Copiar el mensaje",copied:"Mensaje copiado",
  wn:"El botón abre WhatsApp con este mensaje. Si no se abre nada, cópielo.",priv:"Este sitio no guarda nada: su mensaje se envía desde su propio WhatsApp.",
  fo1:"Concierge privado · París VIII · Con cita previa",fo2:"No publicamos precios ni catálogo.",
  msg:(n,s,d,g,l,m)=>`Hola, Amane:\n${n?`soy ${n}. `:''}Quisiera hacer una solicitud: ${s}${d?`, el ${d}`:''}${g?`, para ${g} pasajero${g==='1'?'':'s'}`:''}.\n${l?`Idioma de contacto: ${l}.\n`:''}${m?m+'\n':''}Gracias por contactarme.`},
@@ -543,7 +546,7 @@ ar:{n1:"الخدمات",n2:"طريقتنا",n3:"الأسطول",n4:"أسئلة �
   ["كيف تُحدَّد الأسعار؟","كل خدمة بعرض سعر بعد محادثة أولى. يوضّح العرض كل التفاصيل قبل التأكيد، دون مفاجآت."],
   ["ما المطلوب لاستئجار سيارة دون سائق؟","رخصة قيادة سارية، ووثيقة هوية، وتأمين عبر حجز مسبق على البطاقة البنكية. تُذكر الشروط الدقيقة في العرض."]],
  ak:"قدّم طلبك",at:"أخبرنا بالمناسبة. <em>ونحن نفتح الباب.</em>",ap:"رسالة واحدة تكفي. تردّ عليك جهة تواصل واحدة وتُعدّ لك العرض.",
- l1:"اسمك",l2:"التاريخ",l3:"الخدمة",l4:"عدد الركّاب",l5:"لغة التواصل",l6:"المناسبة في بضع كلمات",pk:"رسالتك",send:"إرسال عبر واتساب",copy:"نسخ الرسالة",copied:"تم نسخ الرسالة",
+ l1:"اسمك",l2:"التاريخ",l3:"الخدمة",l4:"عدد الركّاب",l5:"لغة التواصل",l6:"المناسبة في بضع كلمات",l7:"الهاتف، لنعاود الاتصال بك",cb:"اتصلوا بي",cbneed:"أدخل رقمك لنعاود الاتصال بك.",cbok:"شكرًا لك. سنتصل بك قريبًا جدًا.",cberr:"تعذّر الإرسال. راسلنا عبر واتساب.",priv2:"زر واتساب لا يحفظ أي شيء على هذا الموقع. إذا طلبت أن نتصل بك، يُرسَل اسمك ورقمك إلى دار أمان، فقط للرد عليك.",pk:"رسالتك",send:"إرسال عبر واتساب",copy:"نسخ الرسالة",copied:"تم نسخ الرسالة",
  wn:"يفتح الزر واتساب مع هذه الرسالة. إن لم يُفتح شيء، انسخها.",priv:"لا يُحفظ أي شيء على هذا الموقع: تُرسَل رسالتك من حساب واتساب الخاص بك.",
  fo1:"كونسيرج خاص · باريس، الدائرة الثامنة · بمواعيد مسبقة",fo2:"لا ننشر أسعاراً ولا كتالوجاً.",
  msg:(n,s,d,g,l,m)=>`مرحباً Amane،\n${n?`أنا ${n}. `:''}أودّ تقديم طلب: ${s}${d?`، بتاريخ ${d}`:''}${g?`، لـ${g} ${g==='1'?'راكب':'ركّاب'}`:''}.\n${l?`لغة التواصل: ${l}.\n`:''}${m?m+'\n':''}أرجو التواصل معي.`}
@@ -619,6 +622,7 @@ function applyLang(l){
   $('#langCur').textContent=LANGS.find(x=>x[0]===l)[2];
   $$('[data-lang]').forEach(b=>b.setAttribute('aria-current',b.dataset.lang===l));
   updatePreview();buildTextAnims();
+  if(window.__cbOn&&d.priv2)$('.priv').textContent=d.priv2;
   if(window.__amane)window.__amane.mirror(l==='ar'?-1:1);
   try{localStorage.setItem('amane-lang',l)}catch(e){}
 }
@@ -854,6 +858,15 @@ const form=$('#askform'),preview=$('#preview'),wa=$('#wa');
 function updatePreview(){const d=I18N[LANG];if(!d)return;const n=form.name.value.trim(),s=form.service.options[form.service.selectedIndex]?.text||'',dt=form.date.value?new Date(form.date.value+'T12:00').toLocaleDateString({fr:'fr-FR',en:'en-GB',es:'es-ES',ar:'ar'}[LANG],{weekday:'long',day:'numeric',month:'long'}):'',g=form.guests.value,l=form.clang.value,m=form.msg.value.trim();
   const txt=d.msg(n,s,dt,g,l,m);preview.textContent=txt;preview.dir=LANG==='ar'?'rtl':'ltr';
   const num=placeholder(WHATSAPP_NUMBER)?'':WHATSAPP_NUMBER.replace(/\D/g,'');wa.href=num?`https://wa.me/${num}?text=${encodeURIComponent(txt)}`:`https://wa.me/?text=${encodeURIComponent(txt)}`}
+/* Être rappelé : visible seulement quand le serveur Amane répond (Vercel), la demande arrive dans le CRM. */
+const cbBtn=$('#callback'),cbField=$('.cbf'),privEl=$('.priv');let CB_ON=false;
+function cbToast(k){const t=$('#toast');t.textContent=I18N[LANG][k];t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600)}
+function cbPriv(){if(CB_ON&&I18N[LANG]&&I18N[LANG].priv2)privEl.textContent=I18N[LANG].priv2}
+if(location.protocol.startsWith('http')&&!window.claude)fetch('/api/health',{headers:{accept:'application/json'}}).then(r=>r.ok?r.json():null).then(h=>{if(!h||!h.db)return;CB_ON=true;window.__cbOn=true;cbBtn.hidden=false;cbField.hidden=false;cbPriv()}).catch(()=>{});
+cbBtn.addEventListener('click',async()=>{const tel=form.tel.value.trim();if(tel.replace(/\D/g,'').length<8){cbToast('cbneed');form.tel.focus();return}
+  cbBtn.disabled=true;
+  try{const r=await fetch('/api/lead',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nom:form.name.value.trim(),tel,langue:{fr:'FR',en:'EN',es:'ES',ar:'AR'}[LANG]||'FR',service:form.service.options[form.service.selectedIndex]?.text||'',date:form.date.value,message:preview.textContent,website:form.website.value})});
+    if(!r.ok)throw 0;cbToast('cbok');form.tel.value=''}catch(e){cbToast('cberr')}finally{cbBtn.disabled=false}});
 form.addEventListener('input',updatePreview);form.addEventListener('change',updatePreview);form.addEventListener('submit',e=>{e.preventDefault();wa.click()});
 $('#copy').addEventListener('click',()=>{const t=$('#toast');const done=()=>{t.textContent=I18N[LANG].copied;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1800)};
   if(navigator.clipboard)navigator.clipboard.writeText(preview.textContent).then(done).catch(()=>{const r=document.createRange();r.selectNodeContents(preview);const s=getSelection();s.removeAllRanges();s.addRange(r);done()});else done()});
