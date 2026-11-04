@@ -166,7 +166,7 @@ function audit(opts) {
     const c = cs(el); const fs = parseFloat(c.fontSize); const caps = c.textTransform === 'uppercase' && parseFloat(c.letterSpacing) >= fs * .1; const min = caps ? 11 * opts.scale : 12 * opts.scale;
     if (fs < min - .05) push('font', `${desc(el)} ${fs.toFixed(1)}px`);
   }
-  if (touch && W < 1020) for (const el of all) { if (!el.matches('input,select,textarea') || el.type === 'checkbox' || el.type === 'radio' || el.type === 'file') continue; const fs = parseFloat(cs(el).fontSize); if (fs < 16 * opts.scale - .05) push('input16', `${desc(el)} ${fs.toFixed(1)}px (zoom iOS)`); }
+  if (touch) for (const el of all) { if (!el.matches('input,select,textarea') || el.type === 'checkbox' || el.type === 'radio' || el.type === 'file') continue; const fs = parseFloat(cs(el).fontSize); if (fs < 16 * opts.scale - .05) push('input16', `${desc(el)} ${fs.toFixed(1)}px (zoom iOS)`); }
 
   // 6. Barres fixes et contenu (hors couche modale)
   if (layer === document.body) {
@@ -181,7 +181,7 @@ function audit(opts) {
   const dr = document.querySelector('[data-testid="drawer"]');
   if (dr) { const r = dr.getBoundingClientRect(); if (r.top < -1 || r.bottom > H + 1) push('drawer', `tiroir hors écran (${Math.round(r.top)}→${Math.round(r.bottom)} / ${H})`);
     const save = dr.querySelector('[data-testid="save"]'); if (!save || !vis(save)) push('drawer', 'bouton Enregistrer absent'); else { const s = save.getBoundingClientRect(); if (s.bottom > H + 1 || s.top < 0) push('drawer', `Enregistrer hors écran (${Math.round(s.top)}→${Math.round(s.bottom)} / ${H})`); if (touch && (s.height < 43.5)) push('tap', `Enregistrer ${Math.round(s.height)}px`); }
-    const body = dr.querySelector('[data-drawer-body]'); if (!body || !/(auto|scroll)/.test(cs(body).overflowY)) push('drawer', 'corps du tiroir non défilant'); else if (body.clientHeight < 80) push('drawer', `corps du tiroir trop bas (${body.clientHeight}px)`);
+    const body = dr.querySelector('[data-drawer-body]'); const whole = /(auto|scroll)/.test(cs(dr).overflowY); if (!body || (!whole && !/(auto|scroll)/.test(cs(body).overflowY))) push('drawer', 'corps du tiroir non défilant'); else if (!whole && body.clientHeight < 80) push('drawer', `corps du tiroir trop bas (${body.clientHeight}px)`);
     const h2 = dr.querySelector('h2'); if (h2 && h2.getBoundingClientRect().top < 0) push('drawer', 'en-tête du tiroir hors écran'); }
 
   // 8. Kanban : accrochage et défilement ; 9. Planning : colonne fixe
@@ -189,7 +189,7 @@ function audit(opts) {
   const pl = document.querySelector('[data-plan]'); if (pl && vis(pl)) { if (!/(auto|scroll)/.test(cs(pl).overflowX)) push('planning', 'grille non défilante'); const rl = pl.querySelector('[data-rowlabel]'); if (rl && cs(rl).position !== 'sticky') push('planning', 'première colonne non fixe'); }
 
   // 10. Arabe : direction et alignement
-  for (const el of all) { const t = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join(''); if (!/[؀-ۿ]{3,}/.test(t) || /^[A-Za-z]/.test(t.trim())) continue; if (el.matches('option,select')) continue; const c = cs(el); if (c.direction !== 'rtl') push('rtl', `${desc(el)} direction ${c.direction}`); else if (c.textAlign === 'left') push('rtl', `${desc(el)} aligné à gauche`); }
+  for (const el of all) { const t = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join(''); if (!/[؀-ۿ]{3,}/.test(t) || /^[^\p{L}]*[A-Za-z]/u.test(t.trim())) continue; if (el.matches('option,select')) continue; const c = cs(el); if (c.direction !== 'rtl') push('rtl', `${desc(el)} direction ${c.direction}`); else if (c.textAlign === 'left') push('rtl', `${desc(el)} aligné à gauche`); }
 
   // 11. Images déformées
   for (const img of layer.querySelectorAll('img')) { if (!vis(img) || !img.complete || !img.naturalWidth) continue; const c = cs(img); if (c.objectFit === 'cover' || c.objectFit === 'contain') continue; const r = img.getBoundingClientRect(); const k = (r.width / r.height) / (img.naturalWidth / img.naturalHeight); if (Math.abs(k - 1) > .03) push('image', `${desc(img)} déformée (${k.toFixed(2)})`); }
@@ -202,7 +202,7 @@ function audit(opts) {
   const opOf = (el) => { let o = 1; for (let e = el; e; e = e.parentElement) o *= +cs(e).opacity; return o; };
   for (const el of all) {
     const hasText = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()); if (!hasText) continue; if (el.closest('[disabled],[aria-disabled="true"],[aria-hidden="true"],.sending,option,select')) continue;
-    const c = cs(el); const bg = bgOf(el); if (!bg) continue; let fg = toRGBA(c.color); fg[3] *= opOf(el); fg = over(fg, bg);
+    if (opOf(el) < .05) continue; const c = cs(el); const bg = bgOf(el); if (!bg) continue; let fg = toRGBA(c.color); fg[3] *= opOf(el); fg = over(fg, bg);
     const l1 = lum(fg), l2 = lum(bg); const ratio = (Math.max(l1, l2) + .05) / (Math.min(l1, l2) + .05); const fs = parseFloat(c.fontSize); const big = fs >= 24 || (fs >= 18.66 && parseInt(c.fontWeight) >= 700);
     if (ratio < (big ? 3 : 4.5)) push('contrast', `${desc(el)} ${ratio.toFixed(2)}:1`);
   }

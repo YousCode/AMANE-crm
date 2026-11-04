@@ -20,7 +20,7 @@ import { Aide } from './screens/Aide';
 import { startLive, stopLive } from './lib/ws';
 import { Logo } from './components/Icon';
 
-function Splash() { return <div style={{ minHeight: '100%', display: 'grid', placeItems: 'center', color: 'var(--fg)' }}><div style={{ textAlign: 'center' }}><Logo arch size={52} /><div style={{ marginTop: 14, fontFamily: 'var(--f-display)', letterSpacing: '.5em', paddingLeft: '.5em', fontSize: 13 }}>AMANE</div><div className="label" style={{ marginTop: 10 }}>Connexion…</div></div></div>; }
+function Splash() { return <div style={{ minHeight: '100%', display: 'grid', placeItems: 'center', color: 'var(--fg)' }}><div style={{ textAlign: 'center' }}><Logo arch size={52} /><div style={{ marginTop: 14, fontFamily: 'var(--f-display)', letterSpacing: '.5em', paddingLeft: '.5em', fontSize: '0.8125rem' }}>AMANE</div><div className="label" style={{ marginTop: 10 }}>Connexion…</div></div></div>; }
 
 export default function App() {
   const auth = useStore((x) => x.auth); const boot = useStore((x) => x.boot); const user = useStore((x) => x.user);

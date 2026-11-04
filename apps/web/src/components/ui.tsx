@@ -27,7 +27,7 @@ export function ContactBtns({ tel, email, lieu, wa, telLabel, waLabel, noSms, ch
   const toast = useUI((s) => s.toast);
   const t = telHref(tel), w = telNorm(tel) ? waLink(tel, wa || '') : '', s = smsHref(tel), m = mapsLink(lieu || '');
   return (
-    <div className="ctc" role="group" aria-label="Contacter">
+    <div className="ctc" role="group" aria-label="Contacter" data-hscroll="1">
       {t && <a className="ct dark" href={t}><Icon k="phone" />{telLabel || 'Appeler'}</a>}
       {w && <a className="ct" href={w} target="_blank" rel="noopener"><Icon k="wa" />{waLabel || 'WhatsApp'}</a>}
       {s && !noSms && <a className="ct" href={s}><Icon k="sms" />SMS</a>}

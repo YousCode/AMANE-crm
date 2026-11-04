@@ -9,6 +9,13 @@ export function useIsMobile() {
   return m;
 }
 export const isMobile = () => !!MQ?.matches;
+const CQ = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(pointer:coarse)') : null;
+/** Appareil tactile (cibles de 44 px, y compris tablette). */
+export function useCoarse() {
+  const [m, setM] = useState(!!CQ?.matches);
+  useEffect(() => { if (!CQ) return; const f = () => setM(CQ.matches); CQ.addEventListener ? CQ.addEventListener('change', f) : CQ.addListener(f); return () => { CQ.removeEventListener ? CQ.removeEventListener('change', f) : CQ.removeListener(f); }; }, []);
+  return m;
+}
 /** Les cinq collections métier, mémorisées, pour les règles dérivées. */
 export function useData(): Data {
   const missions = useStore((x) => x.missions), clients = useStore((x) => x.clients), vehicules = useStore((x) => x.vehicules), partenaires = useStore((x) => x.partenaires), services = useStore((x) => x.services);

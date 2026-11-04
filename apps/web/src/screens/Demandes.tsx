@@ -19,7 +19,7 @@ function Card({ m, D, onOpen, move, dragging }: { m: Mission; D: ReturnType<type
   const c = byId(D.clients, m.clientId), v = byId(D.vehicules, m.vehiculeId), k = contratScore(m), cl = clashes(m, D.missions).length; const prev = prevStatut(m.statut), next = nextStatut(m.statut);
   return (
     <div className={`${s.card} ${dragging ? s.dragging : ''}`} data-id={m.id} data-testid={`card-${m.id}`} tabIndex={0} role="button" onClick={onOpen} onKeyDown={(e) => { if (e.key === 'Enter') onOpen(); }}>
-      <div className={s.ct}>{m.titre}</div>
+      <div className={s.ct} dir="auto">{m.titre}</div>
       <div className={s.cm}><Icon k="user" /><span>{c ? c.nom : 'Client à préciser'}</span></div>
       <div className={s.cm}><Icon k={SVC_ICON[m.service || ''] || 'spark'} /><span>{svcName(D.services, m.service)}{v ? ' · ' + v.nom : ''}</span></div>
       <div className={s.cm}><Icon k="clock" /><span>{fmtDT(parse(m.debut))}</span></div>
@@ -54,12 +54,12 @@ function useKanbanDrag(onDrop: (id: string, col: string) => void) {
 
 export function Demandes() {
   const D = useData(); const user = useStore((x) => x.user); const mobile = useIsMobile(); const { openDrawer, filters, setFilter } = useUI(); const move = useMoveMission();
-  const dv = filters.dview || (mobile ? 'liste' : 'kanban');
+  const dv = filters.dview || (mobile && !(typeof window !== 'undefined' && window.matchMedia('(min-width:700px)').matches) ? 'liste' : 'kanban');
   let ms = D.missions; if (filters.mine && user) ms = ms.filter((m) => m.responsable === user.id); if (filters.svc) ms = ms.filter((m) => m.service === filters.svc);
   const { draggingId, suppress } = useKanbanDrag(useMemo(() => (id: string, col: string) => move(id, col), [move]));
   const open = (id: string) => { if (suppress.current) return; openDrawer('mission', id); };
   return <>
-    <div className="view-h"><div><div className="label">Pipeline</div><h2>Demandes</h2></div><div className="tools">
+    <div className="view-h"><div><div className="label">Pipeline</div><h2>Demandes</h2></div><div className="tools tools-dem">
       <div className="seg" role="group" aria-label="Filtre"><button type="button" aria-pressed={!filters.mine} onClick={() => setFilter('mine', false)}>Toutes</button><button type="button" aria-pressed={filters.mine} onClick={() => setFilter('mine', true)}>Les miennes</button></div>
       <select className="field-inline" aria-label="Service" value={filters.svc} onChange={(e) => setFilter('svc', e.target.value)}><option value="">Tous les services</option>{services(D.services).map((x) => <option key={x.id} value={x.id}>{x.nom}</option>)}</select>
       <div className="seg" role="group" aria-label="Affichage"><button type="button" aria-pressed={dv === 'kanban'} onClick={() => setFilter('dview', 'kanban')}>Colonnes</button><button type="button" aria-pressed={dv === 'liste'} onClick={() => setFilter('dview', 'liste')}>Liste</button></div>
@@ -86,7 +86,7 @@ function ListView({ ms, D, move }: { ms: Mission[]; D: ReturnType<typeof useData
     return <section key={st.id} className={s.lgrp}><div className={s.lgrpH}><Chip st={st.id} /><span className={s.s}>{it.length} · {fmtK(tot)}</span></div>{it.map((m) => { const c = byId(D.clients, m.clientId), v = byId(D.vehicules, m.vehiculeId); const prev = prevStatut(m.statut), next = nextStatut(m.statut); const cl = clashes(m, D.missions).length;
       return <div key={m.id} className={s.sw}><div className={s.swBg} aria-hidden="true"><span className={s.p}>{prev ? '‹ ' + label(STATUTS, prev) : ''}</span><span className={s.n}>{next ? label(STATUTS, next) + ' ›' : ''}</span></div>
         <div className={s.lcard} role="button" tabIndex={0} data-testid={`lcard-${m.id}`} onClick={() => { if (!suppress.current) openDrawer('mission', m.id); }} onPointerDown={(e) => onDown(e, m)} onPointerMove={(e) => onMove(e, m)} onPointerUp={(e) => onUp(e, m)} onPointerCancel={() => { reset(sw.current.el); sw.current.el = null; }}>
-          <div className={s.top}><span className={s.ct2}>{m.titre}</span></div>
+          <div className={s.top}><span className={s.ct2} dir="auto">{m.titre}</span></div>
           <div className={s.cm}><Icon k="user" /><span>{c ? c.nom : 'Client à préciser'}</span></div><div className={s.cm}><Icon k={SVC_ICON[m.service || ''] || 'spark'} /><span>{svcName(D.services, m.service)}{v ? ' · ' + v.nom : ''}</span></div><div className={s.cm}><Icon k="clock" /><span>{fmtDT(parse(m.debut))}</span></div>{cl ? <div className={s.cm} style={{ color: 'var(--bad)' }}><Icon k="alert" /><span>Véhicule déjà réservé</span></div> : null}
           <div className={s.bt}><Av id={m.responsable} /><span className={s.amt}>{m.montant ? fmtE(m.montant) : '—'}</span><QA tel={c?.tel} wa={helloTxt(c)} lieu={m.lieu} who={c?.nom} /></div>
           <div className={s.mv} onClick={(e) => e.stopPropagation()}><button type="button" aria-label="Étape précédente" disabled={!prev} onClick={() => prev && move(m.id, prev)}>‹</button><span>{prev || next ? 'Balayer ou' : ''} déplacer</span><button type="button" aria-label="Étape suivante" disabled={!next} onClick={() => next && move(m.id, next)}>›</button></div>
