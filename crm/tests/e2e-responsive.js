@@ -80,8 +80,9 @@ const AUDIT=`(function(o){
   // 7. Champs < 16 px sur téléphone (zoom iOS)
   if(o.phone)[...root.querySelectorAll('input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea')].filter(visible).forEach(el=>{const fs=parseFloat(cs(el).fontSize);if(fs<15.95)add('input-small',el,fs.toFixed(1)+'px')});
   // 8. Chevauchements entre textes / contrôles qui ne sont pas parents l'un de l'autre
+  const visRect=el=>{const q=el.getBoundingClientRect();let L=q.left,T=q.top,R=q.right,B=q.bottom;for(let a=el.parentElement;a&&a!==document.documentElement;a=a.parentElement){const c=cs(a);if(/(auto|scroll|hidden|clip)/.test(c.overflowX+c.overflowY)){const r=a.getBoundingClientRect();L=Math.max(L,r.left);T=Math.max(T,r.top);R=Math.min(R,r.right);B=Math.min(B,r.bottom)}}return R>L&&B>T?{left:L,top:T,right:R,bottom:B,width:R-L,height:B-T}:null};
   const fixedish=el=>{for(let a=el;a&&a!==document.body;a=a.parentElement){const ps=cs(a).position;if(ps==='fixed'||ps==='sticky')return a}return null};
-  const boxes=all.filter(el=>(hasText(el)||el.matches('button,a[href],input,select,textarea'))&&!el.closest('.track,.funnel,.gal,.vcard .win,.strip,.lanes,svg,.tog,.sw-bg,.dots')).map(el=>({el,r:el.getBoundingClientRect()})).filter(b=>b.r.width>2&&b.r.height>2&&b.r.bottom>0&&b.r.top<H).slice(0,900);
+  const boxes=all.filter(el=>(hasText(el)||el.matches('button,a[href],input,select,textarea'))&&!el.closest('.track,.funnel,.gal,.vcard .win,.strip,.lanes,svg,.tog,.sw-bg,.dots')).map(el=>({el,r:visRect(el)})).filter(b=>b.r&&b.r.width>2&&b.r.height>2&&b.r.bottom>0&&b.r.top<H).slice(0,900);
   for(let i=0;i<boxes.length;i++)for(let k=i+1;k<boxes.length;k++){const a=boxes[i],b=boxes[k];if(a.el.contains(b.el)||b.el.contains(a.el))continue;const x=Math.min(a.r.right,b.r.right)-Math.max(a.r.left,b.r.left),y=Math.min(a.r.bottom,b.r.bottom)-Math.max(a.r.top,b.r.top);if(x<=2||y<=2)continue;const inter=x*y,small=Math.min(a.r.width*a.r.height,b.r.width*b.r.height);if(inter>small*.35){if(fixedish(a.el)!==fixedish(b.el))continue;add('overlap',a.el,'avec '+sig(b.el))}}
   // 9. Contrôles invisibles tant qu'on ne survole pas (pas d'équivalent tactile)
   if(o.touch)[...root.querySelectorAll('button,a[href]')].forEach(el=>{if(el.closest(HID))return;let op=1;for(let a=el;a&&a!==document.body;a=a.parentElement)op*=parseFloat(cs(a).opacity);if(op<.05&&!el.closest('[hidden]'))add('hover-only',el,'opacité 0')});
@@ -149,21 +150,22 @@ async function boot(mode,w,h,extra){const api=mode==='server'?seedData():null;
     await p.evaluate(async cols=>{const db=await window.claude.use('db');for(const [c,docs] of Object.entries(cols))for(const [id,d] of Object.entries(docs))await db.collection(c).doc(id).set(d)},seedCols);await W(p,600);
     await p.evaluate(()=>{location.hash='flotte'});await W(p,300);await p.evaluate(()=>__open('vehicule','urus','photos'));await W(p,300);await p.setInputFiles('#phIn',[img]);await W(p,1000);await close(p)}
   return {ctx,p,api}}
-async function login(p){await p.click('#login [data-lgwho="amel"]');await W(p,200);for(const k of '1234')await p.click(`#login [data-key="${k}"]`);await p.click('#login [data-key="ok"]');await W(p,900)}
+async function login(p){if(await p.isVisible('#login [data-lgwho="amel"]')){await p.click('#login [data-lgwho="amel"]');await W(p,200)}for(const k of '1234')await p.click(`#login [data-key="${k}"]`);await p.click('#login [data-key="ok"]');await W(p,900)}
 async function run(mode,w,h,opts){opts=opts||{};const tag=(opts.dark?'dark-':'')+(opts.big?'big-':'')+w+'x'+h;
   const {ctx,p}=await boot(mode,w,h,opts.dark?{colorScheme:'dark'}:null);
   if(opts.big)await p.addStyleTag({content:':root{font-size:20px}'});
   const phone=isPhone(w,h),touch=isTouch(w,h);
   const states=STATES.filter(s=>(s.modes==='both'||s.modes===mode)&&(!ONLY||ONLY.includes(s.id))&&(!s.phoneOnly||w<=760)&&(!opts.only||opts.only.includes(s.id)));
   let logged=false;
+  states.sort((x,y)=>(y.login?1:0)-(x.login?1:0));
   for(const s of states){
-    if(mode==='server'&&!s.login&&!logged){await login(p);logged=true}
-    if(s.login&&logged)continue;
-    try{if(s.go)await s.go(p);
+    if(mode==='server'&&!s.login&&!logged){await p.reload();await W(p,800);await login(p);logged=true}
+    try{await p.evaluate(()=>document.getElementById('toast')&&document.getElementById('toast').classList.remove('on'));if(s.go)await s.go(p);
       if(opts.big)await p.evaluate(()=>{document.documentElement.style.fontSize='20px'});
+      await p.evaluate(()=>document.getElementById('toast')&&document.getElementById('toast').classList.remove('on'));
       const found=await p.evaluate('('+AUDIT+')('+JSON.stringify({root:s.root,touch,phone,dark:!!opts.dark})+')');
       // Barres fixes, tiroir, fil, connexion, kanban, planning : vérifications propres à l'état
-      const extra=await p.evaluate(({id,root,phone})=>{const out=[];const H=innerHeight,Wd=innerWidth;const q=s=>document.querySelector(s);const vis=el=>el&&el.checkVisibility({checkOpacity:true,checkVisibilityCSS:true});
+      const extra=await p.evaluate(({id,root,phone})=>{const out=[];window.scrollTo(0,0);const H=innerHeight,Wd=innerWidth;const q=s=>document.querySelector(s);const vis=el=>el&&el.checkVisibility({checkOpacity:true,checkVisibilityCSS:true});
         const within=(el,lab)=>{const r=el.getBoundingClientRect();if(r.bottom>H+1||r.top<-1||r.right>Wd+1||r.left<-1)out.push({cat:'fixed-bars',el:lab,info:'hors écran '+Math.round(r.top)+'→'+Math.round(r.bottom)+' / '+H})};
         if(root==='#drawer'){const d=q('#drawer');const f=q('#drawer .dr-f'),hd=q('#drawer .dr-h'),bd=q('#drawer .dr-b'),sv=q('#drawer [data-act="save"]');
           if(!f||!vis(f))out.push({cat:'drawer',el:'.dr-f',info:'barre Enregistrer invisible'});else within(f,'.dr-f (Enregistrer)');
@@ -203,7 +205,7 @@ if(!process.env.VPS||VPS.some(v=>v[0]===390)){const ctx=await b.newContext({view
   await p.goto('http://crm.test/');await W(p,900);if(await p.isVisible('#whoM')){await p.click('[data-who="amel"]');await W(p,300)}
   const rm=await p.evaluate(()=>{const g=s=>getComputedStyle(document.querySelector(s));return {live:g('#live i').animationName,drawer:g('#drawer').transitionDuration,orb:(document.querySelector('.mj-h .orb')?g('.mj-h .orb').animationName:'none')}});
   ok('mouvement réduit : aucune animation ni transition',(rm.live==='none')&&/^0s/.test(rm.drawer),JSON.stringify(rm));await ctx.close()}
-}catch(e){res.push('CRASH '+String(e.message).split('\n')[0])}
+}catch(e){res.push('CRASH '+String(e.message).split('\n').slice(0,6).join(' | '))}
 await b.close();
 
 /* ---------- rapport ---------- */
