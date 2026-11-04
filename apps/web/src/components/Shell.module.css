@@ -14,7 +14,7 @@
 .meBtn.amel{background:#111;color:#F6F1E8;border-color:#111}.meBtn.youssouf{background:#6E675F;color:#F6F1E8;border-color:#6E675F}.meBtn.aziz{background:#8A6A3B;color:#F6F1E8;border-color:#8A6A3B}
 @media (max-height:820px){.navBtn{padding:6px 2px 5px;gap:3px}.navBtn svg{width:19px;height:19px}.brand{margin-bottom:6px}}
 
-.main{position:relative;z-index:1;margin-left:var(--rail);min-height:100%;padding:calc(18px + var(--sat)) max(28px,env(safe-area-inset-right,0px)) 60px max(28px,env(safe-area-inset-left,0px));min-width:0}
+.main{position:relative;z-index:1;margin-left:var(--rail);min-height:100%;padding:calc(18px + var(--sat)) max(28px,env(safe-area-inset-right,0px), calc((100% - 1600px) / 2)) 60px max(28px,env(safe-area-inset-left,0px), calc((100% - 1600px) / 2));min-width:0}
 .topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:24px}
 .greet{flex:1;min-width:220px}
 .eyebrow{font-size:0.75rem;letter-spacing:.32em;text-transform:uppercase;color:var(--fg3);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -75,7 +75,7 @@
 @keyframes sheetIn{from{transform:translateY(24px);opacity:0}}
 .grab{width:38px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px}
 .shUser{display:flex;align-items:center;gap:14px;padding:4px 2px 16px;border-bottom:1px solid var(--line2);flex-wrap:wrap}
-.shUser>span{min-width:0;flex:1}
+.shUser>span{min-width:0;flex:1 1 140px}
 .shUser b{display:block;font-family:var(--f-display);font-weight:400;font-size:1.3125rem;line-height:1.1}
 .shUser span.r{font-size:0.7812rem;color:var(--fg3)}
 .shUser .btn{margin-left:auto}

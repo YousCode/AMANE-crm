@@ -30,7 +30,7 @@ const journeys = {
     await login(page); await page.goto(BASE + '/demandes');
     if (isMobile(vp)) {
       await page.waitForSelector('[data-testid="lcard-m_shop"]'); const b = await page.locator('[data-testid="lcard-m_shop"]').boundingBox();
-      await page.mouse.move(b.x + b.width - 30, b.y + b.height / 2); await page.mouse.down(); for (let i = 1; i <= 8; i++) await page.mouse.move(b.x + b.width - 30 - i * 20, b.y + b.height / 2); await page.mouse.up();
+      const sx = b.x + b.width * .62, sy = b.y + 22; /* sur le titre : les boutons ronds (appeler, WhatsApp, itinéraire) font désormais 44 px et ne déclenchent pas le balayage */ await page.mouse.move(sx, sy); await page.mouse.down(); for (let i = 1; i <= 8; i++) await page.mouse.move(sx - i * 20, sy); await page.mouse.up();
     } else {
       await page.waitForSelector('[data-testid="card-m_shop"]'); const c = await page.locator('[data-testid="card-m_shop"]').boundingBox(); const col = await page.locator('[data-testid="col-proposition"]').boundingBox();
       await page.mouse.move(c.x + 40, c.y + 20); await page.mouse.down(); await page.mouse.move(c.x + 60, c.y + 30); for (let i = 1; i <= 6; i++) await page.mouse.move(c.x + 60 + ((col.x + 80 - c.x) * i) / 6, c.y + 60); await page.mouse.up();
