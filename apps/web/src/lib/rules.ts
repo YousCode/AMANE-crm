@@ -40,37 +40,39 @@ export const nowState = (ms: Mission[], v: Vehicule) => { const now = new Date()
 export const ST_CHIP: Record<string, [string, string]> = { f: ['confirmee', 'Libre'], b: ['perdue', 'Réservé'], o: ['proposition', 'Option'], off: ['proposition', 'Indisponible'] };
 export function driverAt(ms: Mission[], vid: string, dt?: string) { const t = parse(dt); if (!t) return null; return ms.find((m) => m.vehiculeId === vid && ['confirmee', 'encours', 'terminee'].includes(m.statut) && parse(m.debut) && (parse(m.debut) as Date) <= t && ((parse(m.fin) || parse(m.debut)) as Date) >= t) || null; }
 
-export interface Todo { sev: 'bad' | 'warn'; t: string; d: string; id?: string; tab?: string; vid?: string; vtab?: string; cid?: string }
+export type TodoKind = 'demande' | 'proposition' | 'contrat' | 'pieces' | 'caution' | 'attribuer' | 'prep' | 'solde' | 'conflit' | 'tache' | 'facture' | 'echeance' | 'pv' | 'entretien' | 'anniversaire';
+/** `k` : nature de la tâche (classement dans le Salon) ; `at` : l'instant qui la rend urgente (départ, échéance) ; `days` : jours de retard ou d'attente. */
+export interface Todo { sev: 'bad' | 'warn'; t: string; d: string; id?: string; tab?: string; vid?: string; vtab?: string; cid?: string; k?: TodoKind; at?: Date; days?: number }
 export function todos(D: Data): Record<string, Todo[]> {
   const ms = D.missions, now = new Date(), out: Record<string, Todo[]> = { amel: [], youssouf: [], aziz: [] };
   const cl = (m: Mission) => byId(D.clients, m.clientId);
   ms.forEach((m) => {
     const c = cl(m), cn = c ? c.nom : 'Client'; const a = parse(m.debut); const k = m.contrat || ({} as NonNullable<Mission['contrat']>);
-    if (m.statut === 'nouvelle') out.amel.push({ sev: 'bad', t: `Répondre à ${cn}`, d: m.titre, id: m.id });
-    if (m.statut === 'proposition' && a && +a - +now < 3 * 864e5 && a > now) out.amel.push({ sev: 'warn', t: `Relancer ${cn}`, d: `${m.titre} · ${fmtDay(a)}`, id: m.id });
+    if (m.statut === 'nouvelle') out.amel.push({ sev: 'bad', t: `Répondre à ${cn}`, d: m.titre, id: m.id, k: 'demande', at: a || undefined });
+    if (m.statut === 'proposition' && a && +a - +now < 3 * 864e5 && a > now) out.amel.push({ sev: 'warn', t: `Relancer ${cn}`, d: `${m.titre} · ${fmtDay(a)}`, id: m.id, k: 'proposition', at: a });
     if (['confirmee', 'encours'].includes(m.statut)) {
-      if (k.statut !== 'signe') out.aziz.push({ sev: a && +a - +now < 2 * 864e5 ? 'bad' : 'warn', t: `Contrat ${k.statut === 'envoye' ? 'à faire signer' : 'à rédiger'}`, d: `${cn} · ${fmtDay(a)}`, id: m.id, tab: 'contrat' });
-      const p = k.pieces || {}; if (m.vehiculeId && (!p.permis || !p.passeport)) out.aziz.push({ sev: 'warn', t: 'Pièces d’identité manquantes', d: `${cn} · ${m.titre}`, id: m.id, tab: 'contrat' });
-      if (m.vehiculeId && (+(k.caution || 0)) > 0 && k.cautionStatut === 'aucune') out.aziz.push({ sev: 'warn', t: `Caution ${fmtE(k.caution)} à pré-autoriser`, d: cn, id: m.id, tab: 'contrat' });
-      if (!m.vehiculeId && ['location', 'van', 'chauffeur', 'transfert'].includes(m.service || '')) out.youssouf.push({ sev: 'warn', t: 'Véhicule à attribuer', d: `${m.titre} · ${fmtDay(a)}`, id: m.id });
-      if (m.vehiculeId && a && +a - +now < 1.5 * 864e5 && !(k.edlDepart && k.edlDepart.fait)) out.youssouf.push({ sev: 'warn', t: 'Préparer le véhicule et l’état des lieux', d: `${m.titre} · ${fmtDT(a)}`, id: m.id, tab: 'contrat' });
+      if (k.statut !== 'signe') out.aziz.push({ sev: a && +a - +now < 2 * 864e5 ? 'bad' : 'warn', t: `Contrat ${k.statut === 'envoye' ? 'à faire signer' : 'à rédiger'}`, d: `${cn} · ${fmtDay(a)}`, id: m.id, tab: 'contrat', k: 'contrat', at: a || undefined });
+      const p = k.pieces || {}; if (m.vehiculeId && (!p.permis || !p.passeport)) out.aziz.push({ sev: 'warn', t: 'Pièces d’identité manquantes', d: `${cn} · ${m.titre}`, id: m.id, tab: 'contrat', k: 'pieces', at: a || undefined });
+      if (m.vehiculeId && (+(k.caution || 0)) > 0 && k.cautionStatut === 'aucune') out.aziz.push({ sev: 'warn', t: `Caution ${fmtE(k.caution)} à pré-autoriser`, d: cn, id: m.id, tab: 'contrat', k: 'caution', at: a || undefined });
+      if (!m.vehiculeId && ['location', 'van', 'chauffeur', 'transfert'].includes(m.service || '')) out.youssouf.push({ sev: 'warn', t: 'Véhicule à attribuer', d: `${m.titre} · ${fmtDay(a)}`, id: m.id, k: 'attribuer', at: a || undefined });
+      if (m.vehiculeId && a && +a - +now < 1.5 * 864e5 && !(k.edlDepart && k.edlDepart.fait)) out.youssouf.push({ sev: 'warn', t: 'Préparer le véhicule et l’état des lieux', d: `${m.titre} · ${fmtDT(a)}`, id: m.id, tab: 'contrat', k: 'prep', at: a });
     }
-    if (m.statut === 'terminee' && k.cautionStatut === 'preautorisee') out.aziz.push({ sev: 'warn', t: 'Caution à libérer', d: `${cn} · ${m.titre}`, id: m.id, tab: 'contrat' });
-    if (m.statut === 'terminee' && m.paiement !== 'solde') out.aziz.push({ sev: 'bad', t: 'Solde à encaisser', d: `${cn} · ${fmtE((+(m.montant || 0)) - (+(m.acompte || 0)))}`, id: m.id, tab: 'devis' });
-    if (clashes(m, ms).length) out.youssouf.push({ sev: 'bad', t: 'Double réservation', d: m.titre, id: m.id });
-    if (chClashes(m, ms).length) out.youssouf.push({ sev: 'bad', t: 'Chauffeur en double réservation', d: m.titre, id: m.id });
-    if (m.statut !== 'perdue') (m.taches || []).forEach((x) => { if (x.fait || !x.resp || !out[x.resp] || !(x.t || '').trim()) return; const due = parse(x.due); out[x.resp].push({ sev: due && due < sod(now) ? 'bad' : 'warn', t: x.t, d: `${m.titre}${due ? ' · ' + fmtDay(due) : ''}`, id: m.id, tab: 'taches' }); });
-    const dv = m.devis; if (dv && dv.factureNumero) { const tt = devisTotals(dv); const fd = parse(dv.factureDate); if (tt.solde > 0.005 && fd && +now - +fd > 7 * 864e5) out.aziz.push({ sev: 'bad', t: `Facture ${dv.factureNumero} en retard`, d: `${cn} · ${fmtE(tt.solde)}`, id: m.id, tab: 'devis' }); }
+    if (m.statut === 'terminee' && k.cautionStatut === 'preautorisee') out.aziz.push({ sev: 'warn', t: 'Caution à libérer', d: `${cn} · ${m.titre}`, id: m.id, tab: 'contrat', k: 'caution' });
+    if (m.statut === 'terminee' && m.paiement !== 'solde') out.aziz.push({ sev: 'bad', t: 'Solde à encaisser', d: `${cn} · ${fmtE((+(m.montant || 0)) - (+(m.acompte || 0)))}`, id: m.id, tab: 'devis', k: 'solde', days: Math.max(0, Math.floor((+now - +(parse(m.fin) || now)) / 864e5)) });
+    if (clashes(m, ms).length) out.youssouf.push({ sev: 'bad', t: 'Double réservation', d: m.titre, id: m.id, k: 'conflit', at: a || undefined });
+    if (chClashes(m, ms).length) out.youssouf.push({ sev: 'bad', t: 'Chauffeur en double réservation', d: m.titre, id: m.id, k: 'conflit', at: a || undefined });
+    if (m.statut !== 'perdue') (m.taches || []).forEach((x) => { if (x.fait || !x.resp || !out[x.resp] || !(x.t || '').trim()) return; const due = parse(x.due); out[x.resp].push({ sev: due && due < sod(now) ? 'bad' : 'warn', t: x.t, d: `${m.titre}${due ? ' · ' + fmtDay(due) : ''}`, id: m.id, tab: 'taches', k: 'tache', at: due || undefined }); });
+    const dv = m.devis; if (dv && dv.factureNumero) { const tt = devisTotals(dv); const fd = parse(dv.factureDate); if (tt.solde > 0.005 && fd && +now - +fd > 7 * 864e5) out.aziz.push({ sev: 'bad', t: `Facture ${dv.factureNumero} en retard`, d: `${cn} · ${fmtE(tt.solde)}`, id: m.id, tab: 'devis', k: 'facture', days: Math.floor((+now - +fd) / 864e5) - 7 }); }
   });
   D.vehicules.forEach((v) => {
-    const e = v.echeances || {}; ([['assurance', 'Assurance'], ['ct', 'Contrôle technique'], ['leasing', 'Fin de leasing']] as const).forEach(([k, l]) => { const d = parse(e[k]); if (d && +d - +now < 30 * 864e5) out.youssouf.push({ sev: +d - +now < 7 * 864e5 ? 'bad' : 'warn', t: `${l} ${v.nom}`, d: `Échéance ${fmtDay(d)}`, vid: v.id }); });
-    (v.journal || []).forEach((j) => { if (j.type === 'pv' && !j.traite) { const m = driverAt(ms, v.id, j.dt); out.aziz.push({ sev: 'bad', t: `PV à désigner · ${v.nom}`, d: m ? `Conducteur : ${cl(m)?.nom || '?'}` : 'Date et heure à vérifier', vid: v.id, vtab: 'journal' }); } });
-    const r = parse(v.revision); if (r && +r - +now < 30 * 864e5) out.youssouf.push({ sev: +r - +now < 7 * 864e5 ? 'bad' : 'warn', t: `Révision ${v.nom}`, d: `Prévue ${fmtDay(r)}`, vid: v.id });
-    if (v.statut === 'entretien') out.youssouf.push({ sev: 'warn', t: `${v.nom} en entretien`, d: 'Indisponible à la location', vid: v.id });
+    const e = v.echeances || {}; ([['assurance', 'Assurance'], ['ct', 'Contrôle technique'], ['leasing', 'Fin de leasing']] as const).forEach(([k, l]) => { const d = parse(e[k]); if (d && +d - +now < 30 * 864e5) out.youssouf.push({ sev: +d - +now < 7 * 864e5 ? 'bad' : 'warn', t: `${l} ${v.nom}`, d: `Échéance ${fmtDay(d)}`, vid: v.id, k: 'echeance', at: d }); });
+    (v.journal || []).forEach((j) => { if (j.type === 'pv' && !j.traite) { const m = driverAt(ms, v.id, j.dt); out.aziz.push({ sev: 'bad', t: `PV à désigner · ${v.nom}`, d: m ? `Conducteur : ${cl(m)?.nom || '?'}` : 'Date et heure à vérifier', vid: v.id, vtab: 'journal', k: 'pv', days: Math.max(0, Math.floor((+now - +(parse(j.dt) || now)) / 864e5)) }); } });
+    const r = parse(v.revision); if (r && +r - +now < 30 * 864e5) out.youssouf.push({ sev: +r - +now < 7 * 864e5 ? 'bad' : 'warn', t: `Révision ${v.nom}`, d: `Prévue ${fmtDay(r)}`, vid: v.id, k: 'echeance', at: r });
+    if (v.statut === 'entretien') out.youssouf.push({ sev: 'warn', t: `${v.nom} en entretien`, d: 'Indisponible à la location', vid: v.id, k: 'entretien' });
   });
   D.clients.forEach((c) => {
     const b = parse(c.naissance); const t0 = sod(now);
-    const bd = (d: Date, l: string) => { let nx = new Date(t0.getFullYear(), d.getMonth(), d.getDate()); if (nx < t0) nx = new Date(t0.getFullYear() + 1, d.getMonth(), d.getDate()); const dd = Math.round((+nx - +t0) / 864e5); if (dd <= 7) out.amel.push({ sev: dd <= 1 ? 'bad' : 'warn', t: `${l} ${c.nom}`, d: dd === 0 ? 'Aujourd’hui' : `Dans ${dd} jour${dd > 1 ? 's' : ''} · ${fmtDay(nx)}`, cid: c.id }); };
+    const bd = (d: Date, l: string) => { let nx = new Date(t0.getFullYear(), d.getMonth(), d.getDate()); if (nx < t0) nx = new Date(t0.getFullYear() + 1, d.getMonth(), d.getDate()); const dd = Math.round((+nx - +t0) / 864e5); if (dd <= 7) out.amel.push({ sev: dd <= 1 ? 'bad' : 'warn', t: `${l} ${c.nom}`, d: dd === 0 ? 'Aujourd’hui' : `Dans ${dd} jour${dd > 1 ? 's' : ''} · ${fmtDay(nx)}`, cid: c.id, k: 'anniversaire', at: nx, days: dd }); };
     if (b) bd(b, 'Anniversaire de'); (c.datesImportantes || []).forEach((x) => { const d = parse(x.date); if (d) bd(d, x.label + ' ·'); });
   });
   return out;
