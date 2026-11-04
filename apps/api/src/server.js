@@ -20,7 +20,7 @@ const api = await createApp({ fake });
 const port = await api.listen();
 const host = process.env.HOST || '0.0.0.0';
 console.log(`Amane API ${VERSION} — http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`);
-console.log('  API : /api/health · WS : /ws · back-office : /app · CRM : /crm · site : /');
+console.log(process.env.CRM_ONLY === '1' ? '  CRM seul (CRM_ONLY=1) : CRM : / · API : /api/health · WS : /ws · back-office : /app' : '  API : /api/health · WS : /ws · back-office : /app · CRM : /crm · site : /');
 if (fake) {
   console.log('  base en mémoire (FAKE_DB=1) — les données disparaissent à l’arrêt');
   const pins = process.env.DEV_PINS ?? 'amel:1234,youssouf:1234,aziz:1234';

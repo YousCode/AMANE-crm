@@ -105,6 +105,16 @@ Cluster `amane` (Paris, EU_WEST_3), base `amane`, utilisateur `amane-app` (readW
 ### Railway / Render / Fly (Docker)
 Image : `docker build -f apps/api/Dockerfile -t amane-api .` depuis la racine (le Dockerfile copie `packages/shared`, `apps/api`, `crm`, `site` et `apps/web/dist` : construire le back-office avant, ou créer un dossier `apps/web/dist` vide). `apps/api/railway.json` et `apps/api/render.yaml` sont fournis ; sur Fly : `fly launch --dockerfile apps/api/Dockerfile`, `fly secrets set …`, une seule machine avec `CRON_ENABLED=1`. Variables : voir `.env.example`. `PUBLIC_URL` = l'URL publique (liens `/d/:token`, CORS du back-office). Santé : `GET /api/health`.
 
+### Projet « CRM seul », relié à la base
+
+Pour déployer uniquement le CRM (sans le site vitrine), relié à MongoDB Atlas : même image Docker, une variable en plus.
+
+- `CRM_ONLY=1` : le CRM est servi à la racine (`/`), le site n'est pas exposé ; l'API, le WebSocket et le back-office `/app` restent disponibles.
+- Variables minimales : `CRM_ONLY=1`, `MONGODB_URI`, `MONGODB_DB=amane`, `AUTH_SECRET`, `AMANE_SETUP_CODE`, `PUBLIC_URL=https://<votre-domaine>`.
+- Railway : *New Project → Deploy from GitHub repo* → `YousCode/AMANE` → le `railway.json` à la racine est repris (Dockerfile `apps/api/Dockerfile`) → onglet *Variables* : coller les valeurs ci-dessus → *Deploy*. Render : *New → Web Service* → même dépôt, *Docker*, chemin `apps/api/Dockerfile`, mêmes variables.
+- Première connexion : `POST /api/auth/setup {"code":"<AMANE_SETUP_CODE>","userId":"amel","pin":"<4 à 8 chiffres>"}` pour chacun des trois, puis ouvrir `/` et saisir le PIN.
+- Test : `node --test test/crm-only.test.js`.
+
 ### Meta — WhatsApp Cloud API
 1. Meta for Developers → app « Business » → produit WhatsApp. Noter le **Phone number ID** (`WHATSAPP_PHONE_NUMBER_ID`) et créer un **utilisateur système** (Business Settings → System users) avec un jeton permanent, permissions `whatsapp_business_messaging` + `whatsapp_business_management` (`WHATSAPP_TOKEN`). `WHATSAPP_APP_SECRET` = App settings → Basic → App secret.
 2. Webhook : URL `https://<PUBLIC_URL>/api/whatsapp`, jeton de vérification = `WHATSAPP_VERIFY_TOKEN`, abonnement au champ `messages`.

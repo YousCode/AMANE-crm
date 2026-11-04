@@ -41,6 +41,7 @@ let notificationsInstalled = false;
 export async function createApp(opts = {}) {
   const env = process.env;
   const fake = opts.fake ?? env.FAKE_DB === '1';
+  const crmOnly = opts.crmOnly ?? env.CRM_ONLY === '1';
   const outbox = [];
   let fakeDb = null;
   if (fake) {
@@ -125,11 +126,16 @@ export async function createApp(opts = {}) {
     };
     const serveCrm = (req, res) => { res.setHeader('X-Robots-Tag', 'noindex, nofollow'); res.setHeader('Cache-Control', 'no-store'); res.type('text/html; charset=utf-8').send(crmHtml()); };
     app.get(['/crm', '/crm/', '/crm/index.html'], serveCrm);
+    // Projet « CRM seul » (CRM_ONLY=1) : le CRM est servi à la racine, relié à la base ; le site vitrine n'est pas exposé.
+    if (crmOnly) app.get(['/', '/index.html'], serveCrm);
   }
 
-  // Site vitrine (site/) : « / » → vercel.html (sinon index.html), fichiers statiques.
+  // Site vitrine (site/) : « / » → vercel.html (sinon index.html), fichiers statiques. Absent en CRM seul (favicon excepté).
   const siteDir = opts.siteDir ?? path.join(ROOT, 'site');
-  if (isDir(siteDir)) {
+  if (crmOnly && isDir(siteDir)) {
+    const fav = path.join(siteDir, 'favicon.svg');
+    if (exists(fav)) app.get('/favicon.svg', (req, res) => res.sendFile(fav));
+  } else if (isDir(siteDir)) {
     const home = ['vercel.html', 'index.html'].map((f) => path.join(siteDir, f)).find(exists);
     if (home) app.get('/', (req, res) => res.sendFile(home));
     app.use(express.static(siteDir, { index: false, maxAge: '1h', dotfiles: 'ignore', setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-store'); } }));
