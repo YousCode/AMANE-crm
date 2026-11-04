@@ -7,13 +7,13 @@
 .card:hover{transform:translateY(-2px);border-color:var(--line)}
 .card.dragging{opacity:.35}
 .ghost{position:fixed;left:0;top:0;z-index:90;margin:0;pointer-events:none;opacity:.96;box-shadow:0 24px 48px -16px rgba(17,17,17,.35);transition:none;transform-origin:center}
-.ct{font-weight:500;line-height:1.3}
+.ct{font-weight:500;line-height:1.3;overflow-wrap:anywhere}
 .cm{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--fg3);min-width:0}
 .cm svg{width:14px;height:14px;flex:0 0 auto}
 .cm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cf{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .amt{font-family:var(--f-mono);font-size:13px}
-.mv{display:flex;align-items:center;justify-content:space-between;gap:6px;border-top:1px solid var(--line2);padding-top:8px;margin-top:2px;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--fg3);opacity:0;transition:opacity .2s}
+.mv{display:flex;align-items:center;justify-content:space-between;gap:6px;border-top:1px solid var(--line2);padding-top:8px;margin-top:2px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--fg3);opacity:0;transition:opacity .2s}
 .card:hover .mv,.card:focus-within .mv{opacity:1}
 @media (hover:none){.mv{opacity:1}}
 .mv button{width:30px;height:26px;border-radius:8px;border:1px solid var(--line2);background:var(--bg);color:var(--fg);font-size:15px;line-height:1;cursor:pointer}
@@ -31,10 +31,11 @@
 .lcard{position:relative;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:14px 14px 10px;display:flex;flex-direction:column;gap:6px;touch-action:pan-y;cursor:pointer;user-select:none;-webkit-user-select:none;transition:transform .28s cubic-bezier(.2,.8,.2,1)}
 .lcard.dragx{transition:none}
 .lcard .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-.lcard .ct2{font-weight:500;line-height:1.3}
+.lcard .ct2{font-weight:500;line-height:1.3;overflow-wrap:anywhere;min-width:0}
 .lcard .bt{display:flex;align-items:center;gap:10px;margin-top:4px}
 .lcard .bt .amt{margin-right:auto}
 .lcard .mv{opacity:1;margin-top:4px}
-.lcard .mv button{width:44px;height:36px}
+.lcard .mv button{width:44px;height:44px}
 .hint{margin:-8px 0 14px;color:var(--fg3);font-size:13px}
-@media (max-width:1019px){.kanban{grid-template-columns:repeat(6,minmax(80vw,1fr))}.mv button{width:44px;height:36px}}
+@media (max-width:1019px){.kanban{grid-template-columns:repeat(6,minmax(min(82vw,320px),1fr));scroll-snap-type:x mandatory;scroll-padding:0 16px;margin:0 -16px;padding:0 16px 10px}.col{scroll-snap-align:start;scroll-snap-stop:always}}
+@media (pointer:coarse){.mv button{width:44px;height:44px}.mv{opacity:1}}

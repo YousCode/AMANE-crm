@@ -163,7 +163,7 @@ function DrawerBody({ st }: { st: DrawerState }) {
       <div className={s.h}><div style={{ minWidth: 0 }}><div className="label">{eyebrow}</div><h2 id="drTitle">{title}</h2></div><button className={s.x} type="button" onClick={closeDrawer} aria-label="Fermer"><Icon k="close" /></button></div>
       {contact && <div className={s.c}>{contact}</div>}
       {tabs.length > 1 && <div className={s.tabs} role="tablist">{tabs.map(([t, l]) => <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)} data-testid={`tab-${t}`}>{l}</button>)}</div>}
-      <div className={s.b}>{body}</div>
+      <div className={s.b} data-drawer-body="1">{body}</div>
       <div className={s.f}>{canDel && (confirmDel ? <span className={s.confirm}>Supprimer définitivement ? <button className="btn sm danger" type="button" onClick={remove}>Oui, supprimer</button><button className="btn sm ghost" type="button" onClick={() => setConfirmDel(false)}>Annuler</button></span> : <button className="btn sm ghost danger" type="button" onClick={() => setConfirmDel(true)}>Supprimer</button>)}{foot}<span className={s.grow} /><button className={`btn sm ghost ${s.close}`} type="button" onClick={closeDrawer}>Fermer</button><button className={`btn sm primary ${s.save}`} type="button" onClick={() => save()} disabled={busy} data-testid="save">Enregistrer</button></div>
     </aside>
   </>;

@@ -13,7 +13,7 @@ import type { Vehicule, Mission, Rentabilite as Rent } from '../shared';
 
 export function Strip({ v, ms, n }: { v: Vehicule; ms: Mission[]; n: number }) {
   const t0 = sod(new Date()); const vm = vehMissions(ms, v);
-  return <><div className="strip" style={{ gridTemplateColumns: `repeat(${n},minmax(0,1fr))` }} aria-label={`Occupation sur ${n} jours`}>{[...Array(n)].map((_, i) => { const d = addD(t0, i), e = addD(d, 1); const ov = vm.filter((m) => parse(m.debut)! < e && (parse(m.fin) || parse(m.debut))! >= d); const c = ov.some((m) => BOOK.includes(m.statut)) ? 'b' : ov.length ? 'o' : ''; return <i key={i} className={`${c}${i === 0 ? ' t' : ''}`} title={`${fmtDay(d)} · ${c === 'b' ? 'réservé' : c === 'o' ? 'option' : 'libre'}`} />; })}</div><div className="strip-l"><span>{fmtDay(t0)}</span><span>{fmtDay(addD(t0, n - 1))}</span></div></>;
+  return <><div className="strip" data-strip="1" style={{ gridTemplateColumns: `repeat(${n},minmax(0,1fr))` }} aria-label={`Occupation sur ${n} jours`}>{[...Array(n)].map((_, i) => { const d = addD(t0, i), e = addD(d, 1); const ov = vm.filter((m) => parse(m.debut)! < e && (parse(m.fin) || parse(m.debut))! >= d); const c = ov.some((m) => BOOK.includes(m.statut)) ? 'b' : ov.length ? 'o' : ''; return <i key={i} className={`${c}${i === 0 ? ' t' : ''}`} title={`${fmtDay(d)} · ${c === 'b' ? 'réservé' : c === 'o' ? 'option' : 'libre'}`} />; })}</div><div className="strip-l"><span>{fmtDay(t0)}</span><span>{fmtDay(addD(t0, n - 1))}</span></div></>;
 }
 
 export function Flotte() {

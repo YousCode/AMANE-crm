@@ -1,6 +1,6 @@
-.clients{grid-template-columns:30px minmax(0,1.6fr) minmax(0,1fr) 110px 120px 90px 84px}
+.clients{grid-template-columns:30px minmax(0,1.6fr) minmax(0,1fr) 110px 120px 90px auto}
 .contrats{grid-template-columns:minmax(0,1.6fr) repeat(5,minmax(70px,.6fr)) 90px}
-.partners{grid-template-columns:34px minmax(0,1.6fr) minmax(0,1fr) 70px 84px}
+.partners{grid-template-columns:34px minmax(0,1.6fr) minmax(0,1fr) 70px auto}
 .fin{grid-template-columns:minmax(0,1fr) 120px 110px}
 .rel{grid-template-columns:34px minmax(0,1.4fr) minmax(0,1fr) 120px auto}
 .rent{grid-template-columns:minmax(0,1.4fr) repeat(6,minmax(70px,.7fr))}
@@ -14,7 +14,7 @@
 .win.ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,10,10,.35),transparent 35%,transparent 60%,rgba(14,10,10,.45));pointer-events:none}
 .win.ph{height:190px}
 .body{padding:14px 18px 18px;display:flex;flex-direction:column;gap:10px}
-.nm{font-family:var(--f-display);font-size:22px;line-height:1.1}
+.nm{font-family:var(--f-display);font-size:22px;line-height:1.1;overflow-wrap:anywhere}
 .cat{font-size:12px;color:var(--fg3);letter-spacing:.06px}
 .now{font-size:12.5px;color:var(--fg2);line-height:1.4}
 .svc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
@@ -39,23 +39,24 @@
 .who b{font-weight:500;display:block}
 .who span{font-size:13px;color:var(--fg3)}
 .kb{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--fg2)}
-.kb kbd{font-family:var(--f-mono);font-size:11.5px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--fg);margin-right:6px}
+.kb kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--fg);margin-right:6px}
 .facts{display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--fg2)}
 .facts div{display:grid;grid-template-columns:20px minmax(0,1fr);gap:8px}
 .facts i{font-style:normal;color:var(--accent)}
 .rg{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}
 .pvPh{border-radius:22px;border:1px solid var(--line);background:var(--bg);padding:16px 14px;display:flex;flex-direction:column;gap:8px}
-.pvPh .cap{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--fg3);text-align:center;padding:4px 0}
+.pvPh .cap{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--fg3);text-align:center;padding:4px 0}
 .relMsg{white-space:pre-wrap;font-size:13px;color:var(--fg2);border-left:2px solid var(--accent);padding:4px 10px;margin-top:6px}
 @media (max-width:1100px){.aide,.rg{grid-template-columns:1fr}}
+@media (min-width:700px) and (max-width:1019px){.svc{grid-template-columns:repeat(2,minmax(0,1fr))}.finK{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:1019px){
   .hideM{display:none!important}
   .clients{grid-template-columns:30px minmax(0,1fr) auto auto;gap:10px;padding:12px 14px}
   .contrats{grid-template-columns:minmax(0,1fr) auto}
   .partners{grid-template-columns:34px minmax(0,1fr) auto;gap:10px;padding:12px 14px}
   .fin{grid-template-columns:minmax(0,1fr) auto}
-  .rel{grid-template-columns:34px minmax(0,1fr) auto}
-  .rent{grid-template-columns:minmax(0,1fr) 80px 80px}
+  .rel{grid-template-columns:34px minmax(0,1fr)}.rel>span:last-child{grid-column:2;justify-self:start}
+  .rent{grid-template-columns:minmax(0,1fr) auto auto}
   .finK{grid-template-columns:1fr 1fr;gap:10px}
   .win{height:130px}
 }
