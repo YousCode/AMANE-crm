@@ -10,7 +10,7 @@ export const BOOK = ['confirmee', 'encours'], OPT = ['nouvelle', 'proposition'];
 export const OPEN_ST = ['nouvelle', 'proposition', 'confirmee', 'encours'];
 export interface Data { missions: Mission[]; clients: Client[]; vehicules: Vehicule[]; partenaires: Partenaire[]; services: Service[] }
 export const byId = <T extends { id: string }>(arr: T[], id?: string | null) => (id ? arr.find((x) => x.id === id) : undefined);
-export const services = (s: Service[]) => (s.length ? [...s] : (SERVICES as Service[])).sort((a, b) => (a.ordre || 99) - (b.ordre || 99));
+export const services = (s: Service[]): Service[] => [...(s.length ? s : (SERVICES as unknown as Service[]))].sort((a, b) => (a.ordre || 99) - (b.ordre || 99));
 export const svcName = (s: Service[], id?: string) => services(s).find((x) => x.id === id)?.nom || 'Service';
 export const vehicles = (v: Vehicule[]) => [...v].sort((a, b) => (a.ordre || 99) - (b.ordre || 99));
 export const chauffeurs = (p: Partenaire[]) => p.filter((x) => x.type === 'chauffeur' && x.actif !== false);

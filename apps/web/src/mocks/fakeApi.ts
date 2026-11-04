@@ -20,14 +20,20 @@ const listeners = new Set<(e: WsEvent) => void>();
 export const bus = { on(f: (e: WsEvent) => void) { listeners.add(f); return () => { listeners.delete(f); }; }, emit(e: WsEvent) { listeners.forEach((f) => { try { f(e); } catch { /* ignore */ } }); } };
 
 export let S: FakeState;
-export function reset(): FakeState {
+/* Persistance entre rechargements de page (Playwright navigue avec page.goto) : sessionStorage. */
+const SS = 'amane.mock.state';
+function persist() { try { if (typeof sessionStorage === 'undefined') return; const o: Record<string, unknown> = {}; (['db'] as const).forEach(() => { }); const db: Record<string, Doc[]> = {}; Object.entries(S.db).forEach(([c, m]) => { db[c] = [...m.values()]; }); o.db = db; o.activity = S.activity; o.compteurs = S.compteurs; o.pins = S.pins; o.session = S.session; o.shares = [...S.shares]; o.espaces = [...S.espaces]; o.outbox = S.outbox.slice(-50); o.offline = S.offline; o.windowClosed = [...S.windowClosed]; sessionStorage.setItem(SS, JSON.stringify(o)); } catch { /* ignore */ } }
+function restore(): boolean { try { if (typeof sessionStorage === 'undefined') return false; const raw = sessionStorage.getItem(SS); if (!raw) return false; const o = JSON.parse(raw); Object.entries(o.db as Record<string, Doc[]>).forEach(([c, arr]) => { S.db[c] = new Map(arr.map((x) => [x.id, x])); }); S.activity = o.activity || []; S.compteurs = o.compteurs || {}; S.pins = o.pins || S.pins; S.session = o.session || null; S.shares = new Map(o.shares || []); S.espaces = new Map(o.espaces || []); S.outbox = o.outbox || []; S.offline = !!o.offline; S.windowClosed = new Set(o.windowClosed || []); return true; } catch { return false; } }
+function fresh(): FakeState {
   const d = seed();
   const db: Record<string, Map<string, Doc>> = {};
   (['clients', 'missions', 'vehicules', 'services', 'partenaires', 'reglages', 'conversations', 'messages'] as const).forEach((c) => { db[c] = new Map((d[c] as Doc[]).map((x) => [x.id, x])); });
   S = { db, activity: d.activity as Doc[], compteurs: { ...d.compteurs }, pins: { amel: '1234', youssouf: '1234', aziz: '1234' }, session: null, photos: new Map(), shares: new Map(), espaces: new Map(), translations: new Map(), outbox: [], fails: 0, offline: false, windowClosed: new Set(), iaOn: true, whatsappOn: true };
   return S;
 }
-reset();
+/** Repart de l'état d'exemple (tests). */
+export function reset(): FakeState { fresh(); try { sessionStorage.removeItem(SS); } catch { /* ignore */ } return S; }
+fresh(); restore();
 const now = () => new Date().toISOString();
 const err = (status: number, error: string, message: string): Res => ({ status, body: { error, message } });
 const ok = (body: unknown): Res => ({ status: 200, body });
@@ -66,6 +72,9 @@ function translate(text: string, to: string, from?: string) {
 }
 
 export function handle(method: string, rawUrl: string, body: unknown, opts?: { cookie?: string }): Res {
+  const r = handle0(method, rawUrl, body, opts); if (method !== 'GET') persist(); return r;
+}
+function handle0(method: string, rawUrl: string, body: unknown, opts?: { cookie?: string }): Res {
   if (S.offline) throw new Error('offline');
   const u = new URL(rawUrl, 'http://amane.local'); const p = u.pathname.replace(/^\/app(?=\/)/, ''); const q = u.searchParams;
   const B = (body || {}) as Record<string, unknown>;
@@ -197,12 +206,12 @@ export const sim = {
     if (!cv) { cv = { id: from, phone: from, nom: opts.name || from, lang, unread: 0, createdAt: at, updatedAt: at }; S.db.conversations.set(from, cv); }
     const msg: Doc = { id, convId: from, dir: 'in', type: opts.type || 'text', text, at, status: 'recu', by: 'client', createdAt: at, updatedAt: at, translation: opts.translation || (lang !== 'FR' ? translate(text, 'FR', lang).text : undefined) };
     S.db.messages.set(id, msg); cv.lastAt = at; cv.lastText = text; cv.lastDir = 'in'; cv.unread = (+(cv.unread as number) || 0) + 1; cv.windowUntil = new Date(Date.now() + 864e5).toISOString(); cv.lastInAt = at; cv.updatedAt = at; S.windowClosed.delete(from);
-    bus.emit({ type: 'message', message: msg }); bus.emit({ type: 'conversation', conversation: cv }); return id;
+    bus.emit({ type: 'message', message: msg }); bus.emit({ type: 'conversation', conversation: cv }); persist(); return id;
   },
   status(id: string, status: string) { const m = S.db.messages.get(id); if (m) { m.status = status; m.updatedAt = now(); bus.emit({ type: 'message', message: m }); } },
-  closeWindow(convId: string) { S.windowClosed.add(convId); const cv = S.db.conversations.get(convId); if (cv) { cv.windowUntil = new Date(Date.now() - 1000).toISOString(); cv.updatedAt = now(); bus.emit({ type: 'conversation', conversation: cv }); } },
-  setOffline(v: boolean) { S.offline = v; },
-  change(col: string, doc: Doc) { S.db[col].set(doc.id, { ...doc, updatedAt: now() }); bus.emit({ type: 'change', col, doc: S.db[col].get(doc.id) }); },
+  closeWindow(convId: string) { persist(); S.windowClosed.add(convId); const cv = S.db.conversations.get(convId); if (cv) { cv.windowUntil = new Date(Date.now() - 1000).toISOString(); cv.updatedAt = now(); bus.emit({ type: 'conversation', conversation: cv }); } },
+  setOffline(v: boolean) { S.offline = v; persist(); },
+  change(col: string, doc: Doc) { S.db[col].set(doc.id, { ...doc, updatedAt: now() }); bus.emit({ type: 'change', col, doc: S.db[col].get(doc.id) }); persist(); },
   acceptShare(token: string) { return handle('POST', `/d/${token}/accepter`, {}); },
   state: () => S, reset, on: bus.on,
 };

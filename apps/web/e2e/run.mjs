@@ -68,7 +68,7 @@ const journeys = {
     await login(page); await page.goto(BASE + '/relances'); await page.waitForSelector('[data-testid^="relance-"]');
     const n = await page.locator('[data-testid^="relance-"]').count(); if (n < 2) throw new Error('moins de deux relances');
     if (!(await page.locator('[data-testid="relance-facture"]').count())) throw new Error('facture en retard absente');
-    await page.locator('[data-testid="relance-proposition"]').first().locator('text=Envoyer').click();
+    await page.locator('[data-testid^="relance-"]').filter({ hasText: 'Envoyer' }).first().locator('text=Envoyer').click();
     await page.waitForSelector('[data-testid="thread"]'); const v = await page.inputValue('[data-testid="composer"]'); if (!v) throw new Error('brouillon de relance non prérempli');
   },
   async 'planning conflit'(page, vp) {
