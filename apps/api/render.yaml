@@ -1,0 +1,37 @@
+# Render : service web Docker (une seule instance, CRON_ENABLED=1).
+services:
+  - type: web
+    name: amane-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /api/health
+    numInstances: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CRON_ENABLED
+        value: "1"
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: amane
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: AMANE_SETUP_CODE
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: TEAM_ALERT_NUMBERS
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false

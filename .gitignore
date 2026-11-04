@@ -4,3 +4,6 @@ node_modules/
 .env*
 !.env.example
 .vercel/
+apps/*/dist/
+apps/*/dist-api/
+apps/mobile/.expo/

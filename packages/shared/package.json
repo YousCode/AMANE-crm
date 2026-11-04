@@ -1,0 +1,23 @@
+{
+  "name": "@amane/shared",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Amane — types, constantes métier, règles pures, i18n, jetons de design et validation partagés (Node, Vite, Metro)",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": { "types": "./index.d.ts", "import": "./index.js", "default": "./index.js" },
+    "./constants": "./constants.js",
+    "./rules": "./rules.js",
+    "./i18n": "./i18n.js",
+    "./tokens": "./tokens.js",
+    "./validate": "./validate.js"
+  },
+  "sideEffects": false,
+  "files": ["index.js", "index.d.ts", "constants.js", "rules.js", "i18n.js", "tokens.js", "validate.js", "README.md"],
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "engines": { "node": ">=20" }
+}

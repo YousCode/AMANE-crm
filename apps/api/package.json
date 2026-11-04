@@ -1,0 +1,21 @@
+{
+  "name": "@amane/api",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Amane — API Express + MongoDB + WebSocket + tâches de fond",
+  "type": "module",
+  "main": "./src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "FAKE_DB=1 FAKE_AI=1 node src/server.js",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "@amane/shared": "^2.0.0",
+    "express": "^5.1.0",
+    "mongodb": "^6.10.0",
+    "node-cron": "^4.2.0",
+    "ws": "^8.18.0"
+  },
+  "engines": { "node": ">=20" }
+}

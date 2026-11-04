@@ -116,4 +116,32 @@ Fronts
 25. Mobile : partage natif d'une photo prise sur place directement dans le fil ; notifications push « nouveau message » qui ouvrent la conversation.
 
 ## Décisions (à compléter par les agents)
-- (vide)
+- **Mobile** (agent MOBILE, `apps/mobile`) : Expo SDK 58 (React Native 0.88, React 19.3, TypeScript 6), Expo Router (`src/app`), Zustand. Le stub local `src/shared-stub.ts` a été retiré dès `packages/shared/READY` : l'appli consomme `@amane/shared` (workspace).
+- **Mobile — hypothèses sur le contrat** :
+  - Notes internes et transfert : `POST /api/whatsapp/note {convId, text, assigne?}` → `{id}` (message `dir:'note'`, jamais envoyé au client) et `POST /api/whatsapp/assign {convId, assigne}` → `{ok, assigne}`, comme les expose `apps/api` ; la simulation `src/mocks/server.ts` fait pareil.
+  - Envoi d'un document PDF depuis le fil : `media:{type:'document', url:'/api/missions/:id/devis.pdf' | '/api/missions/:id/facture.pdf', filename}` (chemins supposés pour les PDF-HTML du devis et de la facture).
+  - Envoi du lieu d'une mission : `location:{lat:0,lng:0,name:titre,address:lieu}` — l'appli n'a pas de géocodage ; le serveur géocode `address` si `lat/lng` valent 0.
+  - Durée d'un vocal : l'appli lit `message.media.duration` (secondes) si l'API le pose ; sinon « vocal » sans durée.
+  - Journal d'un véhicule : `vehicule.journal[]` au format `JournalEntree` du paquet partagé, avec en plus `id`, `photos[]` (ids `/api/photo`) et `par` (membre). `vehicule.statut` prend `entretien` (pas `revision`).
+  - États des lieux : `contrat.edlDepart.photos[]` / `edlRetour.photos[]` (ids `/api/photo`, images compressées côté appareil ≤ 600 Ko).
+  - Espace client : `POST /api/missions/:id/espace` → `{token}` ; le lien envoyé est `${EXPO_PUBLIC_API_URL}/espace/<token>` avec le texte `quick.espace_lien` ; lien de devis : `POST /api/devis/:id/share` → `{url}` et texte `quick.devis_lien`.
+  - Push : `POST /api/push/register {token, platform}` ; les notifications portent `data:{convId}` ou `data:{missionId}`, ce qui ouvre la conversation ou la demande.
+  - Modèles hors fenêtre : liste `WA_TEMPLATES` du paquet partagé (ou `reglages/templates.modeles` s'il existe) ; paramètres remplis dans l'ordre de `vars` (prenom, service, date, heure, lieu, numero, lien) ; `lang` au format Meta (`fr`, `en`, `ar`, `es`, `ru`).
+  - Traduction avant envoi : `POST /api/translate {text, to, from:'FR', context:'message'}` ; le message envoyé porte `text` (langue du client) et `translation` (le français d'origine) pour l'affichage sous la bulle sortante. Si l'IA est coupée (503 `ia_off`), envoi en français sans aperçu.
+  - Itinéraire : `mapsLink(lieu, {apple:true})` sur iOS (Plans), Google Maps ailleurs.
+- **API** (agent API, `packages/shared` + `apps/api`) — Express 5, pilote MongoDB 6, `ws`, `node-cron`, aucune autre dépendance. `@amane/shared` est en JavaScript ES modules + `index.d.ts` (pas de build). Installation du monorepo : `npm install --legacy-peer-deps` (conflit de pairs côté `apps/mobile`).
+- **API — écarts et précisions sur les contrats** :
+  - `GET /api/health` garde exactement les 6 clés du contrat ; `?detail=1` ajoute `transcription`, `push`, `ws`, `cron`, `fake`.
+  - `/api/sync` garde ses 8 collections ; les rappels sont lus par `GET /api/rappels` et poussés par le WS (`{type:'rappel'}`, et `{type:'change', col:'rappels'}`).
+  - À la réception d'un message non français, deux appels Claude partent (extraction + traduction) : un test historique a été ajusté en conséquence.
+  - `/crm` sert `crm/index.html` (la source, qui connaît le mode serveur) enveloppé comme le fait `site/make_vercel.py` ; `site/crm/index.html` (build figé sans mode serveur) n'est utilisé qu'en repli. `/` sert `site/vercel.html`, `/app` sert `apps/web/dist` avec repli SPA.
+  - CORS : origines acceptées = même hôte, `PUBLIC_URL`, `CORS_ORIGINS` et, en dev, localhost/LAN/Expo ; en-têtes CORS renvoyés pour ces origines (le mobile envoie le cookie en en-tête). `POST /api/lead` reste strictement même origine.
+  - Routes ajoutées au-delà du tableau : `POST /api/whatsapp/note`, `POST /api/whatsapp/assign`, `GET /api/whatsapp/templates`, `GET /api/conversations/:id/messages` (pagination au-delà des 60 jours), `GET /api/rappels`, `POST /api/alertes/run`, `POST /api/digest/send`, `POST /api/push/unregister`, `GET /api/media/:id`, `GET /api/espace/:token/devis|facture|photo/:id`, alias `GET /espace/:token`, `POST /d/:token/accepter`, `/__dev/run`, `/__dev/state`, `/__dev/drain`, `DELETE /__dev/outbox`.
+  - `POST /api/whatsapp/send` : `media.url` relatif `/api/missions/:id/devis.pdf|facture.pdf` (hypothèse mobile) → pas de PDF serveur, envoi du lien public du devis / de la facture de l'espace client dans la langue du client ; `location` sans coordonnées → itinéraire Google Maps en texte (pas de géocodage) ; `originalText` (le français) est rangé en `originalText` et `translation` (ce que lit le mobile sous la bulle sortante). Pas de `media.duration` (Meta ne le fournit pas).
+  - Réaction reçue : stockée (`type:'reaction'`, `reactionTo`, `emoji`) sans incrémenter les non-lus ni créer de demande.
+  - « Message sans réponse depuis 6 h » : la réponse automatique ne compte pas comme réponse (`conversation.lastHumanOutAt`) ; alerte une fois par message (`alerte6hFor`). Révision J-7 et PV reçu vont à `vehicule.responsable`, sinon à Youssouf (Tech & flotte) s'il a un numéro, sinon Amel.
+  - Rappel « remerciement » : aussi pour une mission `confirmee` dont la fin est passée (le statut n'est pas toujours mis à jour). Hors fenêtre de 24 h : `amane_rappel` (veille) ou `amane_relance` (merci, acompte). Textes modifiables dans `reglages/rappels`, désactivables par type.
+  - Devis accepté par le lien : `devis.statut='accepte'`, `acceptedAt`, et la demande passe en `confirmee` si elle était `nouvelle`/`proposition`.
+  - Pages publiques : HTML imprimable (pas de PDF) ; bouton « Poser une question » = `wa.me/<WHATSAPP_PUBLIC_NUMBER>` ; pied avec `LEGAL_LINE`, coordonnées `BANK_IBAN`/`BANK_BIC`.
+  - Modèle IA : `claude-sonnet-5-5` (rapide, milieu de gamme) en HTTP direct, JSON contraint, repli serveur, 8 s ; le Majordome 25 s.
+  - Tâches de fond : `CRON_ENABLED=1` sur une seule instance, sinon planificateur externe + `X-Internal-Key` (`INTERNAL_KEY`).
