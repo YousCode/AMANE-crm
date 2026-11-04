@@ -68,7 +68,7 @@ ok('modification visible tout de suite (optimiste)',(await p.textContent('#view'
 ok('file enregistrée dans le navigateur',await p.evaluate(()=>JSON.parse(localStorage.getItem('amane.srv.queue')||'[]').length)===2);
 ok('rien envoyé au serveur',api.st.cols.clients.c3.hotel==='Le Bristol');
 api.offline=false;await ctx.setOffline(false);
-const tq=await until(p,()=>!document.querySelector('#live').innerText.includes('attente')&&document.querySelector('#live').innerText.includes('Synchronisé'),null,8000);
+const tq=await until(p,()=>!document.querySelector('#live').textContent.includes('attente')&&document.querySelector('#live').textContent.includes('Synchronisé'),null,8000);// textContent : l'eyebrow est en capitales (innerText rend « SYNCHRONISÉ »)
 ok('retour du réseau : file rejouée',tq>=0&&api.st.cols.clients.c3.hotel==='Hôtel de Crillon'&&api.st.cols.clients.c4.prefs==='Préfère les salons privés.',JSON.stringify([tq,api.st.cols.clients.c4,api.st.log.filter(x=>x[0]==='PUT').map(x=>x[1])]));
 ok('file vidée',await p.evaluate(()=>JSON.parse(localStorage.getItem('amane.srv.queue')||'[]').length)===0);
 // numérotation par /api/counter

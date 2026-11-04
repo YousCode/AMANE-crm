@@ -2330,8 +2330,11 @@ document.addEventListener('pointercancel',()=>{if(DRAG.el)dragEnd()});
 /* Balayage d'une demande (vue liste) : gauche = étape suivante, droite = étape précédente */
 const SWP={el:null,id:null,pid:null,x0:0,y0:0,dx:0,on:false,suppress:false};
 function swReset(el){if(!el)return;el.classList.remove('dragx');el.style.transform='';if(el.parentElement)el.parentElement.classList.remove('to-next','to-prev','go')}
-document.addEventListener('pointerdown',e=>{if(e.button>0)return;const c=e.target.closest&&e.target.closest('.lcard[data-lid]');if(!c||e.target.closest('a,button,input,select,textarea'))return;
+/* Le balayage peut partir d'un lien ou d'un bouton de la carte (ligne d'actions rapides, flèches) : sans déplacement horizontal, le clic reste normal. */
+document.addEventListener('pointerdown',e=>{if(e.button>0)return;const c=e.target.closest&&e.target.closest('.lcard[data-lid]');if(!c||e.target.closest('input,select,textarea'))return;
   Object.assign(SWP,{el:c,id:c.dataset.lid,pid:e.pointerId,x0:e.clientX,y0:e.clientY,dx:0,on:false})});
+document.addEventListener('dragstart',e=>{if(SWP.el&&e.target.closest&&e.target.closest('.lcard[data-lid]'))e.preventDefault()});
+document.addEventListener('click',e=>{if(SWP.suppress&&e.target.closest&&e.target.closest('.lcard[data-lid]')){e.preventDefault();e.stopPropagation()}},true);
 document.addEventListener('pointermove',e=>{if(!SWP.el||e.pointerId!==SWP.pid)return;const dx=e.clientX-SWP.x0,dy=e.clientY-SWP.y0;
   if(!SWP.on){if(Math.abs(dy)>14&&Math.abs(dy)>Math.abs(dx)){SWP.el=null;return}if(Math.abs(dx)<12||Math.abs(dx)<Math.abs(dy)*1.3)return;SWP.on=true;SWP.el.classList.add('dragx');try{SWP.el.setPointerCapture(e.pointerId)}catch(_){}}
   const m=byId(list('missions'),SWP.id);const i=m?STATUTS.findIndex(x=>x.id===m.statut):-1;const can=i>=0&&(dx<0?i<STATUTS.length-1:i>0);
