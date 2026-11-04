@@ -147,10 +147,11 @@ function handle0(method: string, rawUrl: string, body: unknown, opts?: { cookie?
   if (p === '/api/translate' && method === 'POST') { if (!S.iaOn) return err(503, 'ia_off', 'Traduction indisponible.'); const text = String(B.text || ''); if (!text.trim()) return err(400, 'json_invalide', 'Texte requis.'); return ok(translate(text, String(B.to || 'FR'), B.from ? String(B.from) : undefined)); }
   if (p === '/api/transcribe' && method === 'POST') { const id = String(B.mediaId || ''); if (id === 'med_voice_chen') return ok({ text: 'Hello, I would like a personal shopper on Thursday for leather goods on rue du Faubourg Saint-Honoré, with an interpreter if possible.', lang: 'EN' }); return err(503, 'transcribe_off', 'Transcription indisponible.'); }
   if (p === '/api/whatsapp/read' && method === 'POST') { const cv = S.db.conversations.get(String(B.convId)); if (cv) { cv.unread = 0; cv.updatedAt = now(); bus.emit({ type: 'conversation', conversation: cv }); } return ok({ ok: true }); }
-  if (p === '/api/whatsapp/send' && method === 'POST') {
+  if (p === '/api/whatsapp/assign' && method === 'POST') { const cv = S.db.conversations.get(String(B.convId)); if (!cv) return err(404, 'introuvable', 'Conversation inconnue.'); cv.assigne = String(B.assigne || ''); cv.updatedAt = now(); bus.emit({ type: 'conversation', conversation: cv }); return ok({ ok: true, assigne: cv.assigne }); }
+  if ((p === '/api/whatsapp/send' || p === '/api/whatsapp/note') && method === 'POST') {
     if (!S.whatsappOn) return err(503, 'whatsapp_off', 'WhatsApp non configuré.');
     const cv = S.db.conversations.get(String(B.convId)); if (!cv) return err(404, 'introuvable', 'Conversation inconnue.');
-    if (B.note) { const id = 'note.' + uid(); const at = now(); const msg: Doc = { id, convId: cv.id, dir: 'note', type: 'note', text: String(B.note), at, status: 'recu', by: uid0, createdAt: at, updatedAt: at }; S.db.messages.set(id, msg); bus.emit({ type: 'message', message: msg }); return ok({ id }); }
+    if (B.note) { B.text = B.note; } if (p === '/api/whatsapp/note' || B.noteOnly) { const id = 'note.' + uid(); const at = now(); const msg: Doc = { id, convId: cv.id, dir: 'note', type: 'note', text: String(B.text || ''), at, status: 'recu', by: uid0, createdAt: at, updatedAt: at }; S.db.messages.set(id, msg); if (B.assigne !== undefined) { cv.assigne = B.assigne; cv.updatedAt = at; bus.emit({ type: 'conversation', conversation: cv }); } bus.emit({ type: 'message', message: msg }); return ok({ id }); }
     const win = cv.windowUntil && new Date(String(cv.windowUntil)) > new Date() && !S.windowClosed.has(cv.id);
     if (!B.template && !win) return err(409, 'window_closed', 'Fenêtre de 24 h fermée : envoyez un modèle.');
     const id = 'out.' + uid(); const at = now(); let text = String(B.text || '');
@@ -159,7 +160,7 @@ function handle0(method: string, rawUrl: string, body: unknown, opts?: { cookie?
     const msg: Doc = { id, convId: cv.id, dir: 'out', type: tpl ? 'template' : media ? String(media.type) : loc ? 'location' : contact ? 'contacts' : 'text', text, at, status: 'envoye', by: uid0, createdAt: at, updatedAt: at };
     if (media) msg.media = { id: String(media.photoId || media.url || ''), mime: media.type === 'image' ? 'image/jpeg' : 'application/pdf', filename: media.filename, caption: media.caption };
     if (loc) msg.location = loc; if (contact) { const pt = S.db.partenaires.get(contact.partenaireId); msg.contacts = [{ name: String(pt?.nom || ''), phones: [String(pt?.tel || '')] }]; msg.text = 'Contact : ' + String(pt?.nom || ''); }
-    if (tpl) msg.template = tpl; if (B.lang) msg.lang = B.lang; if (B.original) msg.translation = String(B.original);
+    if (tpl) msg.template = tpl; if (B.lang) msg.lang = B.lang; if (B.originalText) { msg.originalText = String(B.originalText); msg.translation = String(B.originalText); }
     S.db.messages.set(id, msg); S.outbox.push(msg); cv.lastAt = at; cv.lastText = text || (media ? '📎 ' + (media.filename || 'photo') : loc ? '📍 Position' : 'Contact'); cv.lastDir = 'out'; cv.unread = 0; cv.lastOutAt = at; cv.updatedAt = at;
     act(uid0, 'conversations', cv.id, 'whatsapp', 'Message envoyé à ' + String(cv.nom || cv.id));
     bus.emit({ type: 'message', message: msg }); bus.emit({ type: 'conversation', conversation: cv });

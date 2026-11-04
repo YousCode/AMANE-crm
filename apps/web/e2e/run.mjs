@@ -101,8 +101,8 @@ async function run() {
     if (only && !name.includes(only)) continue;
     for (const [vl, vp] of [['1440×900', DESKTOP], ['390×844', MOBILE]]) {
       const label = `${name} @ ${vl}`; const { ctx, page, errors } = await newPage(vp);
-      try { await fn(page, vp); assertNoErrors(errors, label); results.push([label, 'ok']); console.log('✓', label); }
-      catch (e) { results.push([label, 'ÉCHEC']); console.log('✗', label, '—', e.message.split('\n')[0]); await shot(page, 'fail-' + label.replace(/[^a-z0-9]+/gi, '-')); }
+      try { await fn(page, vp); /* hors ligne : le navigateur journalise lui-même les requêtes coupées (net::ERR_FAILED), ce n'est pas une erreur de l'application */ assertNoErrors(errors, label, name === 'hors ligne' ? /^Failed to load resource: net::ERR_FAILED$/ : undefined); results.push([label, 'ok']); console.log('✓', label); }
+      catch (e) { results.push([label, 'ÉCHEC']); console.log('✗', label, '—', e.message.split('\n').slice(0, 4).join(' | ')); await shot(page, 'fail-' + label.replace(/[^a-z0-9]+/gi, '-')); }
       finally { await ctx.close(); }
     }
   }

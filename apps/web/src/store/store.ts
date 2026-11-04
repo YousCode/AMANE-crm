@@ -42,7 +42,7 @@ const lsSet = (k: string, v: string | null) => { try { v == null ? localStorage.
 function upsert<T extends Doc>(arr: T[], doc: T): T[] { const i = arr.findIndex((x) => x.id === doc.id); if (i < 0) return [...arr, doc]; const n = arr.slice(); n[i] = doc; return n; }
 
 export const useStore = create<State>((set, get) => {
-  const snapshot = () => { clearTimeout(saveT); saveT = setTimeout(() => { const s = get(); const data: Record<string, unknown> = { since: s.since, compteurs: s.compteurs }; COLS.forEach((c) => { data[c] = c === 'messages' ? s.messages.slice(-600) : s[c]; }); cache.set('store', data).catch(() => { }); }, 1200); };
+  const snapshot = (now = false) => { clearTimeout(saveT); saveT = setTimeout(() => { const s = get(); const data: Record<string, unknown> = { since: s.since, compteurs: s.compteurs }; COLS.forEach((c) => { data[c] = c === 'messages' ? s.messages.slice(-600) : s[c]; }); cache.set('store', data).catch(() => { }); }, now ? 0 : 1200); };
 
   async function flush() {
     if (flushing) { again = true; return; } flushing = true;
@@ -106,7 +106,7 @@ export const useStore = create<State>((set, get) => {
         await flush();
         const since = get().since;
         const j = await api<{ now: string; changes: Record<string, Doc[]>; deleted: Record<string, string[]>; compteurs?: Record<string, number> }>('GET', '/api/sync' + (since ? '?since=' + encodeURIComponent(since) : ''));
-        const s = get(); const patch: Partial<State> = {};
+        const s = get(); const first = !s.ready; const patch: Partial<State> = {};
         const cur: Record<string, Doc[]> = {}; COLS.forEach((c) => { cur[c] = s[c] as Doc[]; });
         Object.entries(j.changes || {}).forEach(([c, arr]) => {
           if (!COLS.includes(c as Col)) return;
@@ -120,7 +120,7 @@ export const useStore = create<State>((set, get) => {
         COLS.forEach((c) => { (patch as Record<string, unknown>)[c] = cur[c]; });
         if (j.compteurs) patch.compteurs = { ...s.compteurs, ...j.compteurs };
         if (j.now) patch.since = j.now; patch.ready = true; patch.offline = false; patch.lastSync = Date.now();
-        set(patch); snapshot();
+        set(patch); snapshot(first);
       } catch (e) {
         const err = e as ApiError; if (err.code === 'offline') set({ offline: true }); else if (err.status >= 500) set({ offline: false });
       } finally { set({ syncing: false }); if (again) { again = false; setTimeout(() => get().sync(), 30); } }
