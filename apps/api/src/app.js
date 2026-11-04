@@ -14,6 +14,7 @@ import { errorHandler } from './routes/_common.js';
 import { sendError } from './lib/http.js';
 import { drain } from './lib/background.js';
 import { router as health } from './routes/health.js';
+import { router as meteo } from './routes/meteo.js';
 import { router as auth } from './routes/auth.js';
 import { router as sync } from './routes/sync.js';
 import { router as doc } from './routes/doc.js';
@@ -87,7 +88,7 @@ export async function createApp(opts = {}) {
   app.use(cors());
 
   // API
-  for (const r of [health, auth, sync, doc, photo, ai, whatsapp, lead, relances, devis, espace, flotte, push]) app.use(r);
+  for (const r of [health, meteo, auth, sync, doc, photo, ai, whatsapp, lead, relances, devis, espace, flotte, push]) app.use(r);
 
   const server = http.createServer(app);
   const ws = attachWs(server, { path: '/ws', getDb });

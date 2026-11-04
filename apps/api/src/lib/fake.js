@@ -63,6 +63,11 @@ export function installFakeFetch(outbox) {
       outbox.push({ at: new Date().toISOString(), url, body, kind: 'push' });
       return json({ data: body.map(() => ({ status: 'ok', id: 'ticket-' + randomBytes(4).toString('hex') })) });
     }
+    if (process.env.FAKE_DB === '1' && url.startsWith('https://api.open-meteo.com/')) {
+      // Météo de démonstration : un après-midi d'automne à Paris, sans réseau.
+      const { fakeMeteoPayload } = await import('./meteo.js');
+      return json(fakeMeteoPayload());
+    }
     return real(input, init);
   };
   fakeFetch.__amaneFake = true;
