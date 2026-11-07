@@ -1,0 +1,22 @@
+name: Fonctionnalité
+description: Une idée ou un besoin de l'équipe
+labels: [fonctionnalité]
+body:
+  - type: dropdown
+    id: ou
+    attributes:
+      label: Où
+      options: [Back-office, Appli mobile, CRM historique, API / WhatsApp, Site internet]
+    validations:
+      required: true
+  - type: textarea
+    id: besoin
+    attributes:
+      label: Le besoin
+      description: Qui en a besoin, dans quelle situation, et ce que ça change pour le client.
+    validations:
+      required: true
+  - type: textarea
+    id: idee
+    attributes:
+      label: Idée de solution

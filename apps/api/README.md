@@ -5,7 +5,7 @@ Serveur Express 5 + MongoDB (pilote 6) + WebSocket (`ws`) + tâches de fond (`no
 ## Lancer
 
 ```bash
-npm install --legacy-peer-deps            # à la racine (workspaces npm)
+npm install                               # à la racine (workspaces npm)
 cd apps/api
 FAKE_DB=1 FAKE_AI=1 npm run dev           # http://localhost:3000 — base en mémoire, PIN 1234, WhatsApp/IA simulés
 npm test                                  # node --test (API HTTP réelle sur un port local, base en mémoire, fetch stubbé)
@@ -111,7 +111,7 @@ Pour déployer uniquement le CRM (sans le site vitrine), relié à MongoDB Atlas
 
 - `CRM_ONLY=1` : le CRM est servi à la racine (`/`), le site n'est pas exposé ; l'API, le WebSocket et le back-office `/app` restent disponibles.
 - Variables minimales : `CRM_ONLY=1`, `MONGODB_URI`, `MONGODB_DB=amane`, `AUTH_SECRET`, `AMANE_SETUP_CODE`, `PUBLIC_URL=https://<votre-domaine>`.
-- Railway : *New Project → Deploy from GitHub repo* → `YousCode/AMANE` → le `railway.json` à la racine est repris (Dockerfile `apps/api/Dockerfile`) → onglet *Variables* : coller les valeurs ci-dessus → *Deploy*. Render : *New → Web Service* → même dépôt, *Docker*, chemin `apps/api/Dockerfile`, mêmes variables.
+- Railway : *New Project → Deploy from GitHub repo* → `YousCode/amane-app` → le `railway.json` à la racine est repris (Dockerfile `apps/api/Dockerfile`) → onglet *Variables* : coller les valeurs ci-dessus → *Deploy*. Render : *New → Web Service* → même dépôt, *Docker*, chemin `apps/api/Dockerfile`, mêmes variables.
 - Première connexion : `POST /api/auth/setup {"code":"<AMANE_SETUP_CODE>","userId":"amel","pin":"<4 à 8 chiffres>"}` pour chacun des trois, puis ouvrir `/` et saisir le PIN.
 - Test : `node --test test/crm-only.test.js`.
 

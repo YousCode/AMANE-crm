@@ -1,0 +1,31 @@
+name: Bogue
+description: Quelque chose ne fonctionne pas comme prévu
+labels: [bogue]
+body:
+  - type: dropdown
+    id: ou
+    attributes:
+      label: Où
+      options: [Back-office, Appli mobile, CRM historique, API / WhatsApp, Site internet]
+    validations:
+      required: true
+  - type: textarea
+    id: quoi
+    attributes:
+      label: Ce qui se passe
+      description: Ce que vous avez fait, ce que vous attendiez, ce qui s'est passé.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Pour reproduire
+      placeholder: "1. Ouvrir…\n2. Cliquer sur…\n3. …"
+  - type: input
+    id: appareil
+    attributes:
+      label: Appareil et navigateur
+      placeholder: iPhone 15, Safari / Mac, Chrome
+  - type: markdown
+    attributes:
+      value: "Pas de données client réelles (noms, téléphones, pièces) dans les captures."

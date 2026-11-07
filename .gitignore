@@ -7,3 +7,5 @@ node_modules/
 apps/*/dist/
 apps/*/dist-api/
 apps/mobile/.expo/
+# Capture écrite par crm/tests/e2e.js
+/salon.png

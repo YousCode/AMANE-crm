@@ -42,7 +42,9 @@ let notificationsInstalled = false;
 export async function createApp(opts = {}) {
   const env = process.env;
   const fake = opts.fake ?? env.FAKE_DB === '1';
-  const crmOnly = opts.crmOnly ?? env.CRM_ONLY === '1';
+  // Site vitrine facultatif : sans dossier site/ (dépôt CRM seul), le CRM est servi à la racine.
+  const siteDir = opts.siteDir ?? path.join(ROOT, 'site');
+  const crmOnly = opts.crmOnly ?? (env.CRM_ONLY === '1' || !isDir(siteDir));
   const outbox = [];
   let fakeDb = null;
   if (fake) {
@@ -110,7 +112,7 @@ export async function createApp(opts = {}) {
   }
 
   // CRM historique : crm/index.html (source, mode serveur) enveloppé comme site/make_vercel.py ; sinon site/crm/index.html tel quel.
-  const crmSrc = opts.crmFile === null ? null : opts.crmFile ?? [path.join(ROOT, 'crm/index.html'), path.join(ROOT, 'site/crm/index.html')].find(exists);
+  const crmSrc = opts.crmFile === null ? null : opts.crmFile ?? [path.join(ROOT, 'crm/index.html'), path.join(ROOT, 'crm-vercel/index.html')].find(exists);
   if (crmSrc) {
     let cache = { mtime: 0, html: '' };
     const crmHtml = () => {
@@ -131,11 +133,10 @@ export async function createApp(opts = {}) {
     if (crmOnly) app.get(['/', '/index.html'], serveCrm);
   }
 
-  // Site vitrine (site/) : « / » → vercel.html (sinon index.html), fichiers statiques. Absent en CRM seul (favicon excepté).
-  const siteDir = opts.siteDir ?? path.join(ROOT, 'site');
-  if (crmOnly && isDir(siteDir)) {
-    const fav = path.join(siteDir, 'favicon.svg');
-    if (exists(fav)) app.get('/favicon.svg', (req, res) => res.sendFile(fav));
+  // Site vitrine (site/, facultatif) : « / » → vercel.html (sinon index.html), fichiers statiques. En CRM seul, seul le favicon est servi.
+  if (crmOnly) {
+    const fav = [path.join(siteDir, 'favicon.svg'), path.join(ROOT, 'crm-vercel/favicon.svg')].find(exists);
+    if (fav) app.get('/favicon.svg', (req, res) => res.sendFile(fav));
   } else if (isDir(siteDir)) {
     const home = ['vercel.html', 'index.html'].map((f) => path.join(siteDir, f)).find(exists);
     if (home) app.get('/', (req, res) => res.sendFile(home));
