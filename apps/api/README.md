@@ -103,7 +103,7 @@ Client Anthropic en HTTP direct (`src/lib/ai.js`) : modèle `claude-sonnet-5-5`,
 Cluster `amane` (Paris, EU_WEST_3), base `amane`, utilisateur `amane-app` (readWrite). Les index et les données de départ sont posés au premier démarrage (`meta/schema`). Autoriser l'IP sortante de l'hébergeur (ou `0.0.0.0/0` avec un mot de passe fort).
 
 ### Railway / Render / Fly (Docker)
-Image : `docker build -f apps/api/Dockerfile -t amane-api .` depuis la racine (le Dockerfile copie `packages/shared`, `apps/api`, `crm`, `site` et `apps/web/dist` : construire le back-office avant, ou créer un dossier `apps/web/dist` vide). `apps/api/railway.json` et `apps/api/render.yaml` sont fournis ; sur Fly : `fly launch --dockerfile apps/api/Dockerfile`, `fly secrets set …`, une seule machine avec `CRON_ENABLED=1`. Variables : voir `.env.example`. `PUBLIC_URL` = l'URL publique (liens `/d/:token`, CORS du back-office). Santé : `GET /api/health`.
+Image : `docker build -f apps/api/Dockerfile -t amane-api .` depuis la racine (le Dockerfile construit lui-même le back-office React dans une première étape, puis copie `packages/shared`, `apps/api`, `crm`, `site` et `apps/web/dist` : rien à préparer, Railway et Render peuvent construire directement depuis GitHub). `apps/api/railway.json` et `apps/api/render.yaml` sont fournis ; sur Fly : `fly launch --dockerfile apps/api/Dockerfile`, `fly secrets set …`, une seule machine avec `CRON_ENABLED=1`. Variables : voir `.env.example`. `PUBLIC_URL` = l'URL publique (liens `/d/:token`, CORS du back-office). Santé : `GET /api/health`.
 
 ### Projet « CRM seul », relié à la base
 

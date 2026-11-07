@@ -1,5 +1,20 @@
 # API Amane v2 — image de production (Node 20, npm workspaces).
 # Construire depuis la RACINE du dépôt :  docker build -f apps/api/Dockerfile -t amane-api .
+# 1) Back-office React (apps/web/dist n'est pas dans Git : on le construit ici, Railway/Render construisent depuis GitHub).
+FROM node:20-alpine AS web
+WORKDIR /srv
+COPY package.json package-lock.json ./
+COPY packages/shared/package.json packages/shared/
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+COPY apps/mobile/package.json apps/mobile/
+# Tous les manifestes du monorepo sont présents (lockfile cohérent) ; on n'installe que shared + web, devDependencies comprises.
+RUN npm ci --workspace packages/shared --workspace apps/web --include=dev --no-audit --no-fund --legacy-peer-deps
+COPY packages/shared packages/shared
+COPY apps/web apps/web
+RUN npm run build --workspace apps/web
+
+# 2) Image de l'API.
 FROM node:20-alpine AS base
 WORKDIR /srv
 ENV NODE_ENV=production
@@ -16,8 +31,7 @@ COPY packages/shared packages/shared
 COPY apps/api apps/api
 COPY crm crm
 COPY site site
-# Le back-office React doit être construit avant : `npm run build -w apps/web` (créer un dossier apps/web/dist vide s'il n'existe pas).
-COPY apps/web/dist apps/web/dist
+COPY --from=web /srv/apps/web/dist apps/web/dist
 
 ENV PORT=3000 HOST=0.0.0.0
 EXPOSE 3000
