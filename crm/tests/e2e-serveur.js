@@ -4,7 +4,7 @@
 const {chromium}=require('playwright');const path=require('path');const fs=require('fs');
 const {createApi}=require('./api-mock');
 const html0=fs.readFileSync(process.env.CRM_FILE||path.join(__dirname,'..','index.html'),'utf8');
-const HOOK="Object.defineProperty(window,'__S',{get:()=>S});Object.defineProperty(window,'__DR',{get:()=>DR});Object.defineProperty(window,'__db',{get:()=>db});";
+const HOOK="Object.defineProperty(window,'__S',{get:()=>S});Object.defineProperty(window,'__DR',{get:()=>DR});Object.defineProperty(window,'__db',{get:()=>db});Object.defineProperty(window,'__maison',{get:()=>maisonInfo});";
 if(!html0.includes('boot();\n})();'))throw new Error('ancre de test introuvable');// Comme site/make_vercel.py : la page servie hors claude.ai porte la balise viewport
 const VP='<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">';
 const html=(/name="viewport"/.test(html0.slice(0,html0.indexOf('<style')))?'':VP)+html0.replace('boot();\n})();','boot();\n'+HOOK+'\n})();');
@@ -144,6 +144,8 @@ ok('aperçu en direct (prénom inséré)',(await p.textContent('#rgPrev')).inclu
 await p.click('[data-rglang="AR"]');await W(p,150);ok('textes par langue (AR)',(await p.inputValue('#rgT_nuit')).includes('{prenom}')&&(await p.$eval('#rgT_nuit',e=>getComputedStyle(e).direction))==='rtl');
 await p.click('[data-act="rg-save"]');await W(p,900);
 const rg=api.st.cols.reglages.general||{};ok('réglages enregistrés sur le serveur',rg.autoReply===false&&rg.horaires&&rg.horaires.fin==='22:30'&&rg.textes.FR.jour==='Bonjour {prenom}, bienvenue chez Amane.',JSON.stringify(rg).slice(0,140));
+await p.evaluate(()=>{__S.reglages=[...(__S.reglages||[]).filter(x=>x.id!=='maison'),{id:'maison',raison:'Amane SAS',siren:'123 456 789',tva:'FR12123456789'}]});
+const mz=await p.evaluate(()=>__maison());ok('identité de la maison lue dans reglages/maison (documents)',mz.raison==='Amane SAS'&&mz.siren==='123 456 789'&&mz.adresse.includes('[Adresse]'),JSON.stringify(mz));
 // photos
 await p.evaluate(()=>location.hash='flotte');await W(p,400);await p.click('.vcard >> nth=0');await W(p,300);await p.click('[data-tab="photos"]');await W(p,200);
 await p.setInputFiles('#phIn',[path.join(__dirname,'p.jpg')]);await W(p,1500);

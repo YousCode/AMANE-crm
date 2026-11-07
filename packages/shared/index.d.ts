@@ -410,3 +410,18 @@ export function validateDevis(obj: unknown): ValidationResult;
 export function validateVehicule(obj: unknown): ValidationResult;
 export function validatePartenaire(obj: unknown): ValidationResult;
 export function validateService(obj: unknown): ValidationResult;
+
+// ---------- documents A4 (devis, facture, carnet de séjour) ----------
+export type MaisonKey = 'raison' | 'adresse' | 'siren' | 'tva' | 'iban' | 'bic' | 'tel' | 'email' | 'site';
+export type Maison = Record<MaisonKey, string>;
+export const MAISON_FIELDS: readonly { k: MaisonKey; label: string; placeholder: string }[];
+export const DOC_COLORS: Readonly<Record<string, string>>;
+export function escHtml(s: unknown): string;
+/** reglages/maison complété par des valeurs par défaut (ex. BANK_IBAN côté serveur). */
+export function maisonInfo(raw?: Partial<Record<MaisonKey, unknown>> | null, defaults?: Partial<Record<MaisonKey, unknown>> | null): Maison;
+/** Champs légaux manquants pour une facture conforme. */
+export function maisonMissing(m?: Partial<Maison> | null): MaisonKey[];
+export function docShell(o: { lang?: string; title?: string; body?: string; legal?: boolean; kind?: string; num?: string; meta?: string; maison?: Partial<Maison> | null; placeholders?: boolean; after?: string; extraHead?: string }): string;
+export function devisDoc(o: { mission: Partial<Mission> & Record<string, any>; client?: Partial<Client> | null; kind?: 'devis' | 'facture'; maison?: Partial<Maison> | null; placeholders?: boolean; after?: string; lang?: string }): string;
+export function programmeSteps<T extends { dt?: string }>(mission: { programme?: T[] } | null | undefined): T[];
+export function carnetDoc(o: { mission: Partial<Mission> & Record<string, any>; client?: Partial<Client> | null; partenaires?: readonly { id?: string; _id?: string; nom?: string; adresse?: string }[]; maison?: Partial<Maison> | null; lang?: string }): string;

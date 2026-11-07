@@ -78,14 +78,15 @@ test('page publique du devis /d/:token : charte, langue, vuAt, acceptation, aler
   assert.match(page.headers['content-type'], /^text\/html/);
   const html = page.text;
   assert.ok(html.includes('<html lang="ar" dir="rtl">'), 'RTL pour l’arabe');
-  assert.ok(html.includes('#FAF8F4') && html.includes('#111111') && html.includes('#B8955C'), 'ivoire, noir, champagne');
+  assert.ok(html.includes('#5B1622') && html.includes('#F6F1E8') && html.includes('#B8955C'), 'gabarit A4 de la maison : bordeaux, crème, champagne');
   assert.ok(html.includes('Bodoni+Moda') && html.includes('Jost'), 'Google Fonts');
   assert.ok(html.includes('M452 -6 L560 -6'), 'le A à serrure');
   assert.ok(html.includes('Arrive as a <em>Guest</em>. Leave with a <em>Story</em>.'), 'slogan en pied');
   assert.ok(html.includes('عرض سعر') && html.includes('D-2026-0007') && html.includes('خالد المنصوري'));
   assert.ok(html.includes(`action="/d/${token}/accepter"`), 'bouton Accepter');
   assert.ok(html.includes('https://wa.me/33100000000?text='), 'Poser une question → WhatsApp');
-  assert.ok(!/#(?!FAF8F4|F3EFE8|FFFFFF|111111|4A443E|6E675F|8A6A3B|B8955C|EDE7DD|3E7A4E|8A5A12|A3293F|3D5F87|0B0B0B|F4F1EC|CFC8BE|A39B90|C9A56A|1C1B19|9FBF9A|E2BC72|F09AA6|B4C6DE)[0-9A-Fa-f]{6}\b/.test(html.replace(/<path[^>]*>/g, '')), 'aucune autre couleur');
+  assert.ok(!/#(?!5B1622|3B0C15|7A2232|8E3043|B8955C|D9B98A|F6F1E8|EFE7DA|15110F|4A3A3C|6E675F|E5DACB|E0D4C4|3E7A4E)[0-9A-Fa-f]{6}\b/.test(html.replace(/%23/g, '#').replace(/<path[^>]*>/g, '')), 'aucune autre couleur que celles des documents');
+  assert.ok(!html.includes('[SIREN]'), 'pas de champ à compléter montré au client');
   assert.equal(db.dump('missions')[0].devis.vuAt, '2026-11-03T10:00:00.000Z', 'ouverture → vuAt');
   const info = await call(H.doc, { url: '/api/devis/m1/share', cookie });
   assert.equal(info.json.vuAt, '2026-11-03T10:00:00.000Z');
@@ -241,4 +242,27 @@ test('compatibilité mobile : document devis/facture par chemin, position sans c
   const page = await call(H.doc, { url: `/espace/${token}` });
   assert.equal(page.status, 200);
   assert.ok(page.text.includes('Your stay'));
+});
+
+test('documents client : identité de la maison (reglages/maison) sur le devis et la facture, IBAN de repli', async () => {
+  fresh({ BANK_IBAN: 'FR76 ENV 0000', BANK_BIC: 'ENVBICXX' });
+  at(DAY);
+  const cookie = await login();
+  await put(cookie, 'clients', 'c1', { nom: 'Jean Dupont', langue: 'FR' });
+  await put(cookie, 'missions', 'm1', { titre: 'Classe V', clientId: 'c1', statut: 'confirmee', service: 'chauffeur', responsable: 'amel', devis: { numero: 'D-2026-0011', date: '2026-11-03', factureNumero: 'F-2026-0004', factureDate: '2026-11-04', statut: 'accepte', lignes: [{ d: 'Classe V avec chauffeur', q: 1, u: 'jour', pu: 900 }], tva: 20, paiements: [{ date: '2026-11-04', montant: 1080, moyen: 'cb' }] } });
+  const es = await call(H.doc, { method: 'POST', url: '/api/missions/m1/espace', cookie });
+  const before = await call(H.doc, { url: `/api/espace/${es.json.token}/facture` });
+  assert.equal(before.status, 200);
+  assert.ok(before.text.includes('FR76 ENV 0000') && before.text.includes('ENVBICXX'), 'IBAN et BIC des variables d’environnement');
+  assert.ok(!before.text.includes('SIREN') && !before.text.includes('[Raison sociale]'), 'rien d’inventé ni de gabarit vide');
+  const w = await put(cookie, 'reglages', 'maison', { raison: 'Amane SAS', adresse: '12 avenue Montaigne, 75008 Paris', siren: '123 456 789', tva: 'FR12123456789', iban: 'FR76 3000 6000 0112', bic: 'AGRIFRPP' });
+  assert.equal(w.status, 200, 'reglages/maison enregistré');
+  const fac = await call(H.doc, { url: `/api/espace/${es.json.token}/facture` });
+  assert.ok(fac.text.includes('<h1>Facture</h1>') && fac.text.includes('F-2026-0004') && fac.text.includes('Devis D-2026-0011'));
+  assert.ok(fac.text.includes('Amane SAS') && fac.text.includes('SIREN 123 456 789') && fac.text.includes('TVA FR12123456789'));
+  assert.ok(fac.text.includes('FR76 3000 6000 0112') && !fac.text.includes('FR76 ENV 0000'), 'reglages/maison prime sur l’environnement');
+  assert.ok(fac.text.includes('Acquittée'), 'facture soldée');
+  const sh = await call(H.doc, { method: 'POST', url: '/api/devis/m1/share', cookie });
+  const page = await call(H.doc, { url: `/d/${sh.json.token}` });
+  assert.ok(page.text.includes('<h1>Devis</h1>') && page.text.includes('SIREN 123 456 789'));
 });

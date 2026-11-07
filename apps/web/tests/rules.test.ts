@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { clashes, chClashes, freeVehicles, durDays, tplTasks, devisTotals, numeroFormat, paiementStatut, nextStatut, prevStatut, telNorm, waLink, mapsLink, detectLang, docLang, t, validate, cssVars, type Mission, type Vehicule } from '../src/shared';
-import { todos, finData, finCSV, planningICS, devisHTML, progText, vehicleOn } from '../src/lib/rules';
+import { todos, finData, finCSV, planningICS, devisHTML, carnetHTML, progText, vehicleOn } from '../src/lib/rules';
+import { maisonSample } from '../src/screens/Reglages';
 import { seed } from '../src/mocks/seed';
 
 const M = (o: Partial<Mission>): Mission => ({ id: 'x', titre: 't', clientId: 'c', service: 'location', debut: '2026-11-10T10:00', fin: '2026-11-12T18:00', statut: 'confirmee', ...o });
@@ -55,5 +56,13 @@ describe('règles dérivées (à faire, finances, exports)', () => {
   it('finData et CSV', () => { const fd = finData(D, new Date()); expect(fd.facture).toBeGreaterThan(0); expect(fd.factures.length).toBeGreaterThanOrEqual(1); const csv = finCSV(D, fd); expect(csv.startsWith('﻿Facture;Devis;Client')).toBe(true); });
   it('ICS', () => { const ics = planningICS(D); expect(ics).toContain('BEGIN:VCALENDAR'); expect(ics).toContain('SUMMARY:Séjour Al-Rashid — semaine shopping'); });
   it('devisHTML en arabe est RTL, programme dans la langue du client', () => { const m = S.missions[0] as never as Mission; const h = devisHTML(D, m, 'facture'); expect(h).toContain('dir="rtl"'); expect(h).toContain('F-2026-0007'); expect(progText(D, m)).toContain('Amane'); });
+  it('documents au gabarit de la maison : mentions légales de reglages/maison, sinon champs à compléter visibles', () => {
+    const m = S.missions[0] as never as Mission;
+    const vide = devisHTML(D, m, 'facture'); expect(vide).toContain('#5B1622'); expect(vide).toContain('[SIREN]');
+    const D2 = { ...D, reglages: [{ id: 'maison', raison: 'Amane SAS', adresse: '12 avenue Montaigne', siren: '123 456 789', tva: 'FR12123456789' }] };
+    const h = devisHTML(D2, m, 'facture'); expect(h).toContain('SIREN 123 456 789'); expect(h).toContain('Amane SAS'); expect(h).not.toContain('[SIREN]');
+    expect(carnetHTML(D2, m)).toContain('dir="rtl"');
+    expect(maisonSample({ raison: 'Amane SAS', adresse: '', siren: '', tva: '', iban: '', bic: '', tel: '', email: '', site: '' })).toContain('[Adresse]');
+  });
   it('vehicleOn', () => { const v = S.vehicules.find((x) => x.id === 'classev') as never as Vehicule; const m = S.missions[0]; expect(vehicleOn(D.missions, v, new Date(m.debut), new Date(m.fin)).k).toBe('b'); });
 });

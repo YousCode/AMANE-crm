@@ -1,7 +1,7 @@
 /* Faux serveur en mémoire, conforme à docs/crm-serveur.md + docs/architecture-v2.md.
    Utilisé par msw (navigateur et Vitest). Pure fonction `handle()` + bus d'événements « WebSocket ». */
 import { seed } from './seed';
-import { STATUTS, CLIENT_STATUTS, devisTotals, telNorm, detectLang, t as tr } from '../shared';
+import { STATUTS, CLIENT_STATUTS, devisTotals, telNorm, detectLang, t as tr, devisDoc } from '../shared';
 
 export type Res = { status: number; body?: unknown; html?: string; headers?: Record<string, string> };
 export type WsEvent = Record<string, unknown> & { type: string };
@@ -102,8 +102,9 @@ function handle0(method: string, rawUrl: string, body: unknown, opts?: { cookie?
     const dv = (m.devis || {}) as Record<string, unknown>; const c = (S.db.clients.get(String(m.clientId)) || {}) as Doc; const L = String(c.langue || 'EN').toUpperCase();
     if (md[2] && method === 'POST') { dv.statut = 'accepte'; dv.acceptedAt = now(); m.devis = dv; m.updatedAt = now(); m.updatedBy = 'client'; act('client', 'missions', m.id, 'update', `Devis ${dv.numero} accepté par le client via le lien`); bus.emit({ type: 'change', col: 'missions', doc: m }); bus.emit({ type: 'alerte', text: `Devis ${dv.numero} accepté par ${c.nom}` }); return ok({ ok: true }); }
     if (!dv.vuAt) { dv.vuAt = now(); m.devis = dv; m.updatedAt = now(); bus.emit({ type: 'change', col: 'missions', doc: m }); }
-    const tt = devisTotals(dv as never);
-    return { status: 200, html: `<!doctype html><html lang="${L.toLowerCase()}" dir="${L === 'AR' ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><title>${tr(L, 'doc.quote')} ${dv.numero}</title><style>body{font-family:'Bodoni Moda',Georgia,serif;background:#FAF8F4;color:#111;max-width:680px;margin:40px auto;padding:0 20px}.btn{display:inline-block;background:#111;color:#fff;padding:12px 20px;border-radius:12px;text-decoration:none;margin-right:8px;font-family:Jost,sans-serif}</style></head><body><h1>${tr(L, 'doc.quote')} ${dv.numero}</h1><p>${tr(L, 'doc.client')} : ${c.nom}</p><p>${tr(L, 'doc.ttc')} : ${tt.ttc.toFixed(2)} €</p><form method="post" action="/d/${md[1]}/accepter"><button class="btn" id="accept" type="submit">${tr(L, 'doc.accept')}</button> <a class="btn" href="https://wa.me/33600000000">${tr(L, 'doc.ask')}</a></form>${dv.statut === 'accepte' ? '<p id="accepted">✓</p>' : ''}</body></html>` };
+    const accepted = dv.statut === 'accepte'; const mz = S.db.reglages ? S.db.reglages.get('maison') : undefined;
+    const after = accepted ? `<div class="panel"><p class="ok">${tr(L, 'doc.accepted')}</p></div>` : `<div class="btns"><form method="post" action="/d/${md[1]}/accepter" style="display:contents"><button class="btn" type="submit" id="accept">${tr(L, 'doc.accept')}</button></form></div>`;
+    return { status: 200, html: devisDoc({ mission: m as never, client: c as never, kind: 'devis', maison: (mz || null) as never, after }) };
   }
   const me = p.match(/^\/api\/espace\/([A-Za-z0-9_-]+)$/);
   if (me) { const mid = S.espaces.get(me[1]); const m = mid && S.db.missions.get(mid); if (!m) return err(404, 'introuvable', 'Lien inconnu.'); const c = (S.db.clients.get(String(m.clientId)) || {}) as Doc; const ch = S.db.partenaires.get(String(m.chauffeurId)); return ok({ mission: { titre: m.titre, debut: m.debut, fin: m.fin, lieu: m.lieu }, client: { nom: c.nom, langue: c.langue }, programme: m.programme || [], chauffeur: ch ? { nom: ch.nom, tel: ch.tel, photo: ch.photo } : null, documents: m.devis ? [{ type: 'devis', numero: (m.devis as Record<string, unknown>).numero }] : [], solde: devisTotals(m.devis as never).solde }); }

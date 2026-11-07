@@ -44,6 +44,18 @@ Tests : `npm test` (node --test).
 | `guessService(text)`, `guessServiceOrNull` | service deviné par mots-clés (`location` par défaut) |
 | `firstName(nom)`, `fillVars(text, vars)`, `windowOpen(conv)` | prénom propre ; remplissage `{var}` ; fenêtre WhatsApp 24 h |
 
+## Documents (`docs.js`, fonctions pures)
+Gabarit A4 de la maison (bandeau bordeaux aux arcades, A sur cartouche crème, totaux sur pierre, TTC sur bordeaux), utilisé par l'API (`/d/:token`, `/api/espace/:token/devis|facture`), le back-office et le CRM historique (même dessin).
+| Export | Description |
+|---|---|
+| `devisDoc({mission, client, kind, maison, placeholders, after})` | devis ou facture complet (HTML autonome, prêt pour « Enregistrer en PDF ») ; `after` = HTML sous la feuille (boutons de la page publique, masqués à l'impression) |
+| `carnetDoc({mission, client, partenaires, maison})` | carnet de séjour (programme jour par jour) |
+| `docShell(o)` | la feuille A4 seule |
+| `maisonInfo(raw, defaults)`, `maisonMissing(m)`, `MAISON_FIELDS` | identité de la maison (`reglages/maison`) ; mentions légales manquantes ; champs du formulaire |
+| `programmeSteps(m)`, `DOC_COLORS`, `escHtml` | étapes triées ; couleurs des documents ; échappement HTML |
+
+`placeholders: true` (back-office) affiche les champs manquants « [SIREN] » ; sans (pages du client), ils sont omis.
+
 ## i18n (`i18n.js`)
 | Export | Description |
 |---|---|

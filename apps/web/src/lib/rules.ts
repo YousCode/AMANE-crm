@@ -1,14 +1,13 @@
 /* Règles d'affichage dérivées des données (portées de crm/index.html) : à faire, disponibilité des véhicules, finances, exports. */
-import { STATUTS, PART_TYPES, PROG_TYPES, MOYENS, SERVICES, clashes, chClashes, devisTotals, durDays, docLang, t as tr, LOCALES, type Mission, type Client, type Vehicule, type Partenaire, type Service, type Devis } from '../shared';
-import { parse, sod, addD, fmtE, fmtDay, fmtDT, overlapDays, monthBounds, r2, esc, fmtL, pad } from './format';
-import { LOGO_PATH } from '../components/Icon';
+import { STATUTS, PART_TYPES, PROG_TYPES, SERVICES, devisDoc, carnetDoc, maisonInfo, clashes, chClashes, devisTotals, durDays, docLang, t as tr, LOCALES, type Mission, type Client, type Vehicule, type Partenaire, type Service, type Devis } from '../shared';
+import { parse, sod, addD, fmtE, fmtDay, fmtDT, overlapDays, monthBounds, r2, esc, pad } from './format';
 
 /* Libellé d'unité/type de document : « doc.type.x », repli « doc.type.autre » pour un type inconnu. */
 const tl = (L: string, k: string) => { const v = tr(L, 'doc.' + k); return v === 'doc.' + k ? tr(L, 'doc.type.autre') : v; };
 export const ACTIVE = ['confirmee', 'encours', 'terminee'];
 export const BOOK = ['confirmee', 'encours'], OPT = ['nouvelle', 'proposition'];
 export const OPEN_ST = ['nouvelle', 'proposition', 'confirmee', 'encours'];
-export interface Data { missions: Mission[]; clients: Client[]; vehicules: Vehicule[]; partenaires: Partenaire[]; services: Service[] }
+export interface Data { missions: Mission[]; clients: Client[]; vehicules: Vehicule[]; partenaires: Partenaire[]; services: Service[]; reglages?: { id: string }[] }
 export const byId = <T extends { id: string }>(arr: T[], id?: string | null) => (id ? arr.find((x) => x.id === id) : undefined);
 export const services = (s: Service[]): Service[] => [...(s.length ? s : (SERVICES as unknown as Service[]))].sort((a, b) => (a.ordre || 99) - (b.ordre || 99));
 export const svcName = (s: Service[], id?: string) => services(s).find((x) => x.id === id)?.nom || 'Service';
@@ -94,29 +93,14 @@ export function progText(D: Data, m: Mission) {
   if (!progSteps(m).length) lines.push('—'); lines.push('', tr(L, 'doc.sign')); return lines.join('\n');
 }
 
-/* Documents HTML (devis, facture, carnet, contrat) */
-function docShell(title: string, L: string, body: string, legal: boolean) {
-  const rtl = L === 'AR'; const a = `<svg width="26" viewBox="40 -60 940 1120"><path fill="#111" d="${LOGO_PATH}"/></svg>`;
-  return `<!doctype html><html lang="${L.toLowerCase()}" dir="${rtl ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>body{font-family:${rtl ? 'Tahoma,"Noto Naskh Arabic",' : ''}'Bodoni Moda',Georgia,"Times New Roman",serif;max-width:760px;margin:48px auto;padding:0 24px;color:#111;line-height:1.55;background:#fff}header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:1px solid #D9D3C9;padding-bottom:18px;margin-bottom:26px}.brand{display:flex;align-items:center;gap:12px;font-size:13px;letter-spacing:.32em;color:#111}h1{font-weight:400;font-size:30px;margin:0 0 4px}.muted{color:#6E675F;font-size:13px}table{width:100%;border-collapse:collapse;margin:14px 0}th,td{padding:8px 6px;border-bottom:1px solid #ECE6DC;text-align:${rtl ? 'right' : 'left'};vertical-align:top;font-size:14px}th{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#6E675F;font-weight:400}td.n,th.n{text-align:${rtl ? 'left' : 'right'};white-space:nowrap}.tot{margin-${rtl ? 'right' : 'left'}:auto;width:min(360px,100%)}.tot td{border:0;padding:4px 6px}.tot tr.g td{border-top:1px solid #111;font-size:16px;padding-top:8px}.ph{background:#FFF3C4;padding:0 3px}h2{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#6E675F;font-weight:400;margin-top:28px}.day{margin-top:22px;font-size:17px;border-bottom:1px solid #ECE6DC;padding-bottom:6px}.st{display:grid;grid-template-columns:70px 1fr;gap:12px;padding:10px 0}.st b{font-weight:400;color:#8A6A3B}footer{margin-top:40px;font-size:11.5px;color:#6E675F;border-top:1px solid #D9D3C9;padding-top:12px}@media print{body{margin:0 auto}}</style></head><body><header><div class="brand">${a}<span>AMANE</span></div>${legal ? `<div class="muted" style="text-align:${rtl ? 'left' : 'right'}">Amane — <span class="ph">[Raison sociale]</span><br><span class="ph">[Adresse]</span><br>SIREN <span class="ph">[SIREN]</span> · TVA <span class="ph">[TVA intracom.]</span></div>` : ''}</header>${body}${legal ? `<footer>Amane · <span class="ph">[Raison sociale]</span> · SIREN <span class="ph">[SIREN]</span> · <span class="ph">[Adresse]</span> · TVA <span class="ph">[TVA intracom.]</span></footer>` : ''}</body></html>`;
-}
+/* Documents HTML (devis, facture, carnet) : gabarit A4 de la maison, partagé avec l'API (@amane/shared/docs).
+   Usage interne : les mentions légales manquantes restent visibles « [SIREN] » pour qu'on pense à les saisir dans Réglages. */
+export const maisonOf = (D: Pick<Data, 'reglages'>) => maisonInfo((byId(D.reglages || [], 'maison') || null) as never);
 export function devisHTML(D: Data, m: Mission, kind: 'devis' | 'facture') {
-  const c = byId(D.clients, m.clientId) || ({} as Client), L = docLang(c), loc = LOCALES[L], dv = m.devis || { lignes: [] }, t = devisTotals(dv), fac = kind === 'facture';
-  const T = (k: string) => tr(L, 'doc.' + k); const num = fac ? dv.factureNumero || '' : dv.numero || ''; const dt = parse(fac ? dv.factureDate : dv.date) || new Date();
-  const rows = (dv.lignes || []).map((l) => `<tr><td>${esc(l.d)}</td><td class="n">${esc(l.q)}</td><td>${esc(tl(L, 'unit.' + l.u) || l.u)}</td><td class="n">${fmtL(l.pu, loc)}</td><td class="n">${fmtL((+l.q || 0) * (+l.pu || 0), loc)}</td></tr>`).join('');
-  const pays = fac && (dv.paiements || []).length ? `<h2>${T('payments')}</h2><table>${(dv.paiements || []).map((q) => `<tr><td>${q.date ? esc((parse(q.date) as Date).toLocaleDateString(loc)) : ''}</td><td>${esc(MOYENS.find((x) => x.id === q.moyen)?.label || '')}</td><td class="n">${fmtL(q.montant, loc)}</td></tr>`).join('')}</table>` : '';
-  const body = `<h1>${fac ? T('invoice') : T('quote')} ${esc(num)}</h1><p class="muted">${T('date')} : ${dt.toLocaleDateString(loc)} · ${T('ref')} : ${esc(m.titre || '')}${fac && dv.numero ? ' · ' + T('quote') + ' ' + esc(dv.numero) : ''}</p>
-  <h2>${T('client')}</h2><p>${esc(c.nom || '')}<br>${esc([c.hotel, c.pays].filter(Boolean).join(', '))}<br>${esc([c.tel, c.email].filter(Boolean).join(' · '))}</p>
-  <table><thead><tr><th>${T('desc')}</th><th class="n">${T('qty')}</th><th>${T('unit')}</th><th class="n">${T('pu')}</th><th class="n">${T('total')}</th></tr></thead><tbody>${rows}</tbody></table>
-  <table class="tot"><tr><td>${T('total')}</td><td class="n">${fmtL(t.ht, loc)}</td></tr>${t.rem ? `<tr><td>${T('discount')} ${esc(dv.remise)} %</td><td class="n">−${fmtL(t.rem, loc)}</td></tr>` : ''}<tr><td>${T('vat')} ${esc(t.rate)} %</td><td class="n">${fmtL(t.tva, loc)}</td></tr><tr class="g"><td>${T('ttc')}</td><td class="n">${fmtL(t.ttc, loc)}</td></tr>${fac ? `<tr><td>${T('paid')}</td><td class="n">${fmtL(t.paid, loc)}</td></tr><tr class="g"><td>${T('due')}</td><td class="n">${fmtL(Math.max(0, t.solde), loc)}</td></tr>` : ''}</table>${pays}
-  <h2>${T('terms')}</h2><p>${T('termsTxt')}</p><h2>${T('bank')}</h2><p>IBAN <span class="ph">[IBAN]</span> · BIC <span class="ph">[BIC]</span></p>`;
-  return docShell(`${fac ? T('invoice') : T('quote')} ${num}`, L, body, true);
+  return devisDoc({ mission: m as never, client: (byId(D.clients, m.clientId) || {}) as never, kind, maison: maisonOf(D), placeholders: true });
 }
 export function carnetHTML(D: Data, m: Mission) {
-  const c = byId(D.clients, m.clientId) || ({} as Client), L = docLang(c), loc = LOCALES[L]; let day = '', h = '';
-  progSteps(m).forEach((x) => { const d = parse(x.dt) as Date; const dl = d.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' }); if (dl !== day) { day = dl; h += `<div class="day">${esc(dl.charAt(0).toUpperCase() + dl.slice(1))}</div>`; } const p = byId(D.partenaires, x.partenaireId);
-    h += `<div class="st"><b>${d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit', hour12: false })}</b><div>${esc(tl(L, 'type.' + x.type))}${p ? ' — ' + esc(p.nom) : ''}${x.lieu || (p && p.adresse) ? `<div class="muted">${esc([x.lieu, p && p.adresse].filter(Boolean).join(' · '))}</div>` : ''}${x.client ? `<div>${esc(x.client)}</div>` : ''}</div></div>`; });
-  const a = parse(m.debut), b = parse(m.fin);
-  return docShell(tr(L, 'doc.prog'), L, `<h1>${tr(L, 'doc.prog')}</h1><p class="muted">${esc(c.nom || '')}${a ? ' · ' + a.toLocaleDateString(loc, { day: 'numeric', month: 'long' }) + (b ? ' — ' + b.toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' }) : '') : ''}</p><p>${tr(L, 'doc.progIntro')}</p>${h || '<p>—</p>'}`, false);
+  return carnetDoc({ mission: m as never, client: (byId(D.clients, m.clientId) || {}) as never, partenaires: D.partenaires as never, maison: maisonOf(D) });
 }
 export function contratHTML(D: Data, m: Mission) {
   const c = byId(D.clients, m.clientId) || ({} as Client), v = byId(D.vehicules, m.vehiculeId) || ({} as Vehicule), k = m.contrat || ({} as NonNullable<Mission['contrat']>); const a = parse(m.debut), b = parse(m.fin);

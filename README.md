@@ -164,17 +164,19 @@ Toutes les variables sont listées et commentées dans [`apps/api/.env.example`]
 | `CRON_ENABLED` | sur une seule instance | Rappels clients, alertes, tableau du lundi |
 | `CRM_ONLY` | non | `1` : le CRM à la racine, sans le site |
 
+L'identité légale portée par les devis et factures (raison sociale, adresse du siège, SIREN, TVA, IBAN, BIC) se saisit dans le back-office : **Réglages → Documents**. Elle s'applique aussitôt aux documents téléchargés et à ceux que le client ouvre par lien.
+
 **Aucun secret ne va dans le dépôt.** Les valeurs vivent dans l'hébergeur (Railway, Render) et dans votre `.env` local. Voir [`SECURITY.md`](SECURITY.md).
 
 ## Tests et qualité
 
 | Suite | Outil | Nombre |
 |---|---|---|
-| `packages/shared` | `node --test` | 21 |
-| `apps/api` (API HTTP réelle, base en mémoire) | `node --test` | 85 |
-| `apps/web` (règles, store, composants) | Vitest | 33 |
+| `packages/shared` | `node --test` | 27 |
+| `apps/api` (API HTTP réelle, base en mémoire) | `node --test` | 86 |
+| `apps/web` (règles, store, composants) | Vitest | 34 |
 | `apps/mobile` | Jest | 28 |
-| CRM historique : parcours, conciergerie, appareil, serveur | Playwright | 32 + 58 + 16 + 99 |
+| CRM historique : parcours, conciergerie, appareil, serveur | Playwright | 32 + 58 + 16 + 100 |
 | Site : formulaire « Être rappelé » | Playwright | 12 |
 
 La CI GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) lance tout à chaque push sur `main` et sur chaque pull request : tests unitaires, TypeScript, build du back-office, puis les parcours Playwright. Une pull request ne se fusionne que si la CI est verte.

@@ -52,6 +52,12 @@ const DOC = {
   },
 };
 
+// Textes du gabarit A4 des documents (devis, facture, carnet de séjour), repris du CRM historique.
+Object.assign(DOC.FR, { issuer: 'Émis par', house: 'Conciergerie privée · Paris', dueDate: 'Échéance {date}', paidStamp: 'Acquittée', ttcNote: 'Montants en euros, TTC. TVA 20 % sur les prestations de services.', thanks: 'Merci de votre confiance.', print: 'Enregistrer en PDF', yourContact: 'Votre interlocuteur' });
+Object.assign(DOC.EN, { issuer: 'Issued by', house: 'Private concierge · Paris', dueDate: 'Due {date}', paidStamp: 'Paid', ttcNote: 'Amounts in euros, VAT included. VAT 20% on services.', thanks: 'Thank you for your trust.', print: 'Save as PDF', yourContact: 'Your contact' });
+Object.assign(DOC.ES, { issuer: 'Emitido por', house: 'Conserjería privada · París', dueDate: 'Vencimiento {date}', paidStamp: 'Pagada', ttcNote: 'Importes en euros, IVA incluido. IVA 20 % sobre los servicios.', thanks: 'Gracias por su confianza.', print: 'Guardar en PDF', yourContact: 'Su contacto' });
+Object.assign(DOC.AR, { issuer: 'صادر عن', house: 'كونسيرج خاص · باريس', dueDate: 'تاريخ الاستحقاق {date}', paidStamp: 'مدفوعة', ttcNote: 'المبالغ باليورو شاملة الضريبة. ضريبة القيمة المضافة 20٪ على الخدمات.', thanks: 'شكراً لثقتكم.', print: 'حفظ بصيغة PDF', yourContact: 'جهة تواصلكم' });
+
 // Réponses rapides WhatsApp (variables : prenom, voiture, heure, lieu, date, chauffeur, montant, lien, numero).
 const QUICK = {
   FR: {
