@@ -20,6 +20,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Navigateur pour les tests de l'API (ancien CRM servi par Express)
+        run: npx playwright install --with-deps chromium
       - name: Tests (shared, API, back-office, mobile)
         run: npm test
       - name: Types (back-office, mobile)
