@@ -3,7 +3,7 @@
 import { API_BASE } from './api';
 import { useStore, type Col } from '../store/store';
 
-type WsEvent = { type: 'change'; col: Col; doc: { id: string } } | { type: 'deleted'; col: Col; id: string } | { type: 'message'; message: { id: string } } | { type: 'conversation'; conversation: { id: string } } | { type: 'rappel'; rappel: unknown } | { type: 'alerte'; text?: string };
+type WsEvent = { type: 'change'; col: Col; doc: { id: string } } | { type: 'deleted'; col: Col; id: string } | { type: 'message'; message: { id: string } } | { type: 'conversation'; conversation: { id: string } } | { type: 'rappel'; rappel: unknown } | { type: 'relance'; relance: unknown } | { type: 'confirmation'; missionId: string; partenaireId: string } | { type: 'alerte'; text?: string };
 declare global { interface Window { __amaneMock?: { on: (f: (e: WsEvent) => void) => () => void } } }
 
 let ws: WebSocket | null = null, timer: ReturnType<typeof setTimeout> | undefined, tries = 0, stopped = false, pollT: ReturnType<typeof setInterval> | undefined;
@@ -14,6 +14,8 @@ export function handleEvent(e: WsEvent) {
   else if (e.type === 'deleted') s.applyDeleted(e.col, e.id);
   else if (e.type === 'message' && e.message) s.applyChange('messages', e.message);
   else if (e.type === 'conversation' && e.conversation) s.applyChange('conversations', e.conversation);
+  // Relance envoyée ou mission confirmée par un prestataire : les écrans qui interrogent le serveur (Relances, Espace) se rafraîchissent.
+  else if (e.type === 'relance' || e.type === 'confirmation') useStore.setState({ lastSync: Date.now() });
 }
 function url() {
   const base = API_BASE || (typeof location !== 'undefined' ? location.origin : '');

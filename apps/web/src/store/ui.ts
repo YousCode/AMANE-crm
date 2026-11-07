@@ -4,7 +4,7 @@ import { create } from 'zustand';
 export type DrawerKind = 'mission' | 'client' | 'vehicule' | 'partenaire' | 'service';
 export interface DrawerState { kind: DrawerKind; id: string | null; tab: string; preset?: Record<string, unknown> }
 export interface Toast { id: number; text: string }
-export interface Filters { mine: boolean; svc: string; q: string; week: number; todo: string; dview?: 'kanban' | 'liste'; pview?: 'liste' | 'grille'; lst?: string; pq?: string; pt?: string; fm?: number; from?: string; to?: string; todoAll?: boolean; cvq?: string; cvf?: string }
+export interface Filters { mine: boolean; svc: string; q: string; week: number; todo: string; dview?: 'kanban' | 'liste'; pview?: 'liste' | 'grille'; lst?: string; pq?: string; pt?: string; fm?: number; from?: string; to?: string; todoAll?: boolean; cvq?: string; cvf?: string; cvv?: 'afaire' | 'faites' }
 
 interface UI {
   drawer: DrawerState | null; openDrawer: (kind: DrawerKind, id?: string | null, tab?: string, preset?: Record<string, unknown>) => void; closeDrawer: () => void; setTab: (t: string) => void;

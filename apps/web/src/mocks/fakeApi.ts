@@ -1,7 +1,7 @@
 /* Faux serveur en mémoire, conforme à docs/crm-serveur.md + docs/architecture-v2.md.
    Utilisé par msw (navigateur et Vitest). Pure fonction `handle()` + bus d'événements « WebSocket ». */
 import { seed } from './seed';
-import { STATUTS, CLIENT_STATUTS, devisTotals, telNorm, detectLang, t as tr } from '../shared';
+import { STATUTS, CLIENT_STATUTS, RELANCE_TYPES, devisTotals, paiementStatut, telNorm, detectLang, firstName, t as tr } from '../shared';
 
 export type Res = { status: number; body?: unknown; html?: string; headers?: Record<string, string> };
 export type WsEvent = Record<string, unknown> & { type: string };
@@ -15,6 +15,7 @@ export interface FakeState {
   db: Record<string, Map<string, Doc>>; activity: Doc[]; compteurs: Record<string, number>; pins: Record<string, string>; session: string | null;
   photos: Map<string, string>; shares: Map<string, string>; espaces: Map<string, string>; translations: Map<string, string>; outbox: Doc[]; fails: number;
   offline: boolean; windowClosed: Set<string>; iaOn: boolean; whatsappOn: boolean;
+  relances: Doc[]; acces: Map<string, Doc>; confirmations: Map<string, Doc>;
 }
 const listeners = new Set<(e: WsEvent) => void>();
 export const bus = { on(f: (e: WsEvent) => void) { listeners.add(f); return () => { listeners.delete(f); }; }, emit(e: WsEvent) { listeners.forEach((f) => { try { f(e); } catch { /* ignore */ } }); } };
@@ -22,13 +23,13 @@ export const bus = { on(f: (e: WsEvent) => void) { listeners.add(f); return () =
 export let S: FakeState;
 /* Persistance entre rechargements de page (Playwright navigue avec page.goto) : sessionStorage. */
 const SS = 'amane.mock.state';
-function persist() { try { if (typeof sessionStorage === 'undefined') return; const o: Record<string, unknown> = {}; (['db'] as const).forEach(() => { }); const db: Record<string, Doc[]> = {}; Object.entries(S.db).forEach(([c, m]) => { db[c] = [...m.values()]; }); o.db = db; o.activity = S.activity; o.compteurs = S.compteurs; o.pins = S.pins; o.session = S.session; o.shares = [...S.shares]; o.espaces = [...S.espaces]; o.outbox = S.outbox.slice(-50); o.offline = S.offline; o.windowClosed = [...S.windowClosed]; sessionStorage.setItem(SS, JSON.stringify(o)); } catch { /* ignore */ } }
-function restore(): boolean { try { if (typeof sessionStorage === 'undefined') return false; const raw = sessionStorage.getItem(SS); if (!raw) return false; const o = JSON.parse(raw); Object.entries(o.db as Record<string, Doc[]>).forEach(([c, arr]) => { S.db[c] = new Map(arr.map((x) => [x.id, x])); }); S.activity = o.activity || []; S.compteurs = o.compteurs || {}; S.pins = o.pins || S.pins; S.session = o.session || null; S.shares = new Map(o.shares || []); S.espaces = new Map(o.espaces || []); S.outbox = o.outbox || []; S.offline = !!o.offline; S.windowClosed = new Set(o.windowClosed || []); return true; } catch { return false; } }
+function persist() { try { if (typeof sessionStorage === 'undefined') return; const o: Record<string, unknown> = {}; (['db'] as const).forEach(() => { }); const db: Record<string, Doc[]> = {}; Object.entries(S.db).forEach(([c, m]) => { db[c] = [...m.values()]; }); o.db = db; o.activity = S.activity; o.compteurs = S.compteurs; o.pins = S.pins; o.session = S.session; o.shares = [...S.shares]; o.espaces = [...S.espaces]; o.outbox = S.outbox.slice(-50); o.offline = S.offline; o.windowClosed = [...S.windowClosed]; o.relances = S.relances; o.acces = [...S.acces]; o.confirmations = [...S.confirmations]; sessionStorage.setItem(SS, JSON.stringify(o)); } catch { /* ignore */ } }
+function restore(): boolean { try { if (typeof sessionStorage === 'undefined') return false; const raw = sessionStorage.getItem(SS); if (!raw) return false; const o = JSON.parse(raw); Object.entries(o.db as Record<string, Doc[]>).forEach(([c, arr]) => { S.db[c] = new Map(arr.map((x) => [x.id, x])); }); S.activity = o.activity || []; S.compteurs = o.compteurs || {}; S.pins = o.pins || S.pins; S.session = o.session || null; S.shares = new Map(o.shares || []); S.espaces = new Map(o.espaces || []); S.outbox = o.outbox || []; S.offline = !!o.offline; S.windowClosed = new Set(o.windowClosed || []); S.relances = o.relances || []; S.acces = new Map(o.acces || []); S.confirmations = new Map(o.confirmations || []); return true; } catch { return false; } }
 function fresh(): FakeState {
   const d = seed();
   const db: Record<string, Map<string, Doc>> = {};
   (['clients', 'missions', 'vehicules', 'services', 'partenaires', 'reglages', 'conversations', 'messages'] as const).forEach((c) => { db[c] = new Map((d[c] as Doc[]).map((x) => [x.id, x])); });
-  S = { db, activity: d.activity as Doc[], compteurs: { ...d.compteurs }, pins: { amel: '1234', youssouf: '1234', aziz: '1234' }, session: null, photos: new Map(), shares: new Map(), espaces: new Map(), translations: new Map(), outbox: [], fails: 0, offline: false, windowClosed: new Set(), iaOn: true, whatsappOn: true };
+  S = { db, activity: d.activity as Doc[], compteurs: { ...d.compteurs }, pins: { amel: '1234', youssouf: '1234', aziz: '1234' }, session: null, photos: new Map(), shares: new Map(), espaces: new Map(), translations: new Map(), outbox: [], fails: 0, offline: false, windowClosed: new Set(), iaOn: true, whatsappOn: true, relances: [], acces: new Map(), confirmations: new Map() };
   return S;
 }
 /** Repart de l'état d'exemple (tests). */
@@ -69,6 +70,38 @@ function translate(text: string, to: string, from?: string) {
   else if (to.toUpperCase() === 'FR') out = '[FR] ' + text;
   else out = ({ AR: 'مرحباً، ', EN: 'Dear guest, ', ES: 'Estimado cliente, ', RU: 'Здравствуйте, ' }[to.toUpperCase()] || '') + text;
   S.translations.set(key, out); return { text: out, from: src, cached: false };
+}
+
+/* Missions fermes, à venir, confiées au partenaire (chauffeur ou étape du programme). */
+function confiees(pid: string): Doc[] {
+  const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  return [...S.db.missions.values()].filter((m) => !m._deleted && ['confirmee', 'encours'].includes(String(m.statut)) && (m.chauffeurId === pid || ((m.programme as { partenaireId?: string }[]) || []).some((x) => x.partenaireId === pid)) && new Date(String(m.fin || m.debut)) >= t0).sort((a, b) => String(a.debut).localeCompare(String(b.debut)));
+}
+/* « À relancer » : même forme que le serveur (clé stable, cible, fenêtre de 24 h, dernière relance, blocage pendant le délai). */
+function relances(): Doc[] {
+  const items: Doc[] = []; const nowD = Date.now(); const D = 864e5; const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  const add = (type: string, key: string, who: Doc, x: Record<string, unknown>) => { const tel = String(who.tel || ''); const cv = S.db.conversations.get(telNorm(tel)); items.push({ key, type, cible: 'client', nom: who.nom, tel, convId: cv ? cv.id : undefined, fenetre: !!(cv && cv.windowUntil && new Date(String(cv.windowUntil)).getTime() > nowD && !S.windowClosed.has(String(cv.id))), ...x, id: key }); };
+  S.db.missions.forEach((m) => {
+    if (m._deleted) return; const c = (S.db.clients.get(String(m.clientId)) || {}) as Doc; const L = String(c.langue || 'FR'); const prenom = firstName(String(c.nom || ''));
+    if (m.statut === 'proposition' && nowD - new Date(String(m.updatedAt)).getTime() > 48 * 36e5) add('proposition', `proposition:${m.id}`, c, { clientId: m.clientId, missionId: m.id, prenom, objet: m.titre, lang: L, raison: `Proposition « ${m.titre} » sans réponse depuis ${Math.round((nowD - new Date(String(m.updatedAt)).getTime()) / D)} j`, messageSuggere: tr(L, 'relance.proposition', { prenom, objet: m.titre }), depuis: m.updatedAt });
+    const dv = m.devis as Record<string, unknown> | undefined; const fact = !!(dv && dv.factureNumero && devisTotals(dv as never).solde > 0 && nowD - new Date(String(dv.factureDate)).getTime() > 7 * D);
+    if (fact) add('facture', `facture:${m.id}`, c, { clientId: m.clientId, missionId: m.id, prenom, objet: `facture ${dv!.factureNumero}`, lang: L, raison: `Facture ${dv!.factureNumero} en retard`, messageSuggere: tr(L, 'relance.facture', { prenom, numero: dv!.factureNumero, montant: devisTotals(dv as never).solde.toFixed(2) + ' €' }), depuis: dv!.factureDate });
+    const a = new Date(String(m.debut)).getTime(); const fin = new Date(String(m.fin || m.debut)).getTime();
+    if (['proposition', 'confirmee'].includes(String(m.statut)) && paiementStatut(m as never) === 'non' && +(m.montant as number) > 0 && a - nowD < 3 * D && a > nowD) add('acompte', `acompte:${m.id}`, c, { clientId: m.clientId, missionId: m.id, prenom, objet: m.titre, lang: L, raison: `Acompte non reçu, mission dans ${Math.ceil((a - nowD) / D)} j`, messageSuggere: tr(L, 'relance.acompte', { prenom, date: new Date(a).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }), montant: Math.round(+(m.montant as number) * 0.3) + ' €' }), depuis: m.debut });
+    const reste = (+(m.montant as number) || 0) - (+(m.acompte as number) || 0);
+    if (!fact && ['confirmee', 'encours', 'terminee'].includes(String(m.statut)) && paiementStatut(m as never) !== 'solde' && reste > 0 && nowD - fin > D && nowD - fin < 90 * D) add('solde', `solde:${m.id}`, c, { clientId: m.clientId, missionId: m.id, prenom, objet: m.titre, lang: L, raison: `Solde de ${reste} € à régler, mission terminée depuis ${Math.floor((nowD - fin) / D)} j`, messageSuggere: tr(L, 'relance.solde', { prenom, objet: m.titre, montant: reste + ' €' }), depuis: m.fin || m.debut });
+    if (['confirmee', 'encours'].includes(String(m.statut)) && a >= +t0 && a - nowD < 7 * D) {
+      const pids = [m.chauffeurId, ...((m.programme as { partenaireId?: string }[]) || []).map((x) => x.partenaireId)].filter((x, i, arr) => x && arr.indexOf(x) === i) as string[];
+      pids.forEach((pid) => { const pt = S.db.partenaires.get(pid); const cf = S.confirmations.get(`${m.id}:${pid}`); if (!pt || pt._deleted || pt.actif === false || (cf && cf.debut === m.debut)) return; const pp = firstName(String(pt.contact || pt.nom || '')); const date = new Date(a).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+        const ac = S.acces.get(pid); const msg = tr('FR', 'relance.prestataire', { prenom: pp, date, objet: m.titre }) + (ac ? '\n' + tr('FR', 'relance.prestataire_espace', { lien: `${typeof location !== 'undefined' ? location.origin : ''}/api/prestataire/${ac.token}` }) : '');
+        add('prestataire', `prestataire:${m.id}:${pid}`, pt, { cible: 'prestataire', clientId: m.clientId, missionId: m.id, partenaireId: pid, prenom: pp, objet: `${m.titre}, ${date}`, lang: 'FR', raison: `${m.chauffeurId === pid ? 'Chauffeur non confirmé' : 'Prestation non confirmée'} — ${m.titre}`, messageSuggere: msg, depuis: m.debut }); });
+    }
+  });
+  S.db.clients.forEach((c) => { if (c._deleted) return; const last = [...S.db.missions.values()].filter((m) => m.clientId === c.id).map((m) => new Date(String(m.debut)).getTime()).sort((a, b) => b - a)[0]; const L = String(c.langue || 'FR'); const prenom = firstName(String(c.nom || ''));
+    if (c.statut === 'habitue' && last && nowD - last > 90 * D) add('habitue', `habitue:${c.id}`, c, { clientId: c.id, prenom, objet: 'vos prochaines dates à Paris', lang: L, raison: 'Habitué sans mission depuis plus de 90 jours', messageSuggere: tr(L, 'relance.habitue', { prenom }), depuis: new Date(last).toISOString() });
+    if (c.naissance) { const b = new Date(String(c.naissance)); const t1 = new Date(); let nx = new Date(t1.getFullYear(), b.getMonth(), b.getDate()); if (nx < t1) nx = new Date(t1.getFullYear() + 1, b.getMonth(), b.getDate()); const dd = Math.round((+nx - +t1) / D); if (dd <= 21) add('anniversaire', `anniversaire:${c.id}:${nx.toISOString().slice(0, 10)}`, c, { clientId: c.id, prenom, objet: 'Anniversaire', lang: L, raison: `Anniversaire dans ${dd} jour${dd > 1 ? 's' : ''}`, messageSuggere: tr(L, 'relance.anniversaire', { prenom, objet: 'anniversaire' }), depuis: nx.toISOString() }); } });
+  items.forEach((x) => { const d = S.relances.filter((r) => r.key === x.key && r.statut !== 'echec').sort((a, b) => String(b.at).localeCompare(String(a.at)))[0] || null; x.derniere = d; const delai = RELANCE_TYPES.find((t) => t.id === x.type)?.delai || 1; if (d && new Date(String(d.at)).getTime() + delai * D > nowD) x.bloqueeJusqua = new Date(new Date(String(d.at)).getTime() + delai * D).toISOString(); });
+  return items.sort((a, b) => (a.bloqueeJusqua ? 1 : 0) - (b.bloqueeJusqua ? 1 : 0) || String(a.depuis).localeCompare(String(b.depuis)));
 }
 
 export function handle(method: string, rawUrl: string, body: unknown, opts?: { cookie?: string }): Res {
@@ -167,19 +200,35 @@ function handle0(method: string, rawUrl: string, body: unknown, opts?: { cookie?
     setTimeout(() => { const m2 = S.db.messages.get(id); if (m2) { m2.status = 'distribue'; m2.updatedAt = now(); bus.emit({ type: 'message', message: m2 }); } }, 700);
     return ok({ id });
   }
-  if (p === '/api/relances') {
-    const items: unknown[] = []; const nowD = Date.now();
-    S.db.missions.forEach((m) => {
-      if (m._deleted) return; const c = (S.db.clients.get(String(m.clientId)) || {}) as Doc; const L = String(c.langue || 'FR');
-      if (m.statut === 'proposition' && nowD - new Date(String(m.updatedAt)).getTime() > 48 * 36e5) items.push({ type: 'proposition', clientId: m.clientId, missionId: m.id, raison: `Proposition sans réponse depuis ${Math.round((nowD - new Date(String(m.updatedAt)).getTime()) / 864e5)} j`, messageSuggere: tr(L, 'relance.proposition', { prenom: String(c.nom || '').split(' ').pop(), objet: m.titre }), depuis: m.updatedAt });
-      const dv = m.devis as Record<string, unknown> | undefined; if (dv && dv.factureNumero && devisTotals(dv as never).solde > 0 && nowD - new Date(String(dv.factureDate)).getTime() > 7 * 864e5) items.push({ type: 'facture', clientId: m.clientId, missionId: m.id, raison: `Facture ${dv.factureNumero} en retard`, messageSuggere: `Bonjour, sauf erreur de notre part, la facture ${dv.factureNumero} reste à régler. Amane`, depuis: dv.factureDate });
-      const a = new Date(String(m.debut)).getTime(); if (['confirmee'].includes(String(m.statut)) && m.paiement === 'non' && a - nowD < 3 * 864e5 && a > nowD) items.push({ type: 'acompte', clientId: m.clientId, missionId: m.id, raison: 'Acompte non reçu à J-3', messageSuggere: 'Bonjour, afin de confirmer votre réservation, nous attendons votre acompte. Amane', depuis: m.updatedAt });
-    });
-    S.db.clients.forEach((c) => { if (c._deleted) return; const last = [...S.db.missions.values()].filter((m) => m.clientId === c.id).map((m) => new Date(String(m.debut)).getTime()).sort((a, b) => b - a)[0];
-      if (c.statut === 'habitue' && last && nowD - last > 90 * 864e5) items.push({ type: 'habitue', clientId: c.id, raison: 'Habitué sans mission depuis plus de 90 jours', messageSuggere: tr(String(c.langue || 'FR'), 'relance.habitue', { prenom: String(c.nom || '').split(' ').pop() }), depuis: new Date(last).toISOString() });
-      if (c.naissance) { const b = new Date(String(c.naissance)); const t0 = new Date(); let nx = new Date(t0.getFullYear(), b.getMonth(), b.getDate()); if (nx < t0) nx = new Date(t0.getFullYear() + 1, b.getMonth(), b.getDate()); const dd = Math.round((+nx - +t0) / 864e5); if (dd <= 21) items.push({ type: 'anniversaire', clientId: c.id, raison: `Anniversaire dans ${dd} jour${dd > 1 ? 's' : ''}`, messageSuggere: 'Toute la maison Amane vous souhaite un très bel anniversaire.', depuis: nx.toISOString() }); } });
-    return ok({ items });
+  if (p === '/api/relances') { const ty = q.get('type'); const items = relances(); return ok({ items: ty ? items.filter((x) => x.type === ty) : items }); }
+  if ((p === '/api/relances/envoyer' || p === '/api/relances/marquer') && method === 'POST') {
+    const manuel = p.endsWith('marquer'); if (!manuel && !S.whatsappOn) return err(503, 'whatsapp_off', 'WhatsApp n’est pas configuré sur ce serveur.');
+    const it = relances().find((x) => x.key === B.key); if (!it) return err(404, 'introuvable', 'Plus rien à relancer ici : la situation a changé entre-temps.');
+    if (it.bloqueeJusqua) return err(409, 'deja_relance', `Déjà relancé par ${TEAM[String((it.derniere as Doc).by)]?.nom || 'l’équipe'}. Attendez la réponse avant de relancer.`);
+    const at = now(); const n = S.relances.filter((r) => r.key === it.key).length + 1; const canal = manuel ? 'manuel' : it.fenetre ? 'texte' : 'modele';
+    const texte = manuel ? String(B.note || '') : String(B.texte || it.messageSuggere);
+    const r: Doc = { id: `${it.key}#${n}`, key: it.key, n, type: it.type, cible: it.cible, clientId: it.clientId, missionId: it.missionId, partenaireId: it.partenaireId, statut: manuel ? 'manuel' : 'envoye', canal, texte, by: uid0, at, updatedAt: at };
+    S.relances.push(r);
+    const cv = it.convId ? S.db.conversations.get(String(it.convId)) : undefined;
+    if (cv && !manuel) { const id = 'wamid.' + uid(); const msg: Doc = { id, convId: cv.id, dir: 'out', type: canal === 'modele' ? 'template' : 'text', text: canal === 'modele' ? `[Modèle amane_relance] ${it.prenom || ''} · ${it.objet || ''}` : texte, at, status: 'envoye', by: uid0, relance: it.type, createdAt: at, updatedAt: at }; S.db.messages.set(id, msg); cv.lastAt = at; cv.lastText = String(msg.text).slice(0, 200); cv.lastDir = 'out'; cv.lastOutAt = at; cv.updatedAt = at; bus.emit({ type: 'message', message: msg }); bus.emit({ type: 'conversation', conversation: cv }); }
+    const lbl = RELANCE_TYPES.find((x) => x.id === it.type)?.court || it.type;
+    const resume = manuel ? `Relance notée (faite hors CRM) — ${lbl}` : `Relance envoyée par WhatsApp — ${lbl}${canal === 'modele' ? ' : modèle approuvé, hors fenêtre de 24 h' : ''}`;
+    if (it.missionId) act(uid0, 'missions', String(it.missionId), 'relance', resume); else act(uid0, 'clients', String(it.clientId), 'relance', resume);
+    if (it.partenaireId) act(uid0, 'partenaires', String(it.partenaireId), 'relance', resume);
+    bus.emit({ type: 'relance', relance: r }); return ok({ ok: true, relance: r, canal });
   }
+  if (p === '/api/relances/historique') { const k = (['clientId', 'missionId', 'partenaireId'] as const).find((x) => q.get(x)); if (!k) return err(400, 'fiche_invalide', 'Indiquez clientId, missionId ou partenaireId.'); return ok({ items: S.relances.filter((r) => r[k] === q.get(k)).sort((a, b) => String(b.at).localeCompare(String(a.at))) }); }
+  const mpe = p.match(/^\/api\/partenaires\/([^/]+)\/espace$/);
+  if (mpe) { const pid = decodeURIComponent(mpe[1]); const pt = S.db.partenaires.get(pid); if (!pt || pt._deleted) return err(404, 'introuvable', 'Partenaire introuvable.');
+    const url = (tk: string) => `${typeof location !== 'undefined' ? location.origin : 'http://amane.local'}/api/prestataire/${tk}`;
+    if (method === 'DELETE') { const had = S.acces.delete(pid); if (had) act(uid0, 'partenaires', pid, 'update', 'Lien de l’espace prestataire révoqué'); return ok({ ok: true, revoked: had }); }
+    if (method === 'POST') { let a = S.acces.get(pid); const created = !a || B.renouveler === true; if (created) { a = { id: pid, token: (uid() + uid() + uid()).slice(0, 24), createdAt: now(), createdBy: uid0, vues: 0 }; S.acces.set(pid, a); act(uid0, 'partenaires', pid, 'update', 'Lien de l’espace prestataire créé'); } return ok({ token: a!.token, url: url(String(a!.token)), created, createdAt: a!.createdAt }); }
+    const a = S.acces.get(pid); const ms = confiees(pid).map((m) => { const c = S.confirmations.get(`${m.id}:${pid}`); return { id: m.id, debut: m.debut, titre: m.titre, ...(c && c.debut === m.debut ? { confirmeeAt: c.at } : {}) }; });
+    return ok(a ? { actif: true, url: url(String(a.token)), createdAt: a.createdAt, createdBy: a.createdBy, vuAt: a.vuAt || '', vues: a.vues || 0, missions: ms } : { actif: false, missions: ms }); }
+  const mcf = p.match(/^\/api\/missions\/([^/]+)\/confirmation$/);
+  if (mcf && method === 'POST') { const mid = decodeURIComponent(mcf[1]); const m = S.db.missions.get(mid); const pid = String(B.partenaireId || ''); if (!m) return err(404, 'introuvable', 'Demande introuvable.'); if (!confiees(pid).some((x) => x.id === mid)) return err(409, 'non_confiee', 'Cette mission n’est pas confiée à ce prestataire.');
+    if (B.confirme === false) { S.confirmations.delete(`${mid}:${pid}`); return ok({ ok: true, confirme: false }); }
+    S.confirmations.set(`${mid}:${pid}`, { id: `${mid}:${pid}`, at: now(), debut: m.debut }); act(uid0, 'missions', mid, 'confirmation', `Mission confirmée pour ${S.db.partenaires.get(pid)?.nom || pid} (noté par l’équipe)`); return ok({ ok: true, confirme: true }); }
   const msh = p.match(/^\/api\/devis\/([^/]+)\/share$/);
   if (msh) { const mid = decodeURIComponent(msh[1]); const m = S.db.missions.get(mid); if (!m || !m.devis) return err(404, 'introuvable', 'Devis introuvable.'); let token = [...S.shares.entries()].find(([, v]) => v === mid)?.[0]; if (!token) { token = uid() + uid() + uid(); token = token.slice(0, 24); S.shares.set(token, mid); (m.devis as Record<string, unknown>).shareToken = token; m.updatedAt = now(); bus.emit({ type: 'change', col: 'missions', doc: m }); } return ok({ token, url: `/d/${token}` }); }
   const mes = p.match(/^\/api\/missions\/([^/]+)\/espace$/);
