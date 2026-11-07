@@ -1,5 +1,5 @@
 {
-  "name": "amane-app",
+  "name": "amane-crm",
   "version": "2.0.0",
   "private": true,
   "description": "Amane, conciergerie privée à Paris : CRM (API Express + MongoDB, back-office React, CRM historique), appli mobile Expo et site internet",
@@ -21,7 +21,7 @@
     "test": "npm test --workspace packages/shared && npm test --workspace apps/api && npm test --workspace apps/web && npm test --workspace apps/mobile",
     "typecheck": "npm run typecheck --workspace apps/web && npm run typecheck --workspace apps/mobile",
     "test:crm": "node crm/tests/e2e.js && node crm/tests/e2e-conciergerie.js && node crm/tests/e2e-appareil.js && node crm/tests/e2e-serveur.js",
-    "test:site": "node site/tests/e2e-formulaire.js",
+    "test:site": "node site/tests/e2e-formulaire.cjs",
     "build:vercel": "python3 site/make_vercel.py && python3 site/make_crm_vercel.py"
   },
   "devDependencies": {

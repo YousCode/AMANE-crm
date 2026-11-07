@@ -80,8 +80,8 @@ flowchart LR
 Prérequis : **Node 22** (`nvm use`), npm 10, Python 3 (scripts du site).
 
 ```bash
-git clone https://github.com/YousCode/amane-app.git
-cd amane-app
+git clone https://github.com/YousCode/AMANE-crm.git
+cd AMANE-crm
 npm install
 ```
 
