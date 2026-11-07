@@ -91,6 +91,12 @@ async function prepare(db) {
     ['missions', { espaceToken: 1 }],
     ['missions', { 'devis.shareToken': 1 }],
     ['photos', { mediaId: 1 }],
+    ['acces_prestataires', { token: 1 }, { unique: true }],
+    ['confirmations', { partenaireId: 1 }],
+    ['relances', { key: 1, n: -1 }],
+    ['relances', { clientId: 1, at: -1 }],
+    ['relances', { missionId: 1, at: -1 }],
+    ['relances', { partenaireId: 1, at: -1 }],
   ];
   await Promise.all(idx.map(([c, k, o]) => db.collection(c).createIndex(k, o || {})));
   await seedIfEmpty(db, nowIso());

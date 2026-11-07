@@ -1,4 +1,4 @@
-// Notifications d'équipe déclenchées par le bus : push Expo et alertes WhatsApp (devis accepté, nouvelle demande du site).
+// Notifications d'équipe déclenchées par le bus : push Expo et alertes WhatsApp (devis accepté, nouvelle demande du site, mission confirmée par un prestataire).
 import { bus } from './bus.js';
 import { track } from './background.js';
 import { sendPush } from './push.js';
@@ -17,5 +17,6 @@ export function installNotifications(getDb) {
     await sendTeamAlert(db, { who: p.responsable || 'amel', texte: `Amane — devis ${p.numero || ''} accepté par le client via le lien (${p.titre}).`.replace(/\s+/g, ' '), params: [p.titre || 'Devis', `Devis ${p.numero || ''} accepté`.slice(0, 60)] });
     await sendPush(db, { userIds: [p.responsable || 'amel'], title: 'Devis accepté', body: `${p.titre} — devis ${p.numero || ''} accepté par le client`, data: { type: 'devis', missionId: p.missionId } });
   });
+  on('confirmation', (db, p) => (p.confirme && p.via === 'espace' ? sendPush(db, { userIds: [p.responsable || 'youssouf'], title: 'Mission confirmée', body: `${p.nom} a confirmé : ${p.titre || 'mission'}`, data: { type: 'confirmation', missionId: p.missionId } }) : null));
   on('rappel_envoye', (db, p) => sendPush(db, { userIds: [p.responsable || 'amel'], title: 'Rappel envoyé', body: `${p.nom || p.convId} — rappel ${p.type}`, data: { type: 'rappel', convId: p.convId, missionId: p.missionId } }));
 }

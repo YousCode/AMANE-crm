@@ -1,4 +1,4 @@
-// Coquille HTML des pages publiques (devis partagé, espace client) : charte Amane stricte.
+// Coquille HTML des pages publiques (devis partagé, espace client, espace prestataire) : charte Amane stricte.
 // Ivoire #FAF8F4, noir #111, champagne #B8955C ; Bodoni Moda + Jost (Google Fonts) ; le A à serrure ; slogan en pied.
 import { tokens, isRtl, t } from '@amane/shared';
 
@@ -13,7 +13,7 @@ export function logo(size = 26) {
 
 export const slogan = () => `<p class="slogan">Arrive as a <em>Guest</em>. Leave with a <em>Story</em>.</p>`;
 
-export function shell({ lang = 'EN', title, body, description = '', scripts = '' }) {
+export function shell({ lang = 'EN', title, body, description = '', scripts = '', styles = '' }) {
   const L = String(lang || 'EN').toUpperCase();
   const rtl = isRtl(L);
   return `<!doctype html>
@@ -74,6 +74,7 @@ footer{border-top:1px solid var(--line2);padding:26px 0 34px;color:var(--fg3);fo
 .slogan{font-family:${tokens.fonts.display};font-size:17px;color:var(--fg);margin:0 0 8px;direction:ltr;text-align:${rtl ? 'right' : 'left'}}
 .ph-legal{color:var(--fg3)}
 @media print{body{background:#fff;color:#111}.btns,footer .slogan{display:none}}
+${styles}
 </style>
 </head>
 <body>

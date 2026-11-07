@@ -148,6 +148,9 @@ const RELANCE = {
     anniversaire: 'Bonjour {prenom}, toute la maison Amane pense à vous en cette occasion ({objet}) et vous adresse ses vœux les plus chaleureux.',
     acompte: 'Bonjour {prenom}, votre réservation du {date} approche. Pour la confirmer définitivement, nous attendons l’acompte de {montant}. Nous restons à votre disposition.',
     facture: 'Bonjour {prenom}, sauf erreur de notre part, la facture {numero} ({montant}) reste à régler. Merci de nous indiquer si un détail vous retient. Amane',
+    solde: 'Bonjour {prenom}, merci encore pour {objet}. Sauf erreur de notre part, un solde de {montant} reste à régler. Nous restons à votre disposition pour toute question. Amel — Amane',
+    prestataire: 'Bonjour {prenom}, pouvez-vous nous confirmer la mission du {date} ({objet}) ? Merci de répondre à ce message. La maison Amane',
+    prestataire_espace: 'Vos missions et nos disponibilités : {lien}',
   },
   EN: {
     proposition: 'Hello {prenom}, have you had a chance to look at our proposal for {objet}? We would be glad to adjust it. Amel — Amane',
@@ -155,6 +158,9 @@ const RELANCE = {
     anniversaire: 'Hello {prenom}, the whole house of Amane is thinking of you on this occasion ({objet}) and sends you its warmest wishes.',
     acompte: 'Hello {prenom}, your booking on {date} is approaching. To confirm it definitively, we are expecting the deposit of {montant}. We remain at your disposal.',
     facture: 'Hello {prenom}, unless we are mistaken, invoice {numero} ({montant}) remains outstanding. Please let us know if anything is holding you back. Amane',
+    solde: 'Hello {prenom}, thank you again for {objet}. Unless we are mistaken, a balance of {montant} remains outstanding. We remain at your disposal for any question. Amel — Amane',
+    prestataire: 'Hello {prenom}, could you confirm the job on {date} ({objet})? Please reply to this message. The house of Amane',
+    prestataire_espace: 'Your jobs and our availability: {lien}',
   },
   ES: {
     proposition: 'Hola {prenom}, ¿ha podido consultar nuestra propuesta para {objet}? Quedamos a su disposición para ajustarla. Amel — Amane',
@@ -162,6 +168,9 @@ const RELANCE = {
     anniversaire: 'Hola {prenom}, toda la casa Amane piensa en usted en esta ocasión ({objet}) y le envía sus mejores deseos.',
     acompte: 'Hola {prenom}, su reserva del {date} se acerca. Para confirmarla definitivamente, esperamos el anticipo de {montant}. Quedamos a su disposición.',
     facture: 'Hola {prenom}, salvo error por nuestra parte, la factura {numero} ({montant}) sigue pendiente. Indíquenos si algo le retiene. Amane',
+    solde: 'Hola {prenom}, gracias de nuevo por {objet}. Salvo error por nuestra parte, queda un saldo pendiente de {montant}. Quedamos a su disposición para cualquier pregunta. Amel — Amane',
+    prestataire: 'Hola {prenom}, ¿puede confirmarnos el servicio del {date} ({objet})? Gracias por responder a este mensaje. La casa Amane',
+    prestataire_espace: 'Sus servicios y nuestras disponibilidades: {lien}',
   },
   AR: {
     proposition: 'مرحباً {prenom}، هل اطلعتم على عرضنا بخصوص {objet}؟ نبقى في خدمتكم لتعديله. أمل — Amane',
@@ -169,6 +178,9 @@ const RELANCE = {
     anniversaire: 'مرحباً {prenom}، دار Amane بأكملها تفكر بكم في هذه المناسبة ({objet}) وتتقدم إليكم بأحرّ التهاني.',
     acompte: 'مرحباً {prenom}، موعد حجزكم في {date} يقترب. لتأكيده نهائياً، ننتظر الدفعة المقدمة البالغة {montant}. نبقى في خدمتكم.',
     facture: 'مرحباً {prenom}، ما لم نكن مخطئين، لا تزال الفاتورة {numero} ({montant}) قيد السداد. يُرجى إعلامنا إن كان هناك ما يعيقكم. Amane',
+    solde: 'مرحباً {prenom}، شكراً مجدداً على {objet}. ما لم نكن مخطئين، لا يزال هناك رصيد متبقٍ قدره {montant}. نبقى في خدمتكم لأي سؤال. أمل — Amane',
+    prestataire: 'مرحباً {prenom}، هل يمكنكم تأكيد المهمة يوم {date} ({objet})؟ شكراً للرد على هذه الرسالة. دار Amane',
+    prestataire_espace: 'مهامكم وتوفّرنا: {lien}',
   },
   RU: {
     proposition: 'Здравствуйте, {prenom}! Удалось ли вам ознакомиться с нашим предложением по {objet}? Мы с радостью скорректируем его. Амель — Amane',
@@ -176,6 +188,9 @@ const RELANCE = {
     anniversaire: 'Здравствуйте, {prenom}! Весь дом Amane думает о вас по этому случаю ({objet}) и шлёт самые тёплые пожелания.',
     acompte: 'Здравствуйте, {prenom}! Приближается дата вашего бронирования {date}. Для окончательного подтверждения мы ожидаем аванс в размере {montant}. Мы в вашем распоряжении.',
     facture: 'Здравствуйте, {prenom}! Если мы не ошибаемся, счёт {numero} ({montant}) ещё не оплачен. Сообщите, пожалуйста, если что-то вас останавливает. Amane',
+    solde: 'Здравствуйте, {prenom}! Ещё раз благодарим вас за {objet}. Если мы не ошибаемся, остаётся к оплате {montant}. Мы в вашем распоряжении. Амель — Amane',
+    prestataire: 'Здравствуйте, {prenom}! Подтвердите, пожалуйста, заказ на {date} ({objet}). Ответьте, пожалуйста, на это сообщение. Дом Amane',
+    prestataire_espace: 'Ваши заказы и наша доступность: {lien}',
   },
 };
 

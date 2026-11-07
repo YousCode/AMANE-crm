@@ -25,6 +25,7 @@ import { router as lead } from './routes/lead.js';
 import { router as relances } from './routes/relances.js';
 import { router as devis } from './routes/devis.js';
 import { router as espace } from './routes/espace.js';
+import { router as prestataire } from './routes/prestataire.js';
 import { router as flotte } from './routes/flotte.js';
 import { router as push } from './routes/push.js';
 import { devRouter } from './routes/dev.js';
@@ -90,7 +91,7 @@ export async function createApp(opts = {}) {
   app.use(cors());
 
   // API
-  for (const r of [health, meteo, auth, sync, doc, photo, ai, whatsapp, lead, relances, devis, espace, flotte, push]) app.use(r);
+  for (const r of [health, meteo, auth, sync, doc, photo, ai, whatsapp, lead, relances, devis, espace, prestataire, flotte, push]) app.use(r);
 
   const server = http.createServer(app);
   const ws = attachWs(server, { path: '/ws', getDb });

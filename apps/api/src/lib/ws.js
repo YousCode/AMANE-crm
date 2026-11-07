@@ -49,7 +49,9 @@ export function attachWs(server, { path = '/ws', getDb } = {}) {
   const onMessage = ({ message }) => broadcast({ type: 'message', message });
   const onConversation = ({ conversation }) => broadcast({ type: 'conversation', conversation });
   const onRappel = ({ rappel }) => broadcast({ type: 'rappel', rappel });
-  bus.on('change', onChange); bus.on('deleted', onDeleted); bus.on('message', onMessage); bus.on('conversation', onConversation); bus.on('rappel', onRappel);
+  const onRelance = ({ relance }) => broadcast({ type: 'relance', relance });
+  const onConfirmation = ({ missionId, partenaireId, confirme }) => broadcast({ type: 'confirmation', missionId, partenaireId, confirme });
+  bus.on('change', onChange); bus.on('deleted', onDeleted); bus.on('message', onMessage); bus.on('conversation', onConversation); bus.on('rappel', onRappel); bus.on('relance', onRelance); bus.on('confirmation', onConfirmation);
 
   const timer = setInterval(() => {
     for (const ws of clients) {
@@ -66,7 +68,7 @@ export function attachWs(server, { path = '/ws', getDb } = {}) {
     get size() { return clients.size; },
     close() {
       clearInterval(timer);
-      bus.off('change', onChange); bus.off('deleted', onDeleted); bus.off('message', onMessage); bus.off('conversation', onConversation); bus.off('rappel', onRappel);
+      bus.off('change', onChange); bus.off('deleted', onDeleted); bus.off('message', onMessage); bus.off('conversation', onConversation); bus.off('rappel', onRappel); bus.off('relance', onRelance); bus.off('confirmation', onConfirmation);
       for (const ws of clients) { try { ws.terminate(); } catch { /* ignoré */ } }
       clients.clear();
       wss.close();

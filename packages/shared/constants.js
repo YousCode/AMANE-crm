@@ -119,13 +119,15 @@ export const RAPPEL_TYPES = freeze([
   { id: 'merci', label: 'Remerciement (J+1, 10 h)' },
   { id: 'acompte', label: 'Acompte non reçu (J-3)' },
 ]);
-/** Types de relances calculées (`GET /api/relances`). */
+/** Types de relances calculées (`GET /api/relances`). `cible` : à qui s'adresse la relance ; `delai` : jours avant de pouvoir relancer à nouveau. */
 export const RELANCE_TYPES = freeze([
-  { id: 'proposition', label: 'Proposition sans réponse (> 48 h)' },
-  { id: 'habitue', label: 'Habitué sans mission (> 90 j)' },
-  { id: 'anniversaire', label: 'Date importante sous 21 j' },
-  { id: 'acompte', label: 'Acompte non reçu (J-3)' },
-  { id: 'facture', label: 'Facture en retard' },
+  { id: 'proposition', label: 'Devis sans réponse (> 48 h)', court: 'Devis sans réponse', cible: 'client', delai: 3 },
+  { id: 'acompte', label: 'Acompte non reçu (J-3)', court: 'Acompte attendu', cible: 'client', delai: 2 },
+  { id: 'solde', label: 'Solde à régler après la mission', court: 'Solde à régler', cible: 'client', delai: 5 },
+  { id: 'facture', label: 'Facture en retard (> 30 j)', court: 'Facture en retard', cible: 'client', delai: 7 },
+  { id: 'prestataire', label: 'Mission à faire confirmer par le prestataire (J-7)', court: 'Confirmation prestataire', cible: 'prestataire', delai: 1 },
+  { id: 'habitue', label: 'Habitué sans mission (> 90 j)', court: 'Habitué silencieux', cible: 'client', delai: 60 },
+  { id: 'anniversaire', label: 'Date importante sous 21 j', court: 'Date importante', cible: 'client', delai: 365 },
 ]);
 /** Types de messages (collection `messages`). */
 export const MESSAGE_TYPES = freeze(['text', 'image', 'video', 'document', 'audio', 'sticker', 'location', 'contacts', 'reaction', 'template', 'note', 'button', 'interactive']);

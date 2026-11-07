@@ -23,7 +23,7 @@ export type MessageDir = 'in' | 'out' | 'note';
 export type MessageStatus = 'recu' | 'envoye' | 'distribue' | 'lu' | 'echec';
 export type MessageType = 'text' | 'image' | 'video' | 'document' | 'audio' | 'sticker' | 'location' | 'contacts' | 'reaction' | 'template' | 'note' | 'button' | 'interactive';
 export type RappelType = 'veille' | 'merci' | 'acompte';
-export type RelanceType = 'proposition' | 'habitue' | 'anniversaire' | 'acompte' | 'facture';
+export type RelanceType = 'proposition' | 'habitue' | 'anniversaire' | 'acompte' | 'solde' | 'facture' | 'prestataire';
 
 export interface Labelled<T extends string = string> { id: T; label: string }
 
@@ -253,14 +253,54 @@ export interface Rappel extends ServerFields {
   lang?: string;
 }
 
+/** Trace d'une relance (collection `relances`). */
+export interface RelanceEnvoi {
+  id: string;
+  key: string;
+  type: RelanceType | 'rappel';
+  cible: 'client' | 'prestataire';
+  clientId?: string;
+  missionId?: string;
+  partenaireId?: string;
+  statut: 'en_cours' | 'envoye' | 'echec' | 'manuel';
+  canal: 'texte' | 'modele' | 'manuel' | 'rappel';
+  texte?: string;
+  by: string;
+  at: string;
+  erreur?: string;
+}
+
 export interface Relance {
+  /** Identifiant stable (« proposition:m1 », « prestataire:m1:p2 »…) : une seule relance par délai. */
+  key: string;
   type: RelanceType;
+  cible: 'client' | 'prestataire';
   clientId: string;
   missionId?: string;
+  partenaireId?: string;
+  nom: string;
+  tel?: string;
+  convId?: string;
   raison: string;
   messageSuggere: string;
   depuis: string;
   lang?: string;
+  /** Fenêtre WhatsApp de 24 h ouverte : texte libre, sinon modèle approuvé `amane_relance`. */
+  fenetre?: boolean;
+  derniere?: RelanceEnvoi | null;
+  /** Déjà relancé : pas de nouvel envoi avant cette date. */
+  bloqueeJusqua?: string;
+}
+
+/** Espace prestataire (GET /api/partenaires/:id/espace). */
+export interface EspacePrestataireInfo {
+  actif: boolean;
+  url?: string;
+  createdAt?: string;
+  createdBy?: string;
+  vuAt?: string;
+  vues?: number;
+  missions: { id: string; debut: string; titre: string; confirmeeAt?: string }[];
 }
 
 export interface DevisTotals { ht: number; rem: number; base: number; tva: number; rate: number; ttc: number; paid: number; solde: number }
@@ -316,7 +356,7 @@ export const VEHICULES_DEFAUT: Readonly<Record<'urus' | 'f296' | 'g63' | 'm5' | 
 export const VEHICULE_STATUTS: readonly Labelled<VehiculeStatut>[];
 export const WA_TEMPLATES: readonly TemplateDef[];
 export const RAPPEL_TYPES: readonly Labelled<RappelType>[];
-export const RELANCE_TYPES: readonly Labelled<RelanceType>[];
+export const RELANCE_TYPES: readonly (Labelled<RelanceType> & { court: string; cible: 'client' | 'prestataire'; delai: number })[];
 export const MESSAGE_TYPES: readonly MessageType[];
 export const SLOGAN: string;
 export function labelOf(list: readonly { id: string; label?: string; nom?: string }[], id: string, fallback?: string): string;

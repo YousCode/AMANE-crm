@@ -1,5 +1,5 @@
 // Rappels automatiques WhatsApp : veille de mission (J-1 18 h), remerciement (J+1 10 h), acompte (J-3 9 h).
-// Idempotents (collection `rappels`, _id = type:missionId), désactivables par type (reglages/rappels), langue du client.
+// Idempotents (collection `rappels`, _id = type:missionId ; l'acompte n'est pas relancé s'il vient de l'être à la main), désactivables par type (reglages/rappels), langue du client.
 import { t, fmtMoney, fmtDate, fmtTime, labelOf, SERVICES, paiementStatut, devisTotals, RAPPEL_TYPES } from '@amane/shared';
 import { now, nowIso } from './clock.js';
 import { wallToMs, parisToMs, addWallDays } from './paris.js';
@@ -101,6 +101,9 @@ export async function runRappels(db, { nowMs = now(), maxAttempts = 3 } = {}) {
       res.details.push({ id, ...set });
     };
     if (!conv) { await finish({ statut: 'ignore', erreur: 'Pas de conversation WhatsApp pour ce client.' }); res.ignores++; continue; }
+    if (d.type === 'acompte' && await db.collection('relances').findOne({ key: `acompte:${d.mission._id}`, statut: { $in: ['envoye', 'manuel', 'en_cours'] }, at: { $gt: new Date(nowMs - 3 * DAY).toISOString() } })) {
+      await finish({ statut: 'ignore', erreur: 'Acompte déjà relancé par l’équipe.' }); res.ignores++; continue;
+    }
     const lang = (client && client.langue) || conv.lang || 'FR';
     const L = ['FR', 'EN', 'ES', 'AR', 'RU'].includes(String(lang).toUpperCase()) ? String(lang).toUpperCase() : 'EN';
     const m = d.mission;

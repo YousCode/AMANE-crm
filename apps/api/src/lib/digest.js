@@ -52,7 +52,7 @@ export async function computeDigest(db, semaine, nowMs = now()) {
   const facturesRetard = missions
     .filter((m) => m.devis && m.devis.factureNumero && devisTotals(m.devis).solde > 0.005 && (wallToMs(m.devis.factureDate) || 0) < nowMs - 30 * DAY)
     .map((m) => ({ id: m._id, numero: m.devis.factureNumero, client: cname(m.clientId), reste: devisTotals(m.devis).solde, date: m.devis.factureDate || '' }));
-  const relances = (await computeRelances(db, nowMs)).slice(0, 3).map((r) => ({ clientId: r.clientId, nom: r.nom, type: r.type, raison: r.raison }));
+  const relances = (await computeRelances(db, nowMs)).filter((r) => !r.bloqueeJusqua).slice(0, 3).map((r) => ({ clientId: r.clientId, nom: r.nom, type: r.type, raison: r.raison }));
   return { semaine: b.monday, du: b.monday, au: b.sunday, caSemainePassee: ca, nbMissionsSemainePassee: prev.length, missionsAVenir: aVenir, vehiculesRevision: revisions, facturesRetard, relances };
 }
 
