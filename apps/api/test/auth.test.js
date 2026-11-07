@@ -166,3 +166,15 @@ test('erreur interne : 500 sans pile ni détail', async () => {
   assert.equal(r.json.error, 'erreur_serveur');
   assert.ok(!r.text.includes('secret') && !r.text.includes('/var/task'));
 });
+
+test('cookie envoyé deux fois, séparé par une virgule (appli iOS) → session reconnue', async () => {
+  fresh();
+  await call(H.auth, { method: 'POST', url: '/api/auth/setup', body: { code: BASE_ENV.AMANE_SETUP_CODE, userId: 'amel', pin: '2468' } });
+  const r = await call(H.auth, { method: 'POST', url: '/api/auth/login', body: { userId: 'amel', pin: '2468' } });
+  const cookie = cookieOf(r);
+  for (const doubled of [`${cookie},${cookie}`, `${cookie}, ${cookie}`, `autre=1, ${cookie}`]) {
+    const me = await call(H.auth, { url: '/api/auth/me', cookie: doubled });
+    assert.equal(me.status, 200, doubled);
+    assert.equal(me.json.user.id, 'amel');
+  }
+});

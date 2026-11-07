@@ -133,7 +133,10 @@ export function checkSameOrigin(req) {
 export function parseCookies(req) {
   const out = {};
   const raw = (req.headers && req.headers.cookie) || '';
-  for (const part of String(raw).split(';')) {
+  // « ; » sépare les cookies ; « , » aussi : l'appli iOS envoie le cookie deux fois (en-tête posé par l'appli
+  // + magasin de cookies natif), que NSURLSession fusionne avec une virgule. Une valeur de cookie ne contient
+  // jamais de virgule (RFC 6265), le découpage est donc sans risque.
+  for (const part of String(raw).split(/[;,]/)) {
     const i = part.indexOf('=');
     if (i < 0) continue;
     const k = part.slice(0, i).trim();
