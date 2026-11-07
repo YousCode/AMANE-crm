@@ -11,7 +11,7 @@ import { Composer } from '@/components/Composer';
 import { IconBtn, Pill, RoundPic, Sub, Txt, Label, Btn, Panel, Empty } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { telUrl, waUrl, open } from '@/lib/links';
-import { dayLabel, fmtTime, fmtPhone, fmtDT, toLocalInput, fmtE } from '@/lib/format';
+import { dayLabel, fmtTime, fmtUntil, fmtPhone, fmtDT, toLocalInput, fmtE } from '@/lib/format';
 import { api } from '@/lib/api';
 
 export default function ConversationScreen() {
@@ -61,7 +61,7 @@ export default function ConversationScreen() {
           <RoundPic name={nm} size={40} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text numberOfLines={1} style={{ fontFamily: FONT.display, fontSize: 19, color: c.fg }}>{nm}</Text>
-            <Sub numberOfLines={1}>{fmtPhone(cv.id)} · {L} · {open_ ? `fenêtre ouverte jusqu’à ${fmtTime(parseDate(cv.windowUntil))}` : 'fenêtre fermée'}</Sub>
+            <Sub numberOfLines={2}>{fmtPhone(cv.id)} · {L} · {open_ ? `fenêtre ouverte jusqu’à ${fmtUntil(cv.windowUntil)}` : 'fenêtre fermée'}</Sub>
           </View>
         </View>
         <View style={{ height: 59, backgroundColor: c.bg2, borderBottomWidth: 1, borderBottomColor: c.line2 }}><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 14, paddingVertical: 10, alignItems: 'center' }}>

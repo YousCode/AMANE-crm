@@ -59,6 +59,10 @@ test('GET /api/flotte/rentabilite?mois=', async () => {
   assert.equal(u.margeNette, 5000 - 2430 - 500 - 320);
   assert.equal(u.tauxOccupation, 0.17);
   assert.equal(r.json.vehicules.length, 5);
+  // forme du contrat lue par le back-office et l'appli mobile
+  const it = r.json.items.find((v) => v.vehiculeId === 'urus');
+  assert.deepEqual(it, { vehiculeId: 'urus', nom: 'Urus SE', loyer: 2430, charges: 500, joursLoues: 5, ca: 5000, couts: 320, marge: 5000 - 2430 - 500 - 320, occupation: 17 });
+  assert.equal(r.json.items.length, 5);
   assert.equal(r.json.total.ca, 5000);
   assert.equal((await call(H.sync, { url: '/api/flotte/rentabilite?mois=2026-13', cookie })).status, 400);
   assert.equal((await call(H.sync, { url: '/api/flotte/rentabilite' })).status, 401);

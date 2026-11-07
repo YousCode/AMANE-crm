@@ -191,7 +191,7 @@ export async function handle(req: Request): Promise<Response> {
   if (m && method === 'POST') { const ms = st.cols.missions.find((x) => x.id === m![1]); if (!ms) return err(404, 'introuvable', 'Demande inconnue.'); ms.espaceToken = ms.espaceToken || 'tok_' + ms.id; return json(200, { token: ms.espaceToken, url: `/espace/${ms.espaceToken}` }); }
   m = /^\/api\/devis\/([\w-]+)\/share$/.exec(path);
   if (m) { return json(200, { token: 'dv_' + m[1], url: `/d/dv_${m[1]}` }); }
-  if (path === '/api/flotte/rentabilite') return json(200, { items: st.cols.vehicules.map((v) => ({ vehiculeId: v.id, nom: v.nom, loyer: +v.loyerMois || 0, charges: +v.chargesMois || 0, joursLoues: 6, ca: (+v.tarifJour || 0) * 6, couts: 300, marge: (+v.tarifJour || 0) * 6 - (+v.loyerMois || 0) - (+v.chargesMois || 0) - 300, occupation: 0.2 })) });
+  if (path === '/api/flotte/rentabilite') return json(200, { items: st.cols.vehicules.map((v) => ({ vehiculeId: v.id, nom: v.nom, loyer: +v.loyerMois || 0, charges: +v.chargesMois || 0, joursLoues: 6, ca: (+v.tarifJour || 0) * 6, couts: 300, marge: (+v.tarifJour || 0) * 6 - (+v.loyerMois || 0) - (+v.chargesMois || 0) - 300, occupation: 20 })) });
 
   return err(404, 'introuvable', 'Route inconnue.');
 }

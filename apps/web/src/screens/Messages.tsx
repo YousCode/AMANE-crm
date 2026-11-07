@@ -8,7 +8,7 @@ import { useStore, byId } from '../store/store';
 import { useUI } from '../store/ui';
 import { useData, useIsMobile } from '../lib/hooks';
 import { api, mediaURL, uploadPhoto, type ApiError } from '../lib/api';
-import { fmtPhone, fmtTime, fmtDT, parse, shortTime, dayLabel, initial, nowISO, uid, norm, toLocal, isRTL, clone } from '../lib/format';
+import { fmtPhone, fmtTime, fmtUntil, fmtDT, parse, shortTime, dayLabel, initial, nowISO, uid, norm, toLocal, isRTL, clone } from '../lib/format';
 import { blank, services, vehicles, chauffeurs, OPEN_ST } from '../lib/rules';
 import { t as tr, telNorm, LANGUES, QUICK_REPLY_KEYS, QUICK_REPLY_LABELS, firstName, mapsLink, type Conversation, type Message, type Client, type Mission } from '../shared';
 import { TEMPLATES_DEF } from './Reglages';
@@ -118,7 +118,7 @@ function Thread({ cv, msgs, D, draft0, onBack, local, put, toast, openDrawer, me
   const qrVars = { prenom: qn, lieu: m?.lieu || '', heure: m ? fmtTime(parse(m.debut)) : '', date: m ? fmtDT(parse(m.debut)) : '', chauffeur: ch?.nom || m?.chauffeur || '', voiture: v?.nom || '', lien: m?.lieu ? mapsLink(m.lieu) : '', numero: m?.devis?.numero || '' };
   let day = '';
   return <section className={s.th} aria-label={`Conversation avec ${nm}`} data-testid="thread">
-    <header className={s.thH}><button className={s.back} type="button" onClick={onBack} aria-label="Retour aux conversations"><Icon k="left" /></button><span className="pic">{initial(nm)}</span><div style={{ minWidth: 0, flex: 1 }}><h3>{nm}</h3><div className={s.s}>{fmtPhone(cv.id)} · {L} · {open ? 'fenêtre ouverte jusqu’à ' + fmtTime(parse(cv.windowUntil)) : 'fenêtre fermée'}</div></div></header>
+    <header className={s.thH}><button className={s.back} type="button" onClick={onBack} aria-label="Retour aux conversations"><Icon k="left" /></button><span className="pic">{initial(nm)}</span><div style={{ minWidth: 0, flex: 1 }}><h3>{nm}</h3><div className={s.s}>{fmtPhone(cv.id)} · {L} · {open ? 'fenêtre ouverte jusqu’à ' + fmtUntil(parse(cv.windowUntil)) : 'fenêtre fermée'}</div></div></header>
     <div className={s.thA} data-hscroll="1"><a className="ct dark" href={`tel:${tel}`}><Icon k="phone" />Appeler</a><a className="ct" href={`https://wa.me/${tel.slice(1)}`} target="_blank" rel="noopener"><Icon k="wa" />WhatsApp</a><button className="ct" type="button" onClick={() => c ? openDrawer('client', c.id) : openDrawer('client', null, 'main', { nom: cv.nom || '', tel: fmtPhone(cv.id), canal: 'WhatsApp', langue: (LANGUES as readonly string[]).includes(L) ? L : 'FR' })}><Icon k="user" />{c ? 'Fiche client' : 'Créer la fiche'}</button><button className="ct" type="button" onClick={() => cvMission(false)} data-testid="cv-mission"><Icon k="demandes" />{m ? 'Demande' : 'Créer la demande'}</button>
       <label className={s.assign} title="Qui s’en occupe"><Av id={cv.assigne} /><select aria-label="Qui s’en occupe" value={cv.assigne || ''} onChange={(e) => { const a = e.target.value; local('conversations', cv.id, { ...cv, assigne: a }); api('POST', '/api/whatsapp/assign', { convId: cv.id, assigne: a }).catch(() => toast('Attribution non enregistrée (hors ligne ?).')); if (a && a !== me) { setNote(true); setText(`@${teamOf(a)?.nom} je te passe la main : `); ta.current?.focus(); } }}><option value="">Non attribué</option>{['amel', 'youssouf', 'aziz'].map((id) => <option key={id} value={id}>{teamOf(id)?.nom}</option>)}</select></label></div>
     <div className={s.thS} ref={scroller}>

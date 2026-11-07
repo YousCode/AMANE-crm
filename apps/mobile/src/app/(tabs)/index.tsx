@@ -35,8 +35,8 @@ export default function Aujourdhui() {
     );
   };
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <ScrollView testID="screen-aujourdhui" refreshControl={<RefreshControl refreshing={sync === 'syncing'} onRefresh={() => void syncNow()} tintColor={c.accent} />} contentContainerStyle={{ paddingTop: ins.top + 14, paddingHorizontal: GUTTER, paddingBottom: 30 }}>
+    <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: ins.top }}>
+      <ScrollView testID="screen-aujourdhui" refreshControl={<RefreshControl refreshing={sync === 'syncing'} onRefresh={() => void syncNow()} tintColor={c.accent} />} contentContainerStyle={{ paddingTop: 14, paddingHorizontal: GUTTER, paddingBottom: 30 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <Label numberOfLines={1} style={{ flexShrink: 1 }}>{fmtDayLong(now)} · {fmtTime(now)}</Label>
           <View style={{ flex: 1 }} />

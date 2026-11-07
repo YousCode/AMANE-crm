@@ -45,7 +45,7 @@ export function Hero({ now = new Date() }: { now?: Date }) {
       <View pointerEvents="none" style={{ position: 'absolute', right: -34, top: -26, width: 150, height: 210, borderWidth: 1, borderColor: 'rgba(184,149,92,.55)', borderTopLeftRadius: 75, borderTopRightRadius: 75 }} />
       <Label color={c.champagne} style={{ letterSpacing: 3.5, fontSize: 10 }}>{nx.cur ? 'Mission en cours' : 'Prochaine mission'}</Label>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-        <Text testID="hero-time" style={{ fontFamily: FONT.display, fontSize: 46, lineHeight: 48, color: fg }}>{fmtTime(nx.cur ? b : a)}</Text>
+        <Text testID="hero-time" style={{ fontFamily: FONT.display, fontSize: 46, lineHeight: 58, color: fg }}>{fmtTime(nx.cur ? b : a)}</Text>
         <Text style={{ fontFamily: FONT.ui, fontSize: 13, letterSpacing: 0.5, color: fg, opacity: 0.72 }}>{whenLabel(m, nx.cur, now)}</Text>
       </View>
       <Text testID="hero-title" style={{ fontFamily: FONT.display, fontSize: 22, lineHeight: 27, color: fg, marginTop: 12 }}>{m.titre}</Text>

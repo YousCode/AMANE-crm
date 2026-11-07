@@ -15,6 +15,8 @@ export const fmtE2 = (n: unknown) => new Intl.NumberFormat('fr-FR', { style: 'cu
 export const fmtK = (n: unknown) => { const v = +(n as number) || 0; return Math.abs(v) >= 10000 ? (Math.round(v / 100) / 10).toLocaleString('fr-FR') + ' k€' : fmtE(v); };
 export const fmtL = (n: unknown, loc: string) => new Intl.NumberFormat(loc || 'fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(+(n as number) || 0);
 export const fmtDay = (d?: Date | null) => (d ? d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '—');
+/** Fin d'une échéance proche : « 22:43 » aujourd'hui, « demain 22:43 », sinon « ven. 13 nov. 22:43 ». */
+export const fmtUntil = (d?: Date | null, now = new Date()) => { if (!d) return ''; const t = new Date(now); t.setDate(t.getDate() + 1); const pre = d.toDateString() === now.toDateString() ? '' : d.toDateString() === t.toDateString() ? 'demain ' : fmtDay(d) + ' '; return pre + fmtTime(d); };
 export const fmtDayLong = (d?: Date | null) => (d ? d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : '—');
 export const fmtTime = (d?: Date | null) => (d ? d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '');
 export const fmtDT = (d?: Date | null) => (d ? fmtDay(d) + ' · ' + fmtTime(d) : '—');

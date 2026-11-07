@@ -15,6 +15,12 @@ const JOURS_C = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOIS_C = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 
+/** Fin d'une échéance proche : « 22:43 » aujourd'hui, « demain 22:43 », sinon « ven. 13 nov. 22:43 ». */
+export function fmtUntil(x: unknown, now = new Date()): string {
+  const d = parseDate(x as string); if (!d) return '';
+  const pre = sameDay(d, now) ? '' : sameDay(d, addD(now, 1)) ? 'demain ' : fmtDay(d) + ' ';
+  return pre + fmtTime(d);
+}
 export function fmtDay(x: unknown): string {
   const d = parseDate(x); if (!d) return '';
   return `${JOURS_C[d.getDay()]} ${d.getDate()} ${MOIS_C[d.getMonth()]}`;

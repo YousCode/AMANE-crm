@@ -36,5 +36,7 @@ export async function rentabilite(db, mois, nowMs = now()) {
     return { id: v._id, nom: v.nom, categorie: v.categorie || '', loyer, charges, joursLoues, missions: nb, ca: round2(ca), coutsJournal: round2(coutsJournal), margeNette: round2(marge), tauxOccupation: round2(joursLoues / b.days), tarifJour: +v.tarifJour || 0 };
   });
   const total = lignes.reduce((x, l) => ({ loyer: x.loyer + l.loyer, charges: x.charges + l.charges, joursLoues: x.joursLoues + l.joursLoues, ca: round2(x.ca + l.ca), coutsJournal: round2(x.coutsJournal + l.coutsJournal), margeNette: round2(x.margeNette + l.margeNette) }), { loyer: 0, charges: 0, joursLoues: 0, ca: 0, coutsJournal: 0, margeNette: 0 });
-  return { mois: b.mois, du: b.from, au: b.to, jours: b.days, vehicules: lignes, total: { ...total, tauxOccupation: lignes.length ? round2(total.joursLoues / (b.days * lignes.length)) : 0 } };
+  // `items` : forme du contrat (docs/architecture-v2.md) lue par le back-office et l'appli ; occupation en % entier.
+  const items = lignes.map((l) => ({ vehiculeId: l.id, nom: l.nom, loyer: l.loyer, charges: l.charges, joursLoues: l.joursLoues, ca: l.ca, couts: l.coutsJournal, marge: l.margeNette, occupation: Math.round(l.tauxOccupation * 100) }));
+  return { mois: b.mois, du: b.from, au: b.to, jours: b.days, items, vehicules: lignes, total: { ...total, tauxOccupation: lignes.length ? round2(total.joursLoues / (b.days * lignes.length)) : 0 } };
 }

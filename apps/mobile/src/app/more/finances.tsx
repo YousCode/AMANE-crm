@@ -37,7 +37,7 @@ export default function Finances() {
       </Panel>
       <Section title="Rentabilité par véhicule" sub="ce mois" />
       <Panel pad={false}>
-        {rent === null ? <Empty>Chargement…</Empty> : rent.length ? rent.map((r, i) => <Row key={r.vehiculeId || i} last={i === rent.length - 1} title={r.nom} sub={`${r.joursLoues} j loués · CA ${fmtE(r.ca)} · ${Math.round((r.occupation || 0) * 100)} %`} right={<Mono style={{ color: r.marge >= 0 ? c.ok : c.bad }}>{fmtE(r.marge)}</Mono>} chevron={false} />) : <Empty>Indisponible hors ligne.</Empty>}
+        {rent === null ? <Empty>Chargement…</Empty> : rent.length ? rent.map((r, i) => <Row key={r.vehiculeId || i} last={i === rent.length - 1} title={r.nom} sub={`${r.joursLoues} j loués · CA ${fmtE(r.ca)} · ${Math.round(+r.occupation || 0)} %`} right={<Mono style={{ color: r.marge >= 0 ? c.ok : c.bad }}>{fmtE(r.marge)}</Mono>} chevron={false} />) : <Empty>Indisponible hors ligne.</Empty>}
       </Panel>
       <Sub style={{ marginTop: 14 }}>L’export CSV et les factures se font depuis le back-office.</Sub>
     </Screen>

@@ -123,6 +123,7 @@ button{cursor:pointer}
 .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .seg{display:inline-flex;padding:3px;border:1px solid var(--line-2);border-radius:11px;background:var(--glass)}
 .seg button{border:0;background:none;padding:6px 12px;border-radius:8px;font-size:13px;color:var(--fg-2)}
+.seg.lang button{min-width:44px}
 .seg button[aria-pressed="true"]{background:var(--bx-soft);color:var(--fg)}
 .field-inline{height:36px;border-radius:10px;border:1px solid var(--line-2);background:var(--glass);padding:0 12px;min-width:0}
 
@@ -934,6 +935,7 @@ const addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
 const sameDay=(a,b)=>a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
 const fmtDay=d=>d?d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}):'—';
 const fmtTime=d=>d?d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'';
+const fmtUntil=d=>{if(!d)return '';const n=new Date(),t=new Date();t.setDate(n.getDate()+1);return (d.toDateString()===n.toDateString()?'':d.toDateString()===t.toDateString()?'demain ':fmtDay(d)+' ')+fmtTime(d);};
 const fmtDT=d=>d?fmtDay(d)+' · '+fmtTime(d):'—';
 const nowISO=()=>new Date().toISOString();
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
@@ -1945,7 +1947,7 @@ function threadHTML(cv){const nm=convName(cv),c=convClient(cv),m=convMission(cv)
   let day='',body='';convMsgs(cv.id).forEach(x=>{const d=parse(x.at);const k=d?d.toDateString():'';if(k!==day){day=k;body+=`<div class="dsep">${esc(dayLabel(d))}</div>`}body+=bubble(x)});
   const tel='+'+String(cv.id).replace(/\D/g,'');const closed=MSG.closed[cv.id]===true||!open;
   const qn=qrName(cv);const qk=QR[L]?L:'EN';
-  return `<section class="th" aria-label="Conversation avec ${esc(nm)}"><header class="th-h"><button class="x back" type="button" data-act="cv-back" aria-label="Retour aux conversations">${ico('left')}</button><span class="pic">${esc(initial(nm))}</span><div style="min-width:0;flex:1"><h3>${esc(nm)}</h3><div class="s">${esc(fmtPhone(cv.id))} · ${esc(L)} · ${open?'fenêtre ouverte jusqu’à '+esc(fmtTime(parse(cv.windowUntil))):'fenêtre fermée'}</div></div></header>
+  return `<section class="th" aria-label="Conversation avec ${esc(nm)}"><header class="th-h"><button class="x back" type="button" data-act="cv-back" aria-label="Retour aux conversations">${ico('left')}</button><span class="pic">${esc(initial(nm))}</span><div style="min-width:0;flex:1"><h3>${esc(nm)}</h3><div class="s">${esc(fmtPhone(cv.id))} · ${esc(L)} · ${open?'fenêtre ouverte jusqu’à '+esc(fmtUntil(parse(cv.windowUntil))):'fenêtre fermée'}</div></div></header>
     <div class="th-a"><a class="ct dark" href="tel:${esc(tel)}" data-ct="tel">${ico('phone')}Appeler</a><a class="ct" href="https://wa.me/${esc(tel.slice(1))}" target="_blank" rel="noopener" data-ct="wa">${ico('wa')}WhatsApp</a><button class="ct" type="button" data-act="cv-client">${ico('user')}${c?'Fiche client':'Créer la fiche'}</button><button class="ct" type="button" data-act="cv-mission">${ico('demandes')}${m?'Demande':'Créer la demande'}</button></div>
     <div class="th-s" data-keep-scroll="ths-${esc(cv.id)}" data-bottom="1">${aiCard(cv,m)}${body||'<div class="th-empty">Aucun message dans cette conversation.</div>'}</div>
     <div class="cmp">${closed?`<div class="wbox">${ico('clock')}<span>${MSG.tpl[cv.id]?'<b>Modèle envoyé.</b> Vous pourrez écrire librement dès que le client aura répondu.':'<b>Fenêtre de 24 h fermée.</b> WhatsApp n’autorise un message libre que dans les 24 h qui suivent le dernier message du client. Envoyez le modèle approuvé pour reprendre contact ; vous pourrez écrire librement dès sa réponse.'}</span><button class="btn sm ${MSG.tpl[cv.id]?'':'primary'}" type="button" data-act="cv-tpl">${MSG.tpl[cv.id]?'Renvoyer le modèle':'Envoyer le modèle'}</button></div>`:''}
@@ -2015,7 +2017,7 @@ function vReglages(){if(!RG.draft||!RG.dirty)RG.draft=rgCurrent();const r=RG.dra
       <div class="fg"><div class="f"><label for="rgDeb">Ouverture</label><input id="rgDeb" type="time" data-rg="horaires.debut" value="${esc(r.horaires.debut)}"></div><div class="f"><label for="rgFin">Fermeture</label><input id="rgFin" type="time" data-rg="horaires.fin" value="${esc(r.horaires.fin)}"></div></div>
       <p class="muted-s">Entre l’ouverture et la fermeture, le texte « ouvert » part ; en dehors, le texte « fermé ». Fuseau : ${esc(r.fuseau||'Europe/Paris')}.${exists?'':' Valeurs par défaut affichées : rien n’est encore enregistré.'}</p></div>
     <div class="glass panel"><div class="panel-h"><h2>Textes</h2><span class="sub">{prenom} = prénom du client</span></div>
-      <div class="seg wrap" role="group" aria-label="Langue" style="margin-bottom:14px">${RG_LANGS.map(x=>`<button type="button" data-rglang="${x}" aria-pressed="${L===x}">${x}</button>`).join('')}</div>
+      <div class="seg wrap lang" role="group" aria-label="Langue" style="margin-bottom:14px">${RG_LANGS.map(x=>`<button type="button" data-rglang="${x}" aria-pressed="${L===x}">${x}</button>`).join('')}</div>
       <div class="fg">${['jour','nuit'].map(k=>`<div class="f full"><label for="rgT_${k}">${k==='jour'?'Heures d’ouverture':'En dehors des heures d’ouverture'} · ${L}</label><textarea id="rgT_${k}" dir="auto" data-rg="textes.${L}.${k}">${esc((r.textes[L]||{})[k]||'')}</textarea></div>`).join('')}</div>
       <div style="margin-top:12px"><button class="btn sm ghost" type="button" data-act="rg-reset">Revenir aux textes par défaut (${L})</button></div></div>
   </div><div class="stack">
