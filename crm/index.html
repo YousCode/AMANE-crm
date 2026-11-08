@@ -2108,9 +2108,10 @@ function drawRender(){
       ${s?`<div class="note-box">Point mort : <b class="num">${s.toFixed(1).replace('.',',')} jours</b> de location par mois couvrent loyer, assurance et entretien.</div>`:''}`;
   }
   if(k==='partenaire'){
-    eyebrow=isNew?'Nouveau partenaire':label(PART_TYPES,d.type);title=d.nom||'Partenaire';tabs=isNew?[['main','Fiche']]:[['main','Fiche'],['hist','Missions']];
+    eyebrow=isNew?'Nouveau partenaire':label(PART_TYPES,d.type);title=d.nom||'Partenaire';tabs=isNew?[['main','Fiche']]:[['main','Fiche'],['hist','Missions']];if(S.mode==='server'&&!isNew)tabs.push(['espace','Espace']);
     if(DR.tab==='hist'){const pid=DR.id;const ms=list('missions').filter(m=>m.chauffeurId===pid||(m.commissions||[]).some(c=>c.partenaireId===pid)||(m.programme||[]).some(x=>x.partenaireId===pid)).sort((a,b)=>(parse(b.debut)||0)-(parse(a.debut)||0));const comm=list('missions').reduce((x,m)=>x+(m.commissions||[]).filter(c=>c.partenaireId===pid).reduce((y,c)=>y+(+c.base||0)*(+c.pct||0)/100,0),0);
       body=`<div class="kv"><div><span>Missions</span><b>${ms.length}</b></div><div><span>Commissions</span><b>${fmtE(comm)}</b></div></div><div class="hist">${ms.map(m=>`<button type="button" data-open="mission:${m.id}"><span>${esc(m.titre)}<div class="sub-t" style="font-size:12px;color:var(--fg-3)">${fmtDT(parse(m.debut))}</div></span><span>${chip(m.statut)}</span></button>`).join('')||'<div class="empty">Aucune mission.</div>'}</div>`}
+    else if(DR.tab==='espace'){body=`<div id="espBox" data-pid="${esc(DR.id)}"><div class="empty">Chargement…</div></div>`;setTimeout(espLoad,0)}
     else body=`<div class="fg">${fld('nom','Nom',d.nom,'text',{full:1})}${fld('type','Type',d.type,'select',{opts:opt(PART_TYPES,d.type)})}${fld('contact','Contact',d.contact)}${fld('tel','Téléphone',d.tel,'tel')}${fld('email','E-mail',d.email,'email')}${fld('langues','Langues',d.langues,'text',{ph:'FR, EN, AR'})}${fld('commission','Commission (%)',d.commission,'number')}${fld('adresse','Adresse',d.adresse,'text',{full:1})}<div class="f full checks"><label><input type="checkbox" data-k="actif" ${d.actif!==false?'checked':''}>Actif</label></div>${fld('notes','Notes',d.notes,'textarea',{full:1})}</div>`;
   }
   if(k==='service'){
@@ -2304,6 +2305,7 @@ document.addEventListener('click',async e=>{
   else if(a==='new-mission-for'){openDrawer('mission',null,'main',{clientId:DR.id})}
   else if(a==='dl-contrat'){readForm();try{await dl.save({filename:`contrat-amane-${(DR.draft.titre||'mission').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').slice(0,40)}.html`,data:contratHTML(DR.draft)})}catch(err){if(err&&err.code!=='cancelled'&&err.code!=='declined')toast('Téléchargement impossible.')}}
   else if(a&&/^(dv|pay|com|pr|tk|jr)-/.test(a)){conciergeAct(a,t)}
+  else if(a&&/^esp-/.test(a)){espAct(a,t)}
   else if(a==='ics')dlSave('amane-planning.ics',planningICS());
   else if(a==='fin-csv'){const ref=monthOf(S.filters.fm||0);dlSave(`amane-finances-${ref.getFullYear()}-${pad(ref.getMonth()+1)}.csv`,finCSV(finData(ref)))}
   else if(a==='import-json')importJSON();
@@ -2358,6 +2360,30 @@ $('#palBtn').addEventListener('click',openPal);$('#helpBtn').addEventListener('c
 document.addEventListener('pointermove',e=>{const g=e.target.closest&&e.target.closest('.lit');if(!g)return;const r=g.getBoundingClientRect();g.style.setProperty('--mx',(e.clientX-r.left)+'px');g.style.setProperty('--my',(e.clientY-r.top)+'px')},{passive:true});
 
 function wireKanban(){}
+/* Espace prestataire (mode serveur) : lien personnel sans compte, missions confiées et leur confirmation. */
+const ESP={info:null,ask:''};
+async function espLoad(){const box=$('#espBox');if(!box)return;const pid=box.dataset.pid;
+  try{ESP.info=await api('GET','/api/partenaires/'+encodeURIComponent(pid)+'/espace')}catch(e){box.innerHTML=`<div class="empty">${esc(e.code==='offline'?'Espace prestataire indisponible hors connexion.':e.message||'Espace indisponible.')}</div>`;return}
+  const i=ESP.info,d=DR.draft,pre=String(d.contact||d.nom||'').trim().split(/\s+/)[0]||'';
+  const msg=i.url?`Bonjour${pre?' '+pre:''}, voici votre espace prestataire Amane : vos missions et les disponibilités de notre flotte, à jour en temps réel. ${i.url}`:'';
+  const lien=i.actif?`<div style="display:flex;gap:8px"><input readonly id="espUrl" value="${esc(i.url)}" aria-label="Lien de l’espace prestataire" style="flex:1;min-width:0"><button class="btn sm" type="button" data-act="esp-copy">${ico('copy')}Copier</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${d.tel?`<a class="btn sm primary" href="${esc(waLink(d.tel,msg))}" target="_blank" rel="noopener">${ico('wa')}Envoyer par WhatsApp</a>`:''}<a class="btn sm" href="${esc(i.url)}" target="_blank" rel="noopener">Ouvrir l’espace</a>
+    ${ESP.ask==='renew'?`<span class="muted-s">L’ancien lien cessera de fonctionner.</span><button class="btn sm" type="button" data-act="esp-renew-yes">Nouveau lien</button><button class="btn sm ghost" type="button" data-act="esp-no">Annuler</button>`:`<button class="btn sm ghost" type="button" data-act="esp-renew">Nouveau lien</button>`}
+    ${ESP.ask==='revoke'?`<button class="btn sm danger" type="button" data-act="esp-revoke-yes">Révoquer l’accès</button><button class="btn sm ghost" type="button" data-act="esp-no">Annuler</button>`:`<button class="btn sm ghost danger" type="button" data-act="esp-revoke">Révoquer</button>`}</div>
+    <p class="muted-s">${i.vues?`Ouvert ${i.vues} fois.`:'Pas encore ouvert.'} Lien personnel : à ne pas diffuser.</p>`
+    :`<p class="muted-s" style="margin-bottom:10px">${esc(d.nom||'Le prestataire')} verra les missions que vous lui confiez (date, lieu, prénom du client, véhicule) et les disponibilités de la flotte, sans compte ni mot de passe. Jamais de montants ni de téléphones de clients.</p><button class="btn sm primary" type="button" data-act="esp-create">Créer le lien</button>`;
+  const ms=(i.missions||[]).map(m=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-2)"><span style="flex:1;min-width:0"><button class="lnk" type="button" data-open="mission:${esc(m.id)}">${esc(m.titre||'Mission')}</button><div style="font-size:12px;color:var(--fg-3)">${fmtDT(parse(m.debut))}</div></span>${m.confirmeeAt?'<span class="ex-s">Confirmée</span>':`<button class="btn sm" type="button" data-act="esp-confirm" data-mid="${esc(m.id)}">Noter confirmée</button>`}</div>`).join('');
+  box.innerHTML=`<div class="sec-t">Lien personnel</div>${lien}<div class="sec-t">Missions confiées</div><div>${ms||'<div class="empty">Aucune mission ferme à venir.</div>'}</div>`}
+async function espAct(a,t){const box=$('#espBox');if(!box)return;const pid=encodeURIComponent(box.dataset.pid);
+  if(a==='esp-copy')return copyText(ESP.info&&ESP.info.url||'');
+  if(a==='esp-renew'||a==='esp-revoke'){ESP.ask=a.slice(4);return espLoad()}
+  if(a==='esp-no'){ESP.ask='';return espLoad()}
+  try{
+    if(a==='esp-create'||a==='esp-renew-yes'){await api('POST','/api/partenaires/'+pid+'/espace',{renouveler:a==='esp-renew-yes'});toast(a==='esp-create'?'Lien de l’espace créé':'Nouveau lien : l’ancien ne fonctionne plus')}
+    if(a==='esp-revoke-yes'){await api('DELETE','/api/partenaires/'+pid+'/espace');toast('Lien révoqué')}
+    if(a==='esp-confirm'){await api('POST','/api/missions/'+encodeURIComponent(t.dataset.mid)+'/confirmation',{partenaireId:box.dataset.pid});toast('Confirmation notée')}
+  }catch(e){toast(e.message||'Impossible pour l’instant.')}
+  ESP.ask='';espLoad()}
 /* Actions des onglets conciergerie */
 async function conciergeAct(a,t){
   readForm();const d=DR.draft;const i=+t.dataset.i;const demo=!!d._demo;
