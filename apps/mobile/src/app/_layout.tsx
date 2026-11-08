@@ -54,6 +54,7 @@ export default function RootLayout() {
           <Stack.Screen name="client/[id]" />
           <Stack.Screen name="vehicule/[id]" />
           <Stack.Screen name="espace/[token]" />
+          <Stack.Screen name="partenaire/[id]" />
         </Stack>
         <Toast />
       </View>

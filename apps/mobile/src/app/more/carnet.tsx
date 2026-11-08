@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { PART_TYPES } from '@amane/shared';
 import { useStore } from '@/store';
 import { label } from '@/store/select';
 import { useTheme, GUTTER } from '@/theme';
-import { Screen, Panel, Seg, Sub, Txt, Empty, RoundPic, Section } from '@/components/ui';
+import { Screen, Panel, Seg, Sub, Txt, Empty, RoundPic, Btn } from '@/components/ui';
 import { ContactBar } from '@/components/ContactBar';
 
 export default function Carnet() {
-  const { c } = useTheme();
+  const { c } = useTheme(); const router = useRouter();
   const data = useStore((s) => s.data);
   const [type, setType] = useState('chauffeur');
   const list = data.partenaires.filter((p) => p.type === type && p.actif !== false).sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
@@ -23,7 +24,7 @@ export default function Carnet() {
           </View>
           {p.adresse ? <Sub>{p.adresse}</Sub> : null}
           {p.notes ? <Sub style={{ color: c.fg2 }}>{p.notes}</Sub> : null}
-          <ContactBar tel={p.tel} email={p.email} lieu={p.adresse} compact />
+          <ContactBar tel={p.tel} email={p.email} lieu={p.adresse} compact extra={<Btn small icon="link" title="Espace & relances" testID={`carnet-espace-${p.id}`} onPress={() => router.push(`/partenaire/${p.id}` as never)} />} />
         </Panel>
       )) : <Empty>Aucun contact de ce type.</Empty>}
     </Screen>

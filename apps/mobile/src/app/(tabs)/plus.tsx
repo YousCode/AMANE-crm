@@ -14,7 +14,8 @@ export default function Plus() {
   const me = useStore((s) => s.me); const logout = useStore((s) => s.logout); const pending = useStore((s) => s.pending); const flush = useStore((s) => s.flush); const roleClient = useStore((s) => s.prefs.roleClient);
   const entries: { title: string; sub: string; icon: string; to: string; testID: string }[] = [
     { title: 'Flotte', sub: 'Véhicules, journal, photos', icon: 'car', to: '/more/flotte', testID: 'plus-flotte' },
-    { title: 'Carnet', sub: 'Chauffeurs, restaurants, boutiques', icon: 'book', to: '/more/carnet', testID: 'plus-carnet' },
+    { title: 'À relancer', sub: 'Devis, soldes, confirmations des prestataires', icon: 'clock', to: '/more/relances', testID: 'plus-relances' },
+    { title: 'Carnet', sub: 'Chauffeurs, restaurants, boutiques, espaces prestataires', icon: 'book', to: '/more/carnet', testID: 'plus-carnet' },
     { title: 'Finances', sub: 'Facturé, encaissé, retards', icon: 'euro', to: '/more/finances', testID: 'plus-finances' },
     { title: 'Réglages', sub: 'Apparence, réponses automatiques, rappels', icon: 'settings', to: '/more/reglages', testID: 'plus-reglages' },
     { title: 'Aide', sub: 'Comment ça marche', icon: 'help', to: '/more/aide', testID: 'plus-aide' },
