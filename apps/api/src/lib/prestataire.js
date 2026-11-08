@@ -137,25 +137,30 @@ export function prestataireData({ token, partenaire, missions, clients, vehicule
   const pid = partenaire._id;
   const byClient = new Map((clients || []).map((c) => [c._id, c]));
   const byVeh = new Map((vehicules || []).map((v) => [v._id, v]));
+  const today = parisDay(nowMs);
   const list = missionsConfiees(missions, pid, nowMs).map((m) => {
     const v = m.vehiculeId ? byVeh.get(m.vehiculeId) : null;
-    const etapes = (Array.isArray(m.programme) ? m.programme : []).filter((x) => x && x.partenaireId === pid && x.dt).sort((a, b) => String(a.dt).localeCompare(String(b.dt)))
+    const etapes = (Array.isArray(m.programme) ? m.programme : []).filter((x) => x && x.partenaireId === pid && x.dt && String(x.dt).slice(0, 10) >= today).sort((a, b) => String(a.dt).localeCompare(String(b.dt)))
       .map((x) => ({ dt: x.dt, type: x.type || 'autre', typeLabel: labelOf(PROG_TYPES, x.type, 'Étape'), lieu: x.lieu || '', itineraire: x.lieu ? mapsLink(x.lieu) : '' }));
     const conf = confirmations && confirmations.get(m._id);
     const ok = isConfirmed(conf, m);
+    // Chauffeur : toute la mission. Étape du programme seulement : son créneau à lui (première étape), pas le séjour entier.
+    const chauffeur = m.chauffeurId === pid;
+    if (!chauffeur && !etapes.length) return null;
+    const debut = chauffeur || !etapes.length ? m.debut || '' : etapes[0].dt;
     return {
       id: m._id,
-      debut: m.debut || '', fin: m.fin || '',
+      debut, fin: chauffeur ? m.fin || '' : '',
       service: labelOf(SERVICES, m.service, m.service || 'Mission'),
-      role: m.chauffeurId === pid ? 'Chauffeur' : etapes.map((e) => e.typeLabel).filter((x, i, a) => a.indexOf(x) === i).join(', ') || 'Prestation',
-      lieu: m.lieu || '', itineraire: m.lieu ? mapsLink(m.lieu) : '',
+      role: chauffeur ? 'Chauffeur' : etapes.map((e) => e.typeLabel).filter((x, i, a) => a.indexOf(x) === i).join(', ') || 'Prestation',
+      lieu: chauffeur ? m.lieu || '' : '', itineraire: chauffeur && m.lieu ? mapsLink(m.lieu) : '',
       client: prenomClient((byClient.get(m.clientId) || {}).nom),
       vehicule: v ? v.nom : '',
-      etapes: m.chauffeurId === pid ? [] : etapes,
+      etapes: chauffeur ? [] : etapes,
       confirmee: ok, confirmeeAt: ok ? conf.at : '',
-      bientot: (wallToMs(m.debut) || 0) - nowMs < 7 * DAY,
+      bientot: (wallToMs(debut) || 0) - nowMs < 7 * DAY,
     };
-  });
+  }).filter(Boolean).sort((a, b) => a.debut.localeCompare(b.debut));
   return {
     token,
     partenaire: { nom: partenaire.nom || '', prenom: firstName(partenaire.contact || partenaire.nom) || partenaire.nom || '', type: partenaire.type || '', typeLabel: labelOf(PART_TYPES, partenaire.type, 'Partenaire') },

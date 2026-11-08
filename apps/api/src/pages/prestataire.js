@@ -26,15 +26,15 @@ h1 em{color:var(--accent)}
 .mi .btn{flex:0 0 auto;min-height:44px;padding:10px 20px;font-size:14px}
 .ok-l{display:inline-flex;align-items:center;gap:8px;margin-top:12px;color:var(--ok);font-size:14px}
 .ok-l::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
-.soon{margin-left:8px;vertical-align:middle;font-size:10px;padding:2px 8px}
+.soon{margin-left:8px;vertical-align:middle;font-family:'Jost',sans-serif;font-size:10px;padding:2px 8px}
 .dispo-w{overflow-x:auto;margin:14px -20px 0;padding:0 20px;-webkit-overflow-scrolling:touch}
 table.dispo{border-collapse:separate;border-spacing:3px;width:auto;min-width:100%;margin:0}
 table.dispo th,table.dispo td{border:0;padding:0;font-size:12px;text-align:center;vertical-align:middle}
 table.dispo thead th{color:var(--fg3);font-weight:400;letter-spacing:.04em;text-transform:none;font-size:11px;line-height:1.25;padding:0 0 4px;min-width:30px}
 table.dispo thead th.we{color:var(--fg2)}
 table.dispo thead th b{display:block;font-family:'IBM Plex Mono',monospace;font-weight:400;font-size:13px;color:var(--fg)}
-table.dispo tbody th{position:sticky;left:0;z-index:1;background:var(--panel);text-align:left;padding:0 12px 0 0;min-width:120px;font-size:14px;font-weight:400;white-space:nowrap}
-table.dispo tbody th span{display:block;font-size:11px;color:var(--fg3);letter-spacing:.04em}
+table.dispo tbody th{position:sticky;left:0;z-index:1;background:var(--panel);text-align:left;padding:0 12px 0 0;min-width:120px;font-size:14px;font-weight:400;white-space:nowrap;text-transform:none;letter-spacing:0;color:var(--fg)}
+table.dispo tbody th span{display:block;font-size:11px;color:var(--fg3);letter-spacing:.04em;text-transform:none}
 table.dispo td{height:34px;border-radius:6px}
 .s-libre{box-shadow:inset 0 0 0 1px var(--line)}
 .s-reserve{background:var(--fg)}

@@ -91,7 +91,8 @@ test('page prestataire : missions confiées, client au prénom, disponibilités,
 
   const j = await call(H.doc, { url: `/api/prestataire/${token}`, headers: { accept: 'application/json' } });
   assert.equal(j.status, 200);
-  assert.deepEqual(j.json.missions.map((m) => [m.id, m.role, m.client, m.vehicule]), [['m2', 'Transfert', 'Mme I.', ''], ['m1', 'Chauffeur', 'John', 'Urus SE']]);
+  assert.deepEqual(j.json.missions.map((m) => [m.id, m.role, m.client, m.vehicule]), [['m2', 'Transfert', 'Mme I.', ''], ['m1', 'Chauffeur', 'John', 'Urus SE']], 'triées par créneau du prestataire');
+  assert.deepEqual([j.json.missions[0].debut, j.json.missions[0].fin, j.json.missions[0].lieu], ['2026-11-10T09:00', '', ''], 'étape seule : son créneau, pas le séjour');
   assert.equal(JSON.stringify(j.json).includes('montant'), false);
   const D = j.json.disponibilites;
   assert.equal(D.jours[0], '2026-11-08');

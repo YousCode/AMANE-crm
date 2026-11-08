@@ -50,7 +50,7 @@ export function EspaceTab({ pid, nom, contact, tel }: { pid: string; nom: string
     <div className="sec-t">Missions confiées</div>
     <div>{info.missions.length ? info.missions.map((m) => <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '10px 0', borderBottom: '1px solid var(--line2)' }}>
       <span style={{ flex: '1 1 180px', minWidth: 0 }}><button type="button" className="lnk" onClick={() => openDrawer('mission', m.id)} dir="auto">{m.titre || 'Mission'}</button><div className="sub-t" style={{ fontSize: '0.75rem' }}>{fmtDT(parse(m.debut))}</div></span>
-      {m.confirmeeAt ? <><span className="tagc" title={`Confirmée ${relTime(m.confirmeeAt)}`}><Icon k="check" />Confirmée</span><button className="btn sm ghost" type="button" disabled={busy} onClick={() => confirmer(m.id, false)}>Retirer</button></> : <><span className="tagc">À confirmer</span><button className="btn sm" type="button" disabled={busy} onClick={() => confirmer(m.id, true)} data-testid={`confirmer-${m.id}`}>Noter confirmée</button></>}
+      {m.confirmeeAt ? <><span className="tagc" title={`Confirmée ${relTime(m.confirmeeAt)}`}>Confirmée</span><button className="btn sm ghost" type="button" disabled={busy} onClick={() => confirmer(m.id, false)}>Retirer</button></> : <><span className="tagc">À confirmer</span><button className="btn sm" type="button" disabled={busy} onClick={() => confirmer(m.id, true)} data-testid={`confirmer-${m.id}`}>Noter confirmée</button></>}
     </div>) : <Empty arch={false}>Aucune mission ferme à venir pour {nom}.</Empty>}</div>
     <div className="sec-t">Relances</div>
     <RelancesHist q={'partenaireId=' + encodeURIComponent(pid)} />

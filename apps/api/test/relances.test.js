@@ -49,6 +49,13 @@ test('vue unique : devis sans réponse, solde, confirmation de prestataire, avec
   await call(H.doc, { method: 'POST', url: '/api/partenaires/p1/espace', cookie });
   assert.match((await list(cookie))['prestataire:m3:p1'].messageSuggere, /\nVos missions et nos disponibilités : https:\/\/amane\.test\/api\/prestataire\/[A-Za-z0-9_-]{24}$/);
 
+  // Prestataire sur une seule étape d'un séjour : son créneau à lui, pas le début du séjour.
+  await put(cookie, 'partenaires', 'p2', { nom: 'Lasserre', contact: 'Maître d’hôtel', type: 'restaurant', tel: '+33143590213' });
+  await put(cookie, 'missions', 'm6', { titre: 'Séjour Smith', clientId: 'c1', statut: 'encours', service: 'sejour', debut: '2026-11-07T10:00', fin: '2026-11-14T10:00', programme: [{ dt: '2026-11-07T20:00', type: 'restaurant', partenaireId: 'p2', lieu: 'Lasserre' }, { dt: '2026-11-09T20:30', type: 'restaurant', partenaireId: 'p2', lieu: 'Lasserre' }] });
+  const step = (await list(cookie))['prestataire:m6:p2'];
+  assert.match(step.raison, /^Prestation non confirmée — Séjour Smith, dans 2 j$/);
+  assert.match(step.messageSuggere, /la mission du lundi 9 novembre, 20:30 \(Restaurant — Lasserre\)/);
+
   // Le client a écrit après l'envoi du devis : plus de relance « devis ».
   await db.collection('conversations').insertOne({ _id: '447700900123', phone: '447700900123', lastInAt: '2026-11-05T10:00:00Z' });
   assert.equal((await list(cookie))['proposition:m1'], undefined);

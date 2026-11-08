@@ -2,7 +2,7 @@
 // habitués, dates importantes) et envoi en un geste par WhatsApp : texte libre dans la fenêtre de 24 h, sinon modèle
 // approuvé `amane_relance`. Chaque relance a une clé stable (« proposition:m1 », « prestataire:m1:p2 ») et laisse une
 // trace dans la collection `relances` (_id = clé#n). Tant que le délai du type court, la clé est bloquée : jamais deux fois.
-import { t, fmtMoney, fmtDate, fmtTime, labelOf, SERVICES, RELANCE_TYPES, paiementStatut, devisTotals, ACTIVE_STATUTS, firstName, windowOpen } from '@amane/shared';
+import { t, fmtMoney, fmtDate, fmtTime, labelOf, SERVICES, PROG_TYPES, RELANCE_TYPES, paiementStatut, devisTotals, ACTIVE_STATUTS, firstName, windowOpen } from '@amane/shared';
 import { now, nowIso } from './clock.js';
 import { wallToMs, parisDay } from './paris.js';
 import { HttpError } from './http.js';
@@ -135,19 +135,21 @@ export async function computeRelances(db, nowMs = now(), { base = '' } = {}) {
     const objet = m.titre || labelOf(SERVICES, m.service, '');
     add('solde', `solde:${m._id}`, { c, m, objet, raison: `Solde de ${fmtMoney(reste, 'FR')} à régler, mission terminée depuis ${Math.floor((nowMs - fin) / DAY)} j`, msg: forClient(c, 'relance.solde', { objet, montant: fmtMoney(reste, docL(c)) }), depuis: new Date(fin).toISOString() });
   }
-  // 5. Prestataires : mission ferme dans les 7 jours, confiée (chauffeur ou étape), pas encore confirmée.
+  // 5. Prestataires : mission ferme confiée (chauffeur, ou étape du programme), pas encore confirmée, dont le créneau
+  //    du prestataire (début de mission, ou sa première étape à venir) tombe dans les 7 jours.
   for (const m of missions) {
     if (!CONFIEES.includes(m.statut)) continue;
-    const d = wallToMs(m.debut);
-    if (!d || d < nowMs || d - nowMs > 7 * DAY) continue;
     const pids = [m.chauffeurId, ...(Array.isArray(m.programme) ? m.programme.map((x) => x && x.partenaireId) : [])].filter((x, i, a) => x && a.indexOf(x) === i);
     for (const pid of pids) {
+      const step = m.chauffeurId === pid ? null : (m.programme || []).filter((x) => x && x.partenaireId === pid && (wallToMs(x.dt) || 0) >= nowMs).sort((a, b) => String(a.dt).localeCompare(String(b.dt)))[0];
+      const d = wallToMs(step ? step.dt : m.debut);
+      if (!d || d < nowMs || d - nowMs > 7 * DAY) continue;
       const p = byPart.get(pid);
       if (!p || p.actif === false || isConfirmed(confOf.get(`${m._id}:${pid}`), m)) continue;
       const L = partL(p);
       const v = m.vehiculeId ? vehicules.get(m.vehiculeId) : null;
-      const service = labelOf(SERVICES, m.service, m.service || 'Mission');
-      const objet = v ? `${service} — ${v.nom}` : service;
+      const service = step ? labelOf(PROG_TYPES, step.type, 'Prestation') + (step.lieu ? ` — ${step.lieu}` : '') : labelOf(SERVICES, m.service, m.service || 'Mission');
+      const objet = !step && v ? `${service} — ${v.nom}` : service;
       const date = `${fmtDate(d, L, { weekday: 'long', day: 'numeric', month: 'long' }, 'Europe/Paris')}, ${fmtTime(d, L, 'Europe/Paris')}`;
       const prenom = firstName(p.contact || p.nom);
       const a = accesOf.get(pid);

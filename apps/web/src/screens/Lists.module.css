@@ -2,7 +2,10 @@
 .contrats{grid-template-columns:minmax(0,1.6fr) repeat(5,minmax(70px,.6fr)) 90px}
 .partners{grid-template-columns:34px minmax(0,1.6fr) minmax(0,1fr) 70px auto}
 .fin{grid-template-columns:minmax(0,1fr) 120px 110px}
-.rel{grid-template-columns:34px minmax(0,1.4fr) minmax(0,1fr) 120px auto}
+.rel{grid-template-columns:34px minmax(0,1fr) auto;align-items:start}
+.rel :global(.main-t),.rel :global(.sub-t){white-space:normal}
+.relActs{display:inline-flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:300px}
+.relMeta{font-size:0.75rem;color:var(--fg3);margin-top:6px}
 .rent{grid-template-columns:minmax(0,1.4fr) repeat(6,minmax(70px,.7fr))}
 .fleet{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:14px}
 .vcard{padding:0;overflow:hidden;cursor:pointer;text-align:start;width:100%;color:inherit;display:flex;flex-direction:column}
@@ -55,7 +58,7 @@
   .contrats{grid-template-columns:minmax(0,1fr) auto}
   .partners{grid-template-columns:34px minmax(0,1fr) auto;gap:10px;padding:12px 14px}
   .fin{grid-template-columns:minmax(0,1fr) auto}
-  .rel{grid-template-columns:34px minmax(0,1fr)}.rel>span:last-child{grid-column:2;justify-self:start}
+  .rel{grid-template-columns:34px minmax(0,1fr)}.rel>span:last-child{grid-column:2;justify-self:start}.relActs{justify-content:flex-start;max-width:none}
   .rent{grid-template-columns:minmax(0,1fr) auto auto}
   .finK{grid-template-columns:1fr 1fr;gap:10px}
   .win{height:130px}

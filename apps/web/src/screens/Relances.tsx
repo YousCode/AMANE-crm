@@ -8,10 +8,12 @@ import { Empty, QA, whoName } from '../components/ui';
 import { useUI } from '../store/ui';
 import { useStore } from '../store/store';
 import { api, type ApiError } from '../lib/api';
-import { relTime, fmtDayLong } from '../lib/format';
+import { relTime, fmtDayLong, parse } from '../lib/format';
 import { waLink, telNorm, RELANCE_TYPES, type Relance } from '../shared';
 
 const ICON: Record<string, string> = { proposition: 'clock', acompte: 'euro', solde: 'euro', facture: 'contrats', prestataire: 'key', habitue: 'star', anniversaire: 'spark' };
+/** « il y a 3 j » pour le passé, « pour mardi 10 novembre » pour une échéance à venir (acompte, mission). */
+const quand = (iso?: string) => { const d = parse(iso); return !d ? '' : +d > Date.now() ? 'pour ' + fmtDayLong(d) : relTime(iso); };
 export const relanceLabel = (type: string) => RELANCE_TYPES.find((x) => x.id === type)?.court || type;
 /** « Relancé il y a 2 j par Amel (modèle) » */
 export function derniereTxt(d: Relance['derniere']) {
@@ -66,14 +68,13 @@ export function Relances() {
           {edit[x.key] !== undefined && !bloq
             ? <textarea className="inp" rows={4} dir="auto" value={txt} aria-label="Message de relance" onClick={(e) => e.stopPropagation()} onChange={(e) => setEdit((o) => ({ ...o, [x.key]: e.target.value }))} style={{ marginTop: 6, width: '100%' }} />
             : <div className={s.relMsg} dir="auto">{txt}</div>}
-          {x.derniere && <div className="sub-t" style={{ marginTop: 6 }} data-testid="derniere">{derniereTxt(x.derniere)}{bloq ? ` · prochaine relance possible le ${fmtDayLong(new Date(x.bloqueeJusqua!))}` : ''}</div>}
+          <div className={s.relMeta}>{[x.lang, quand(x.depuis), bloq ? '' : x.fenetre ? 'fenêtre de 24 h ouverte : message libre' : 'hors fenêtre : modèle approuvé « amane_relance »'].filter(Boolean).join(' · ')}</div>
+          {x.derniere && <div className="sub-t" style={{ marginTop: 4 }} data-testid="derniere">{derniereTxt(x.derniere)}{bloq ? ` · prochaine relance possible le ${fmtDayLong(new Date(x.bloqueeJusqua!))}` : ''}</div>}
         </span>
-        <span className={`sub-t ${s.hideM}`}>{x.lang || ''}{x.depuis ? ' · ' + relTime(x.depuis) : ''}</span>
-        <span className={`sub-t ${s.hideM}`} title={x.fenetre ? 'Le contact a écrit il y a moins de 24 h : message libre.' : 'Plus de 24 h sans message du contact : WhatsApp impose le modèle approuvé « amane_relance ».'}>{bloq ? '' : x.fenetre ? 'Fenêtre ouverte' : 'Modèle approuvé'}</span>
-        <span style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap' }} onClick={(e) => e.stopPropagation()}>
-          {bloq ? <span className="tagc" data-testid="bloquee"><Icon k="check" />Relancé</span> : <>
+        <span className={s.relActs} onClick={(e) => e.stopPropagation()}>
+          {bloq ? <span className="tagc" data-testid="bloquee">Relancé</span> : <>
             {tel ? <button className="btn sm primary" type="button" disabled={busy === x.key} onClick={() => relancer(x)} data-testid="relancer"><Icon k="wa" />{busy === x.key ? 'Envoi…' : 'Relancer'}</button> : <span className="sub-t">Pas de numéro</span>}
-            {edit[x.key] === undefined ? <button className="btn sm ghost" type="button" onClick={() => setEdit((o) => ({ ...o, [x.key]: x.messageSuggere }))} disabled={!x.fenetre} title={x.fenetre ? 'Modifier le message avant l’envoi' : 'Hors fenêtre, le modèle approuvé est envoyé tel quel'}>Modifier</button> : <button className="btn sm ghost" type="button" onClick={() => setEdit((o) => { const n = { ...o }; delete n[x.key]; return n; })}>Annuler</button>}
+            {!x.fenetre ? null : edit[x.key] === undefined ? <button className="btn sm ghost" type="button" onClick={() => setEdit((o) => ({ ...o, [x.key]: x.messageSuggere }))} title="Modifier le message avant l’envoi">Modifier</button> : <button className="btn sm ghost" type="button" onClick={() => setEdit((o) => { const n = { ...o }; delete n[x.key]; return n; })}>Annuler</button>}
             {waOff && tel && <a className="btn sm" href={waLink(x.tel || '', txt)} target="_blank" rel="noopener"><Icon k="wa" />WhatsApp</a>}
             <button className="btn sm ghost" type="button" disabled={busy === x.key} onClick={() => noter(x)} title="Relance faite par téléphone ou depuis votre WhatsApp : la noter évite de relancer deux fois" data-testid="noter">Noter</button>
           </>}
