@@ -54,9 +54,11 @@ export const DEVIS_ST = freeze([{ id: 'brouillon', label: 'Brouillon' }, { id: '
 export const UNITES = freeze([{ id: 'jour', label: 'jour' }, { id: 'heure', label: 'heure' }, { id: 'forfait', label: 'forfait' }]);
 export const MOYENS = freeze([{ id: 'virement', label: 'Virement' }, { id: 'cb', label: 'Carte bancaire' }, { id: 'especes', label: 'Espèces' }, { id: 'lien', label: 'Lien de paiement' }]);
 export const PART_TYPES = freeze([
-  { id: 'chauffeur', label: 'Chauffeur' }, { id: 'restaurant', label: 'Restaurant' }, { id: 'hotel', label: 'Hôtel / palace' },
+  { id: 'chauffeur', label: 'Chauffeur' }, { id: 'loueur', label: 'Loueur / prestataire véhicules' }, { id: 'restaurant', label: 'Restaurant' }, { id: 'hotel', label: 'Hôtel / palace' },
   { id: 'boutique', label: 'Boutique' }, { id: 'garage', label: 'Garage / entretien' }, { id: 'assurance', label: 'Assurance' }, { id: 'autre', label: 'Autre' },
 ]);
+/** Réponse d'un prestataire à une demande de disponibilité (mission.dispoDemandes[].statut). */
+export const DISPO_ST = freeze([{ id: 'envoyee', label: 'En attente de réponse' }, { id: 'oui', label: 'Disponible' }, { id: 'non', label: 'Pas disponible' }]);
 export const PROG_TYPES = freeze([
   { id: 'transfert', label: 'Transfert' }, { id: 'restaurant', label: 'Restaurant' }, { id: 'shopping', label: 'Shopping' },
   { id: 'visite', label: 'Visite' }, { id: 'hotel', label: 'Hôtel' }, { id: 'autre', label: 'Autre' },

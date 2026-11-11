@@ -1,5 +1,5 @@
 // Validation des fiches : { ok, errors: { champ: 'message en français' } }.
-import { STATUTS, CLIENT_STATUTS, LANGUES, CANAUX, SERVICE_IDS, TEAM_IDS, PART_TYPES, PAIEMENT_ST, CONTRAT_ST, CAUTION_ST, DEVIS_ST, UNITES, MOYENS, PROG_TYPES, JOURNAL_T, VEHICULE_STATUTS, PRIORITES } from './constants.js';
+import { STATUTS, CLIENT_STATUTS, LANGUES, CANAUX, SERVICE_IDS, TEAM_IDS, PART_TYPES, PAIEMENT_ST, CONTRAT_ST, CAUTION_ST, DEVIS_ST, UNITES, MOYENS, PROG_TYPES, JOURNAL_T, VEHICULE_STATUTS, PRIORITES, DISPO_ST } from './constants.js';
 import { telNorm, parseDate } from './rules.js';
 
 const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]{1,64}@[^\s@<>()[\]\\,;:"]{1,190}\.[A-Za-z]{2,24}$/;
@@ -72,6 +72,10 @@ export function mission(obj) {
   date(errors, obj, 'debut', 'Date de début');
   date(errors, obj, 'fin', 'Date de fin');
   if (!errors.debut && !errors.fin && obj.debut && obj.fin && parseDate(obj.fin) < parseDate(obj.debut)) errors.fin = 'La fin précède le début.';
+  if (!empty(obj.dispoDemandes)) {
+    if (!Array.isArray(obj.dispoDemandes) || obj.dispoDemandes.length > 20) errors.dispoDemandes = 'Liste attendue (20 au plus).';
+    else obj.dispoDemandes.forEach((d, i) => { if (!d || !isStr(d.vehiculeId) || !ids(DISPO_ST).includes(d.statut)) errors[`dispoDemandes.${i}`] = 'Demande de disponibilité invalide.'; });
+  }
   num(errors, obj, 'montant', 'Montant');
   num(errors, obj, 'acompte', 'Acompte');
   num(errors, obj, 'passagers', 'Nombre de passagers');
@@ -144,6 +148,12 @@ export function vehicule(obj) {
   num(errors, obj, 'km', 'Kilométrage');
   num(errors, obj, 'ordre', 'Ordre');
   date(errors, obj, 'revision', 'Date de révision');
+  num(errors, obj, 'prixAchatJour', 'Prix d’achat journalier');
+  if (!empty(obj.partenaireId) && (!isStr(obj.partenaireId) || !/^[A-Za-z0-9_-]{1,64}$/.test(obj.partenaireId))) errors.partenaireId = 'Prestataire invalide.';
+  if (!empty(obj.dispos)) {
+    if (!Array.isArray(obj.dispos) || obj.dispos.length > 60) errors.dispos = 'Liste de périodes attendue (60 au plus).';
+    else obj.dispos.forEach((p, i) => { if (!p || !/^\d{4}-\d{2}-\d{2}$/.test(String(p.du)) || !/^\d{4}-\d{2}-\d{2}$/.test(String(p.au)) || !parseDate(p.du) || !parseDate(p.au) || p.du > p.au) errors[`dispos.${i}`] = 'Période invalide (du AAAA-MM-JJ au AAAA-MM-JJ).'; });
+  }
   if (!empty(obj.journal) && !Array.isArray(obj.journal)) errors.journal = 'Liste attendue.';
   if (Array.isArray(obj.journal)) {
     obj.journal.forEach((j, i) => {
