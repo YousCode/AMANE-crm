@@ -73,6 +73,7 @@ flowchart LR
 - **Une seule source de vérité** pour les règles métier (statuts, conflits de réservation, numérotation des devis, montants, langues) : `packages/shared`, utilisé par l'API, le back-office et l'appli.
 - **Temps réel** : chaque écriture est diffusée sur `/ws` ; les écrans se mettent à jour sans recharger.
 - **WhatsApp ne perd rien** : chaque message entrant est stocké, rattaché au client, traduit si besoin, et une alerte part si personne n'a répondu au bout de 6 h.
+- **Prestataires (loueurs)** : ils s'inscrivent sur `/prestataires`, l'équipe valide, chacun reçoit un lien personnel (`/p/…`) pour déclarer ses véhicules et ses jours et répondre aux demandes de dispo. Contrat : [`docs/prestataires.md`](docs/prestataires.md).
 - Le contrat de l'API est décrit dans [`docs/crm-serveur.md`](docs/crm-serveur.md) (v1, toujours valable) et [`docs/architecture-v2.md`](docs/architecture-v2.md) (v2).
 
 ## Démarrer en 5 minutes
@@ -147,6 +148,7 @@ Toutes depuis la racine.
 | `npm run typecheck` | Vérification TypeScript du back-office et de l'appli |
 | `npm run test:crm` | Parcours complets du CRM historique (Playwright) |
 | `npm run test:site` | Parcours du formulaire du site (Playwright) |
+| `npm run build:demo --workspace apps/web` | Démo autonome du back-office en un seul fichier (`apps/web/dist-demo/amane-demo.html`), données fictives |
 | `npm run build:vercel` | Régénère `site/vercel.html`, `site/crm/` et `crm-vercel/` après une modification du site ou du CRM |
 
 ## Configuration
@@ -172,9 +174,9 @@ L'identité légale portée par les devis et factures (raison sociale, adresse d
 
 | Suite | Outil | Nombre |
 |---|---|---|
-| `packages/shared` | `node --test` | 27 |
-| `apps/api` (API HTTP réelle, base en mémoire) | `node --test` | 86 |
-| `apps/web` (règles, store, composants) | Vitest | 34 |
+| `packages/shared` | `node --test` | 33 |
+| `apps/api` (API HTTP réelle, base en mémoire) | `node --test` | 100 |
+| `apps/web` (règles, store, composants) | Vitest | 53 |
 | `apps/mobile` | Jest | 28 |
 | CRM historique : parcours, conciergerie, appareil, serveur | Playwright | 32 + 58 + 16 + 100 |
 | Site : formulaire « Être rappelé » | Playwright | 12 |

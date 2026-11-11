@@ -116,12 +116,16 @@ test('jeton inconnu, mal formé, partenaire remis « à valider » ou supprimé 
   assert.ok(JSON.parse(inconnu)[3].includes('Ce lien n’est plus valable.') && !JSON.parse(inconnu)[3].includes('<script'));
   assert.equal(JSON.parse(inconnu)[9], JSON.parse(inconnu)[3], 'formulaire sans JavaScript : la même page');
   for (const t of ['court', token.slice(0, 23), token + 'a', token.slice(0, 23) + '.', '%24ne', encodeURIComponent('{"$ne":""}')]) assert.equal(await probe(t), inconnu, 'mal formé : ' + t);
-  // Remis « à valider » par l'équipe : le lien s'éteint (le jeton stocké, lui, ne bouge pas).
+  // Une fiche enregistrée depuis un écran en retard ne peut pas remettre le partenaire « à valider » (champ posé par le serveur seulement).
   await put(cookie, 'partenaires', 'p1', { nom: 'Luxe Cars', type: 'loueur', tel: '+' + TEL, aValider: true });
+  assert.equal(one(db, 'partenaires', 'p1').aValider, undefined, 'aValider ignoré à l’écriture de la fiche');
+  assert.equal((await get(`/api/portail/${token}`)).status, 200, 'le lien marche toujours');
+  // Partenaire « à valider » (état posé côté serveur) : le lien s'éteint (le jeton stocké, lui, ne bouge pas).
+  await db.collection('partenaires').updateOne({ _id: 'p1' }, { $set: { aValider: true } });
   assert.equal(one(db, 'partenaires', 'p1').portailToken, token);
   assert.equal((await probe(token)).replaceAll(token, 'x'.repeat(24)), inconnu, 'partenaire à valider');
   assert.equal(one(db, 'vehicules', 'v1').dispos, undefined, 'aucune écriture');
-  await put(cookie, 'partenaires', 'p1', { nom: 'Luxe Cars', type: 'loueur', tel: '+' + TEL });
+  await db.collection('partenaires').updateOne({ _id: 'p1' }, { $unset: { aValider: '' } });
   assert.equal((await get(`/api/portail/${token}`)).status, 200, 'revalidé : le lien revit');
   // Type changé : plus un loueur, plus de portail.
   await put(cookie, 'partenaires', 'p1', { nom: 'Luxe Cars', type: 'garage', tel: '+' + TEL });
@@ -378,7 +382,8 @@ test('demande de dispo avec WhatsApp : modèle amane_dispo hors fenêtre, texte 
   assert.equal((await post('/api/missions/m1/dispo', { vehiculeId: 'inconnu' }, { cookie })).status, 404);
   const maison = await post('/api/missions/m1/dispo', { vehiculeId: 'urus' }, { cookie });
   assert.deepEqual([maison.status, maison.json.error], [409, 'pas_prestataire']);
-  await put(cookie, 'partenaires', 'p9', { nom: 'Pas encore validé', type: 'loueur', aValider: true });
+  await put(cookie, 'partenaires', 'p9', { nom: 'Pas encore validé', type: 'loueur' });
+  await db.collection('partenaires').updateOne({ _id: 'p9' }, { $set: { aValider: true } });
   await put(cookie, 'vehicules', 'v9', { nom: 'Vito', partenaireId: 'p9' });
   assert.equal((await post('/api/missions/m1/dispo', { vehiculeId: 'v9' }, { cookie })).json.error, 'pas_prestataire');
   await put(cookie, 'missions', 'mf', { titre: 'Close', clientId: 'c1', statut: 'terminee', debut: '2026-10-01T10:00' });
@@ -440,6 +445,12 @@ test('réponse « oui » sur le portail : statut, jours étendus, alerte au resp
   assert.deepEqual(r.json, { ok: true, statut: 'oui', deja: false });
   const m = one(db, 'missions', 'm1');
   assert.deepEqual(m.dispoDemandes, [{ vehiculeId: 'v1', partenaireId: 'p1', statut: 'oui', envoyeAt: '2026-11-03T10:00:00.000Z', canal: 'portail', par: 'amel', reponduAt: '2026-11-03T12:00:00.000Z' }]);
+  // L'équipe enregistre la fiche depuis un écran qui n'a pas encore reçu la réponse : la réponse du prestataire reste.
+  const { _id: _i, updatedAt: _u, updatedBy: _b, createdAt: _c, ...fiche } = m;
+  assert.equal((await put(cookie, 'missions', 'm1', { ...fiche, lieu: 'Ritz Paris', dispoDemandes: [{ vehiculeId: 'v1', partenaireId: 'p1', statut: 'envoyee' }] })).status, 200);
+  assert.equal(one(db, 'missions', 'm1').lieu, 'Ritz Paris');
+  assert.equal(one(db, 'missions', 'm1').dispoDemandes[0].statut, 'oui', 'réponse du prestataire conservée');
+  assert.equal((await put(cookie, 'missions', 'm1', { ...fiche })).status, 200);
   assert.deepEqual([m.statut, m.montant, m.vehiculeId, m.updatedBy], ['proposition', 4321987, 'v1', 'prestataire'], 'rien d’autre ne change sur la demande');
   assert.deepEqual(one(db, 'vehicules', 'v1').dispos, [{ du: '2026-11-10', au: '2026-11-22' }], 'période de la mission ajoutée et fusionnée (addDispo)');
   const alertes = net.graphCalls.filter((c) => c.body.to !== TEL);

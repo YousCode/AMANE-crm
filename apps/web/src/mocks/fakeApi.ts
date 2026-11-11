@@ -1,11 +1,13 @@
-/* Faux serveur en mémoire, conforme à docs/crm-serveur.md + docs/architecture-v2.md.
+/* Faux serveur en mémoire, conforme à docs/crm-serveur.md + docs/architecture-v2.md + docs/prestataires.md (portail, inscription, demandes de dispo).
    Utilisé par msw (navigateur et Vitest). Pure fonction `handle()` + bus d'événements « WebSocket ». */
 import { seed } from './seed';
-import { STATUTS, CLIENT_STATUTS, devisTotals, telNorm, detectLang, t as tr, devisDoc } from '../shared';
+import { STATUTS, CLIENT_STATUTS, OPEN_STATUTS, devisTotals, telNorm, detectLang, t as tr, devisDoc, waLink, firstName, normDispos, addDispo } from '../shared';
 
 export type Res = { status: number; body?: unknown; html?: string; headers?: Record<string, string> };
 export type WsEvent = Record<string, unknown> & { type: string };
 type Doc = Record<string, unknown> & { id: string; updatedAt?: string; _deleted?: boolean };
+/** Entrée de mission.dispoDemandes : {vehiculeId, partenaireId, statut, envoyeAt, reponduAt, canal, par}. */
+type DD = Record<string, unknown>;
 
 const DOC_COLS = ['clients', 'missions', 'vehicules', 'services', 'partenaires', 'reglages', 'conversations'];
 const TEAM: Record<string, { id: string; nom: string; role: string }> = { amel: { id: 'amel', nom: 'Amel', role: 'Relation client' }, youssouf: { id: 'youssouf', nom: 'Youssouf', role: 'Tech & flotte' }, aziz: { id: 'aziz', nom: 'Aziz', role: 'Contrats & conformité' } };
@@ -40,6 +42,23 @@ const ok = (body: unknown): Res => ({ status: 200, body });
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 const label = (arr: readonly { id: string; label: string }[], id: unknown) => (arr.find((x) => x.id === id) || {}).label || String(id || '—');
 const titleOf = (col: string, d: Doc) => String(d.titre || d.nom || d.id);
+
+/* Prestataires : jeton du portail (24 caractères, posé par le serveur), lien public, messages prêts à envoyer. */
+const TOKEN_RE = /^[A-Za-z0-9_-]{24}$/;
+const token24 = () => (uid() + uid() + uid()).slice(0, 24);
+const origin = () => (typeof location !== 'undefined' && /^https?:/.test(location.origin) ? location.origin : 'http://amane.local');
+const live = (d: Doc | undefined): d is Doc => !!d && !d._deleted;
+const loueurOk = (p: Doc | undefined): p is Doc => live(p) && p.type === 'loueur' && !p.aValider;
+const byPortail = (token: string) => (TOKEN_RE.test(token) ? [...S.db.partenaires.values()].find((p) => loueurOk(p) && p.portailToken === token) : undefined);
+const jour = (x: unknown) => { const d = new Date(String(x || '')); return isNaN(+d) ? '' : d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }); };
+/** Crée, renvoie ou régénère le jeton du partenaire ; réponse de /portail et /valider. */
+function portail(pt: Doc, reset: boolean) {
+  let created = false;
+  if (reset || !TOKEN_RE.test(String(pt.portailToken || ''))) { pt.portailToken = token24(); pt.portailAt = now(); pt.updatedAt = now(); created = true; bus.emit({ type: 'change', col: 'partenaires', doc: pt }); }
+  const url = `${origin()}/p/${pt.portailToken}`; const pr = firstName(String(pt.contact || ''));
+  const message = `Bonjour${pr ? ' ' + pr : ''}, voici votre espace prestataire Amane : vos véhicules, vos jours disponibles et nos demandes. ${url}`;
+  return { token: String(pt.portailToken), url, created, message, ...(telNorm(String(pt.tel || '')) ? { waLink: waLink(pt.tel, message) } : {}) };
+}
 
 function act(user: string, col: string, docId: string, action: string, resume: string) {
   const a = { id: uid(), at: now(), user, col, docId, action, resume }; S.activity.unshift(a);
@@ -109,6 +128,59 @@ function handle0(method: string, rawUrl: string, body: unknown, opts?: { cookie?
   const me = p.match(/^\/api\/espace\/([A-Za-z0-9_-]+)$/);
   if (me) { const mid = S.espaces.get(me[1]); const m = mid && S.db.missions.get(mid); if (!m) return err(404, 'introuvable', 'Lien inconnu.'); const c = (S.db.clients.get(String(m.clientId)) || {}) as Doc; const ch = S.db.partenaires.get(String(m.chauffeurId)); return ok({ mission: { titre: m.titre, debut: m.debut, fin: m.fin, lieu: m.lieu }, client: { nom: c.nom, langue: c.langue }, programme: m.programme || [], chauffeur: ch ? { nom: ch.nom, tel: ch.tel, photo: ch.photo } : null, documents: m.devis ? [{ type: 'devis', numero: (m.devis as Record<string, unknown>).numero }] : [], solde: devisTotals(m.devis as never).solde }); }
 
+  /* Prestataire : portail par lien personnel (aucune session). Ni prix de vente, ni coordonnées du client : prénom, dates, lieu. */
+  const mp = p.match(/^\/api\/portail\/([^/]+)(?:\/(dispos|vehicules|demandes)(?:\/([^/]+))?)?$/);
+  if (mp) {
+    const pt = byPortail(mp[1]); if (!pt) return err(404, 'introuvable', 'Lien inconnu.');
+    const mine = [...S.db.vehicules.values()].filter((v) => live(v) && v.partenaireId === pt.id); const prenom = (m: Doc) => firstName(String(S.db.clients.get(String(m.clientId))?.nom || ''));
+    const vehOf = (id: unknown) => mine.find((v) => v.id === id);
+    if (!mp[2] && method === 'GET') {
+      const nowL = Date.now(); const ms = [...S.db.missions.values()].filter(live);
+      return ok({ partenaire: { nom: pt.nom },
+        vehicules: mine.map((v) => ({ id: v.id, nom: v.nom, categorie: v.categorie || '', plaque: v.plaque || '', aValider: !!v.aValider, dispos: normDispos(v.dispos),
+          reservations: ms.filter((m) => m.vehiculeId === v.id && ['confirmee', 'encours'].includes(String(m.statut)) && +new Date(String(m.fin || m.debut)) >= nowL).map((m) => ({ du: m.debut, au: m.fin || m.debut, lieu: m.lieu || '', prenom: prenom(m), titre: m.titre })) })),
+        demandes: ms.filter((m) => (OPEN_STATUTS as readonly string[]).includes(String(m.statut))).flatMap((m) => ((m.dispoDemandes as DD[]) || []).filter((x) => x.partenaireId === pt.id).map((x) => ({ missionId: m.id, vehiculeId: x.vehiculeId, vehicule: String(vehOf(x.vehiculeId)?.nom || ''), du: m.debut, au: m.fin || m.debut, lieu: m.lieu || '', prenom: prenom(m), statut: x.statut }))) });
+    }
+    if (mp[2] === 'dispos' && method === 'POST') {
+      const v = vehOf(B.vehiculeId); if (!v) return err(404, 'introuvable', 'Véhicule inconnu.');
+      if (!Array.isArray(B.dispos) || B.dispos.length > 60) return err(400, 'json_invalide', 'Liste de périodes attendue (60 au plus).');
+      if ((B.dispos as DD[]).some((x) => !x || normDispos([x]).length !== 1)) return err(400, 'json_invalide', 'Période invalide (du AAAA-MM-JJ au AAAA-MM-JJ).');
+      const ds = normDispos(B.dispos); const max = new Date(); max.setFullYear(max.getFullYear() + 2); const lim = `${max.getFullYear()}-${String(max.getMonth() + 1).padStart(2, '0')}-${String(max.getDate()).padStart(2, '0')}`;
+      if (ds.some((x) => x.au > lim)) return err(400, 'json_invalide', 'Pas de date à plus de deux ans.');
+      v.dispos = ds; v.updatedAt = now(); v.updatedBy = 'prestataire'; act('prestataire', 'vehicules', v.id, 'update', `Jours déclarés par ${pt.nom} : ${v.nom}`); bus.emit({ type: 'change', col: 'vehicules', doc: v });
+      return ok({ ok: true, dispos: ds });
+    }
+    if (mp[2] === 'vehicules' && method === 'POST') {
+      const nom = String(B.nom || '').trim(); if (!nom || nom.length > 120) return err(400, 'json_invalide', 'Indiquez le modèle du véhicule.'); if (mine.length >= 20) return err(409, 'trop_de_vehicules', 'Vingt véhicules au plus par prestataire.');
+      const id = uid(); const v: Doc = { id, nom, categorie: String(B.categorie || ''), plaque: String(B.plaque || ''), notes: String(B.notes || ''), prixAchatJour: +(B.prixJour as number) || '', tarifJour: '', statut: 'disponible', partenaireId: pt.id, aValider: true, dispos: [], photos: [], journal: [], createdAt: now(), updatedAt: now(), updatedBy: 'prestataire' };
+      S.db.vehicules.set(id, v); act('prestataire', 'vehicules', id, 'create', `Véhicule proposé par ${pt.nom} : ${nom}`); bus.emit({ type: 'change', col: 'vehicules', doc: v }); bus.emit({ type: 'alerte', text: `${pt.nom} propose un véhicule : ${nom}` });
+      return ok({ ok: true, id, vehicule: { id, nom, categorie: v.categorie, plaque: v.plaque, aValider: true, dispos: [], reservations: [] } });
+    }
+    if (mp[2] === 'demandes' && mp[3] && method === 'POST') {
+      const m = S.db.missions.get(decodeURIComponent(mp[3])); const rep = String(B.reponse || ''); if (rep !== 'oui' && rep !== 'non') return err(400, 'json_invalide', 'Réponse attendue : oui ou non.');
+      const dd = live(m) ? ((m.dispoDemandes as DD[]) || []).find((x) => x.vehiculeId === B.vehiculeId && x.partenaireId === pt.id) : undefined; const v = vehOf(B.vehiculeId);
+      if (!m || !dd || !v) return err(404, 'introuvable', 'Demande inconnue.');
+      if (dd.statut !== rep) {
+        m.dispoDemandes = (m.dispoDemandes as DD[]).map((x) => (x === dd ? { ...dd, statut: rep, reponduAt: now(), canal: 'portail' } : x)); m.updatedAt = now(); m.updatedBy = 'prestataire';
+        if (rep === 'oui') { v.dispos = addDispo(v.dispos as never, String(m.debut || ''), String(m.fin || '') || undefined); v.updatedAt = now(); bus.emit({ type: 'change', col: 'vehicules', doc: v }); }
+        act('prestataire', 'missions', m.id, 'update', `${pt.nom} : ${v.nom} ${rep === 'oui' ? 'disponible' : 'pas disponible'}`);
+        bus.emit({ type: 'change', col: 'missions', doc: m }); bus.emit({ type: 'alerte', text: `${pt.nom} : ${v.nom} ${rep === 'oui' ? 'disponible' : 'pas disponible'} pour « ${m.titre} »` });
+      }
+      return ok({ ok: true, statut: rep, deja: dd.statut === rep });
+    }
+    return err(404, 'introuvable', 'Route inconnue : ' + method + ' ' + p);
+  }
+  /* Inscription publique « Devenir prestataire » : mêmes garde-fous que /api/lead, téléphone obligatoire, aucun accès tant que l'équipe n'a pas validé. */
+  if (p === '/api/prestataires/inscription' && method === 'POST') {
+    if (B.website) return ok({ ok: true });
+    const contact = String(B.nom || '').trim().slice(0, 120), societe = String(B.societe || '').trim().slice(0, 120); if (!contact && !societe) return err(400, 'nom_requis', 'Indiquez votre nom ou celui de votre société.');
+    if (!String(B.tel || '').trim()) return err(400, 'tel_requis', 'Indiquez un numéro de téléphone.'); const tn = telNorm(String(B.tel)); if (!tn) return err(400, 'tel_invalide', 'Numéro de téléphone invalide.');
+    if ([...S.db.partenaires.values()].some((x) => live(x) && x.telNorm === tn)) return ok({ ok: true });
+    const id = uid(); const d: Doc = { id, nom: societe || contact, type: 'loueur', societe, contact, tel: String(B.tel), telNorm: tn, email: String(B.email || '').trim().slice(0, 200), siren: String(B.siren || '').trim().slice(0, 20), aValider: true, actif: true, inscription: { at: now(), vehicules: String(B.vehicules || '').slice(0, 1000), message: String(B.message || '').slice(0, 2000) }, createdAt: now(), updatedAt: now(), updatedBy: 'site' };
+    S.db.partenaires.set(id, d); act('site', 'partenaires', id, 'lead', 'Inscription prestataire : ' + d.nom); bus.emit({ type: 'change', col: 'partenaires', doc: d }); bus.emit({ type: 'alerte', text: `Inscription prestataire à valider : ${d.nom}` });
+    return ok({ ok: true });
+  }
+
   /* Session requise */
   const n = need(); if (n) return n;
   const uid0 = user!.id;
@@ -128,6 +200,8 @@ function handle0(method: string, rawUrl: string, body: unknown, opts?: { cookie?
       if (JSON.stringify(B).length > 512 * 1024) return err(413, 'trop_lourd', 'Fiche trop volumineuse.');
       const d: Doc = { ...B, id, updatedAt: now(), updatedBy: uid0, createdAt: (before && !before._deleted ? before.createdAt : B.createdAt) || now() } as Doc;
       delete d._deleted; if (col === 'clients' || col === 'partenaires') d.telNorm = telNorm(String(d.tel || ''));
+      /* Le jeton du portail n'appartient qu'au serveur : un PUT ne peut ni le créer ni le changer. */
+      if (col === 'partenaires') { delete d.portailToken; delete d.portailAt; if (before && !before._deleted && before.portailToken) { d.portailToken = before.portailToken; d.portailAt = before.portailAt; } }
       const resume = diffResume(col, before && !before._deleted ? before : undefined, d);
       m.set(id, d); if (resume) act(uid0, col, id, before && !before._deleted ? 'update' : 'create', resume);
       bus.emit({ type: 'change', col, doc: d });
@@ -181,6 +255,29 @@ function handle0(method: string, rawUrl: string, body: unknown, opts?: { cookie?
       if (c.naissance) { const b = new Date(String(c.naissance)); const t0 = new Date(); let nx = new Date(t0.getFullYear(), b.getMonth(), b.getDate()); if (nx < t0) nx = new Date(t0.getFullYear() + 1, b.getMonth(), b.getDate()); const dd = Math.round((+nx - +t0) / 864e5); if (dd <= 21) items.push({ type: 'anniversaire', clientId: c.id, raison: `Anniversaire dans ${dd} jour${dd > 1 ? 's' : ''}`, messageSuggere: 'Toute la maison Amane vous souhaite un très bel anniversaire.', depuis: nx.toISOString() }); } });
     return ok({ items });
   }
+  /* Prestataires, côté équipe : lien du portail, validation d'une inscription, demande de dispo. */
+  const mpt = p.match(/^\/api\/partenaires\/([^/]+)\/(portail|valider)$/);
+  if (mpt && method === 'POST') {
+    const pt = S.db.partenaires.get(decodeURIComponent(mpt[1])); if (!live(pt)) return err(404, 'introuvable', 'Partenaire introuvable.');
+    if (pt.type !== 'loueur') return err(409, 'pas_loueur', 'Le portail est réservé aux loueurs.');
+    if (mpt[2] === 'valider') { if (pt.aValider) { delete pt.aValider; pt.updatedAt = now(); pt.updatedBy = uid0; act(uid0, 'partenaires', pt.id, 'update', 'Inscription validée : ' + String(pt.nom)); bus.emit({ type: 'change', col: 'partenaires', doc: pt }); } return ok(portail(pt, false)); }
+    if (pt.aValider) return err(409, 'a_valider', 'Validez d’abord l’inscription de ce prestataire.');
+    const r = portail(pt, !!B.reset); if (r.created) act(uid0, 'partenaires', pt.id, 'update', (B.reset ? 'Lien du portail régénéré : ' : 'Lien du portail créé : ') + String(pt.nom));
+    return ok(r);
+  }
+  const mdi = p.match(/^\/api\/missions\/([^/]+)\/dispo$/);
+  if (mdi && method === 'POST') {
+    const m = S.db.missions.get(decodeURIComponent(mdi[1])); if (!live(m)) return err(404, 'introuvable', 'Mission introuvable.');
+    const v = S.db.vehicules.get(String(B.vehiculeId || '')); const pt = live(v) ? S.db.partenaires.get(String(v.partenaireId || '')) : undefined;
+    if (!live(v) || !loueurOk(pt)) return err(409, 'pas_prestataire', 'Ce véhicule n’appartient pas à un prestataire validé.');
+    const lien = portail(pt, false); const wa = S.whatsappOn && !!telNorm(String(pt.tel || '')); const canal = wa ? 'whatsapp' : 'lien';
+    const dd: DD = { vehiculeId: v.id, partenaireId: pt.id, statut: 'envoyee', envoyeAt: now(), canal, par: uid0 };
+    m.dispoDemandes = [...((m.dispoDemandes as DD[]) || []).filter((x) => x.vehiculeId !== v.id), dd]; m.updatedAt = now(); m.updatedBy = uid0;
+    const pr = firstName(String(pt.contact || '')); const message = `Bonjour${pr ? ' ' + pr : ''}, Amane a une demande pour votre ${v.nom}, du ${jour(m.debut)} au ${jour(m.fin || m.debut)}. Est-il disponible ? Répondez OUI ou NON, ou ouvrez votre espace : ${lien.url}`;
+    if (wa) S.outbox.push({ id: 'out.' + uid(), to: pt.telNorm || telNorm(String(pt.tel)), type: 'text', text: message, at: now(), by: uid0 });
+    act(uid0, 'missions', m.id, 'update', `Dispo demandée à ${pt.nom} : ${v.nom}`); bus.emit({ type: 'change', col: 'missions', doc: m });
+    return ok({ ok: true, canal, url: lien.url, message, ...(telNorm(String(pt.tel || '')) ? { waLink: waLink(pt.tel, message) } : {}) });
+  }
   const msh = p.match(/^\/api\/devis\/([^/]+)\/share$/);
   if (msh) { const mid = decodeURIComponent(msh[1]); const m = S.db.missions.get(mid); if (!m || !m.devis) return err(404, 'introuvable', 'Devis introuvable.'); let token = [...S.shares.entries()].find(([, v]) => v === mid)?.[0]; if (!token) { token = uid() + uid() + uid(); token = token.slice(0, 24); S.shares.set(token, mid); (m.devis as Record<string, unknown>).shareToken = token; m.updatedAt = now(); bus.emit({ type: 'change', col: 'missions', doc: m }); } return ok({ token, url: `/d/${token}` }); }
   const mes = p.match(/^\/api\/missions\/([^/]+)\/espace$/);
@@ -190,6 +287,8 @@ function handle0(method: string, rawUrl: string, body: unknown, opts?: { cookie?
     const items = [...S.db.vehicules.values()].filter((v) => !v._deleted).map((v) => {
       let jours = 0, ca = 0; S.db.missions.forEach((m) => { if (m.vehiculeId !== v.id || !['confirmee', 'encours', 'terminee'].includes(String(m.statut))) return; const d0 = new Date(String(m.debut)), d1 = new Date(String(m.fin || m.debut)); const s = Math.max(+d0, +a), e = Math.min(+d1, +b + 864e5); if (e <= s) return; const o = Math.round((e - s) / 864e5) || 1; const tot = Math.max(1, Math.round((+d1 - +d0) / 864e5)); jours += o; ca += (+(m.montant as number) || 0) * Math.min(1, o / tot); });
       const couts = ((v.journal as { dt: string; cout: number }[]) || []).filter((j) => j.dt && j.dt.slice(0, 7) === mois).reduce((s, j) => s + (+j.cout || 0), 0);
+      /* Véhicule de prestataire : ni loyer ni charges, le coût est le prix d'achat × jours loués. */
+      if (v.partenaireId) { const achat = (+(v.prixAchatJour as number) || 0) * jours; return { vehiculeId: v.id, nom: v.nom, partenaireId: v.partenaireId, loyer: 0, charges: 0, joursLoues: jours, ca: Math.round(ca), couts: achat, marge: Math.round(ca - achat), occupation: Math.round(jours / days * 100) }; }
       const loyer = +(v.loyerMois as number) || 0, charges = +(v.chargesMois as number) || 0;
       return { vehiculeId: v.id, nom: v.nom, loyer, charges, joursLoues: jours, ca: Math.round(ca), couts, marge: Math.round(ca - loyer - charges - couts), occupation: Math.round(jours / days * 100) };
     });
@@ -215,5 +314,7 @@ export const sim = {
   setOffline(v: boolean) { S.offline = v; persist(); },
   change(col: string, doc: Doc) { S.db[col].set(doc.id, { ...doc, updatedAt: now() }); bus.emit({ type: 'change', col, doc: S.db[col].get(doc.id) }); persist(); },
   acceptShare(token: string) { return handle('POST', `/d/${token}/accepter`, {}); },
+  /** Le prestataire répond à une demande de dispo depuis son portail (« oui » ou « non »). */
+  dispoReponse(missionId: string, vehiculeId: string, reponse: 'oui' | 'non') { const dd = ((S.db.missions.get(missionId)?.dispoDemandes as DD[]) || []).find((x) => x.vehiculeId === vehiculeId); const pt = dd && S.db.partenaires.get(String(dd.partenaireId)); return handle('POST', `/api/portail/${pt?.portailToken || '-'}/demandes/${encodeURIComponent(missionId)}`, { vehiculeId, reponse }); },
   state: () => S, reset, on: bus.on,
 };

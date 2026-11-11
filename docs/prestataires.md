@@ -15,7 +15,7 @@ Règles communes : `packages/shared` (`rules.js`, `constants.js`, `validate.js`,
 | `societe`, `siren` | raison sociale et SIREN (facultatifs) |
 | `aValider: true` | inscription reçue par le formulaire public, pas encore validée par l'équipe ; aucun portail tant que c'est vrai |
 | `inscription: {at, vehicules, message}` | ce que le prestataire a annoncé en s'inscrivant |
-| `portailToken`, `portailAt` | jeton du portail (24 caractères, `TOKEN_RE`), **posé par le serveur uniquement** : un `PUT /api/doc/partenaires/:id` ne peut ni le créer ni le changer (la valeur stockée est conservée) |
+| `portailToken`, `portailAt` | jeton du portail (24 caractères, `TOKEN_RE`), **posé par le serveur uniquement** : un `PUT /api/doc/partenaires/:id` ne peut ni le créer ni le changer (la valeur stockée est conservée). Il est détruit à la suppression du partenaire |
 
 **Véhicule** (`vehicules`)
 
@@ -25,6 +25,8 @@ Règles communes : `packages/shared` (`rules.js`, `constants.js`, `validate.js`,
 | `prixAchatJour` | ce que la maison paie au prestataire, par jour |
 | `dispos: [{du, au}]` | jours (`AAAA-MM-JJ`, bornes incluses) où le prestataire déclare le véhicule disponible |
 | `aValider: true` | véhicule proposé par le prestataire depuis son portail, pas encore validé par l'équipe |
+
+Champs posés par le serveur seulement (`PROTECTED` dans `apps/api/src/lib/docs.js`) : `partenaires.portailToken`, `portailAt`, `aValider` et `missions.dispoDemandes`. Une fiche enregistrée depuis un écran en retard ne peut donc ni écraser la réponse d'un prestataire, ni remettre un partenaire « à valider ».
 
 **Mission** (`missions`) — `dispoDemandes: [{vehiculeId, partenaireId, statut, envoyeAt, reponduAt, canal, par}]`, une entrée par véhicule ; `statut` ∈ `envoyee | oui | non` (`DISPO_ST`) ; `canal` ∈ `whatsapp | lien | portail` (portail = réponse donnée sur le portail, whatsapp = réponse par message).
 
@@ -86,6 +88,15 @@ avec deux boutons de réponse rapide « Oui, disponible » et « Non ». À ajou
 - **Planning et « Qui est libre ? »** : rien à coder au-delà d'afficher le libellé `t` (« Dispo à demander », « À valider ») que `vehicleOn` renvoie déjà.
 - **À faire** : « Inscription prestataire à valider », « Véhicule proposé à valider », « Prestataire sans réponse depuis 24 h ».
 - Faux serveur `msw` (`src/mocks/fakeApi.ts`) : les mêmes routes, pour les tests et le développement.
+
+## Précisions de mise en œuvre
+
+- `reservations[].titre` et le libellé des demandes valent le **service** (« Van VIP »), jamais le titre libre de la mission : les titres automatiques contiennent le nom ou le numéro du client.
+- `POST /api/missions/:id/dispo` répond 409 `mission_fermee` pour une mission terminée ou perdue.
+- Une réponse de prestataire est **définitive** de son côté : la même réponse répétée → 200 `deja: true`, la réponse contraire → 409 `deja_repondu`. Pour corriger, l'équipe redemande la dispo (l'entrée repasse à `envoyee`).
+- WhatsApp entrant : une inscription encore `aValider` dont le numéro est celui d'un client connu ne compte pas comme partenaire (sinon le formulaire public permettrait de couper les demandes d'un client). Le « oui / non » n'est appliqué que pour un loueur validé.
+- Réponses enrichies : `dispos` → `{ok, dispos}` ; `vehicules` → `{ok, id, vehicule}` ; `demandes/:missionId` → `{ok, statut, deja}`.
+- Sans JavaScript, la page du portail permet de répondre à une demande et de proposer un véhicule ; déclarer des jours demande JavaScript.
 
 ## Hors périmètre de cette étape
 

@@ -14,7 +14,7 @@ export const BROADCAST = [...WRITABLE, 'rappels'];
 const SERVER_FIELDS = new Set(['_id', 'id', 'updatedAt', 'updatedBy', 'createdAt', '_deleted', 'telNorm']);
 const IGNORED_IN_SUMMARY = new Set([...SERVER_FIELDS]);
 /** Champs posés par le serveur uniquement : un PUT du CRM ne peut ni les créer, ni les changer, ni les retirer. */
-export const PROTECTED = { partenaires: ['portailToken', 'portailAt'] };
+export const PROTECTED = { partenaires: ['portailToken', 'portailAt', 'aValider'], missions: ['dispoDemandes'] };
 
 export const STATUT_MISSION = {
   nouvelle: 'Nouvelle', proposition: 'Proposition', confirmee: 'Confirmée', encours: 'En cours', terminee: 'Terminée', perdue: 'Perdue',

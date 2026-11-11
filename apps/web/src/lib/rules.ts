@@ -1,6 +1,7 @@
-/* Règles d'affichage dérivées des données (portées de crm/index.html) : à faire, disponibilité des véhicules, finances, exports. */
-import { STATUTS, PART_TYPES, PROG_TYPES, SERVICES, devisDoc, carnetDoc, maisonInfo, clashes, chClashes, devisTotals, durDays, docLang, t as tr, LOCALES, type Mission, type Client, type Vehicule, type Partenaire, type Service, type Devis } from '../shared';
-import { parse, sod, addD, fmtE, fmtDay, fmtDT, overlapDays, monthBounds, r2, esc, pad } from './format';
+/* Règles d'affichage dérivées des données (portées de crm/index.html) : à faire, disponibilité des véhicules, finances, exports.
+   Véhicules des prestataires : l'état vient du paquet partagé (`vehicleOn`, `dispoDemandeOf`, `dispoCovers`), jamais recopié ici. */
+import { STATUTS, PART_TYPES, PROG_TYPES, SERVICES, devisDoc, carnetDoc, maisonInfo, clashes, chClashes, devisTotals, durDays, docLang, t as tr, LOCALES, vehicleOn as sharedVehicleOn, dispoDemandeOf, dispoCovers, margePrestataire, type Mission, type Client, type Vehicule, type Partenaire, type Service, type Devis, type DispoDemande } from '../shared';
+import { parse, sod, addD, fmtE, fmtDay, fmtDT, overlapDays, monthBounds, r2, esc, pad, relTime } from './format';
 
 /* Libellé d'unité/type de document : « doc.type.x », repli « doc.type.autre » pour un type inconnu. */
 const tl = (L: string, k: string) => { const v = tr(L, 'doc.' + k); return v === 'doc.' + k ? tr(L, 'doc.type.autre') : v; };
@@ -13,35 +14,63 @@ export const services = (s: Service[]): Service[] => [...(s.length ? s : (SERVIC
 export const svcName = (s: Service[], id?: string) => services(s).find((x) => x.id === id)?.nom || 'Service';
 export const vehicles = (v: Vehicule[]) => [...v].sort((a, b) => (a.ordre || 99) - (b.ordre || 99));
 export const chauffeurs = (p: Partenaire[]) => p.filter((x) => x.type === 'chauffeur' && x.actif !== false);
+/** Prestataires validés (ceux à qui un véhicule peut appartenir et qui ont un portail). */
+export const loueurs = (p: Partenaire[]) => p.filter((x) => x.type === 'loueur' && !x.aValider && x.actif !== false);
+/** Inscriptions reçues par le formulaire public, pas encore validées. */
+export const inscriptions = (p: Partenaire[]) => p.filter((x) => x.type === 'loueur' && x.aValider).sort((a, b) => String(a.inscription?.at || a.createdAt || '').localeCompare(String(b.inscription?.at || b.createdAt || '')));
+/** Prestataire propriétaire d'un véhicule (undefined = la maison). */
+export const proprio = (p: Partenaire[], v?: Pick<Vehicule, 'partenaireId'> | null) => byId(p, v?.partenaireId);
 export const isVan = (v: Vehicule) => /van|classe v/i.test((v.nom || '') + ' ' + (v.categorie || ''));
-export const seuil = (v: Vehicule) => { const t = +(v.tarifJour || 0); return t ? ((+(v.loyerMois || 0)) + (+(v.chargesMois || 0))) / t : 0; };
+/** Point mort en jours loués par mois ; sans objet (0) pour un véhicule de prestataire : ni loyer ni charges. */
+export const seuil = (v: Vehicule) => { const t = +(v.tarifJour || 0); return t && !v.partenaireId ? ((+(v.loyerMois || 0)) + (+(v.chargesMois || 0))) / t : 0; };
 export const caMois = (ms: Mission[], ref: Date) => { const [a, b] = monthBounds(ref); return ms.filter((m) => ACTIVE.includes(m.statut)).reduce((s, m) => { const d = durDays(m); const o = overlapDays(m, a, b); return s + (+(m.montant || 0)) * (d ? o / d : 0); }, 0); };
 export const joursLoues = (ms: Mission[], v: Vehicule, ref: Date) => { const [a, b] = monthBounds(ref); return ms.filter((m) => m.vehiculeId === v.id && ACTIVE.includes(m.statut)).reduce((s, m) => s + overlapDays(m, a, b), 0); };
 export function contratScore(m: Mission) { const k = m.contrat || ({} as Mission['contrat']); const p = k?.pieces || {}; const steps = [!!p.permis, !!p.passeport, !!p.domicile, k?.statut === 'signe', !!(k?.edlDepart && k.edlDepart.fait), !!(k?.edlRetour && k.edlRetour.fait)]; return { done: steps.filter(Boolean).length, total: steps.length }; }
 
 export function vehMissions(ms: Mission[], v: Vehicule, excl?: string) { return ms.filter((m) => m.vehiculeId === v.id && m.id !== excl && [...BOOK, ...OPT].includes(m.statut) && parse(m.debut)); }
-export type VehState = { k: 'f' | 'b' | 'o' | 'off'; m?: Mission; t?: string };
-export function vehicleOn(ms: Mission[], v: Vehicule, a: Date | null, b: Date | null, excl?: string): VehState {
-  if (v.statut && v.statut !== 'disponible') return { k: 'off', t: v.statut === 'entretien' ? 'En entretien' : 'Indisponible' };
-  if (!a) return { k: 'f' }; b = b || a;
-  const ov = vehMissions(ms, v, excl).filter((m) => (parse(m.debut) as Date) < (b as Date) && ((parse(m.fin) || parse(m.debut)) as Date) > a);
-  const bk = ov.find((m) => BOOK.includes(m.statut)); if (bk) return { k: 'b', m: bk };
-  const op = ov.find((m) => OPT.includes(m.statut)); return op ? { k: 'o', m: op } : { k: 'f' };
-}
+export type VehState = { k: 'f' | 'b' | 'o' | 'off'; m?: Mission; t?: string; ask?: boolean };
+/** État d'un véhicule sur [a, b] : règle du paquet partagé (réservé, option, indisponible ; « À valider » et « Dispo à demander » pour un véhicule de prestataire). */
+export function vehicleOn(ms: Mission[], v: Vehicule, a: Date | null, b: Date | null, excl?: string): VehState { return sharedVehicleOn(v, ms, a || '', b || undefined, excl); }
 export function nowLine(ms: Mission[], v: Vehicule) {
   const now = new Date(); if (v.statut && v.statut !== 'disponible') return v.statut === 'entretien' ? 'En entretien' : 'Indisponible';
+  if (v.aValider) return 'Proposé par le prestataire, à valider';
   const bk = vehMissions(ms, v).filter((m) => BOOK.includes(m.statut));
   const cur = bk.find((m) => (parse(m.debut) as Date) <= now && ((parse(m.fin) || parse(m.debut)) as Date) > now); if (cur) return 'En mission jusqu’au ' + fmtDT(parse(cur.fin));
   const nx = bk.filter((m) => (parse(m.debut) as Date) > now).sort((a, b) => +(parse(a.debut) as Date) - +(parse(b.debut) as Date))[0];
+  if (v.partenaireId && !dispoCovers(v, now)) return 'Dispo à demander au prestataire';
   return nx ? 'Libre jusqu’au ' + fmtDT(parse(nx.debut)) : 'Libre, aucune réservation à venir';
 }
 export const nowState = (ms: Mission[], v: Vehicule) => { const now = new Date(); return vehicleOn(ms, v, now, new Date(+now + 60000)); };
 export const ST_CHIP: Record<string, [string, string]> = { f: ['confirmee', 'Libre'], b: ['perdue', 'Réservé'], o: ['proposition', 'Option'], off: ['proposition', 'Indisponible'] };
+
+/* Disponibilité d'un véhicule de prestataire pour une demande : la réponse à la demande de dispo d'abord (`dispoDemandeOf`), sinon ses jours déclarés (`vehicleOn`). */
+export interface DispoEtat { k: 'a_demander' | 'attente' | 'oui' | 'non' | 'bloque'; label: string; st: '' | 'ok' | 'warn' | 'bad'; d: string; dd: DispoDemande | null }
+/** « 40 min », « 3 h », « 2 j » : durée écoulée depuis `iso`. */
+export function depuis(iso?: string, now = new Date()): string { const d = parse(iso); if (!d) return ''; const mn = Math.max(0, Math.round((+now - +d) / 60000)); return mn < 60 ? `${Math.max(1, mn)} min` : mn < 48 * 60 ? `${Math.round(mn / 60)} h` : `${Math.round(mn / 1440)} j`; }
+const CANAL: Record<string, string> = { portail: 'sur son portail', whatsapp: 'par WhatsApp' };
+export function dispoEtat(ms: Mission[], m: Mission, v: Vehicule, now = new Date()): DispoEtat {
+  const dd = dispoDemandeOf(m, v.id); const a = parse(m.debut), b = parse(m.fin); const s = vehicleOn(ms, v, a, b, m.id);
+  if (s.k === 'off' && !s.ask) return { k: 'bloque', label: s.t || 'Indisponible', st: 'warn', d: v.aValider ? 'Validez d’abord ce véhicule dans la flotte.' : 'Véhicule marqué indisponible dans la flotte.', dd };
+  if (!a) return { k: 'a_demander', label: 'Non demandée', st: '', d: 'Indiquez les dates de la demande.', dd };
+  const rep = dd && dd.reponduAt ? `Réponse du prestataire ${CANAL[String(dd.canal)] ? CANAL[String(dd.canal)] + ', ' : ''}${relTime(dd.reponduAt)}.` : '';
+  if (dd?.statut === 'non') return { k: 'non', label: 'Pas disponible', st: 'bad', d: rep || 'Le prestataire a répondu non.', dd };
+  const couvert = s.k === 'f' || (!s.ask && dispoCovers(v, a, b || a));
+  if (dd?.statut === 'oui' && couvert) return { k: 'oui', label: 'Disponible', st: 'ok', d: rep || 'Le prestataire a répondu oui.', dd };
+  if (dd?.statut === 'envoyee') return { k: 'attente', label: `En attente depuis ${depuis(dd.envoyeAt, now) || 'peu'}`, st: 'warn', d: 'Demande envoyée, pas encore de réponse.', dd };
+  if (couvert) return { k: 'oui', label: 'Disponible', st: 'ok', d: 'Ces dates sont dans les jours déclarés par le prestataire.', dd };
+  return { k: 'a_demander', label: 'Non demandée', st: '', d: dd?.statut === 'oui' ? 'Les dates ont changé depuis sa réponse : à redemander.' : 'Ces dates ne sont pas dans ses jours déclarés.', dd };
+}
+/** Marge d'une demande sur un véhicule de prestataire, prête à afficher (null : véhicule de la maison ou prix d'achat absent ; « — » tant que le montant n'est pas saisi). */
+export function margeLignes(m: Mission, v: Vehicule): { cout: string; coutD: string; marge: string; taux: string; neg: boolean } | null {
+  const x = margePrestataire(m, v); if (!x) return null; const n = durDays(m);
+  return { cout: fmtE(x.cout), coutD: `${n} jour${n > 1 ? 's' : ''} × ${fmtE(v.prixAchatJour)}`, marge: x.vente > 0 ? fmtE(x.marge) : '—', taux: x.vente > 0 ? `${x.taux} %` : '', neg: x.vente > 0 && x.marge < 0 };
+}
 export function driverAt(ms: Mission[], vid: string, dt?: string) { const t = parse(dt); if (!t) return null; return ms.find((m) => m.vehiculeId === vid && ['confirmee', 'encours', 'terminee'].includes(m.statut) && parse(m.debut) && (parse(m.debut) as Date) <= t && ((parse(m.fin) || parse(m.debut)) as Date) >= t) || null; }
 
-export type TodoKind = 'demande' | 'proposition' | 'contrat' | 'pieces' | 'caution' | 'attribuer' | 'prep' | 'solde' | 'conflit' | 'tache' | 'facture' | 'echeance' | 'pv' | 'entretien' | 'anniversaire';
-/** `k` : nature de la tâche (classement dans le Salon) ; `at` : l'instant qui la rend urgente (départ, échéance) ; `days` : jours de retard ou d'attente. */
-export interface Todo { sev: 'bad' | 'warn'; t: string; d: string; id?: string; tab?: string; vid?: string; vtab?: string; cid?: string; k?: TodoKind; at?: Date; days?: number }
+export type TodoKind = 'demande' | 'proposition' | 'contrat' | 'pieces' | 'caution' | 'attribuer' | 'prep' | 'solde' | 'conflit' | 'tache' | 'facture' | 'echeance' | 'pv' | 'entretien' | 'anniversaire' | 'inscription' | 'vehicule' | 'dispo';
+/** `k` : nature de la tâche (classement dans le Salon) ; `at` : l'instant qui la rend urgente (départ, échéance) ; `days` : jours de retard ou d'attente.
+    Fiche ouverte au clic : `cid` client, `pid` partenaire, `vid` véhicule (onglet `vtab`), sinon `id` demande (onglet `tab`). */
+export interface Todo { sev: 'bad' | 'warn'; t: string; d: string; id?: string; tab?: string; vid?: string; vtab?: string; cid?: string; pid?: string; k?: TodoKind; at?: Date; days?: number }
 export function todos(D: Data): Record<string, Todo[]> {
   const ms = D.missions, now = new Date(), out: Record<string, Todo[]> = { amel: [], youssouf: [], aziz: [] };
   const cl = (m: Mission) => byId(D.clients, m.clientId);
@@ -61,9 +90,13 @@ export function todos(D: Data): Record<string, Todo[]> {
     if (clashes(m, ms).length) out.youssouf.push({ sev: 'bad', t: 'Double réservation', d: m.titre, id: m.id, k: 'conflit', at: a || undefined });
     if (chClashes(m, ms).length) out.youssouf.push({ sev: 'bad', t: 'Chauffeur en double réservation', d: m.titre, id: m.id, k: 'conflit', at: a || undefined });
     if (m.statut !== 'perdue') (m.taches || []).forEach((x) => { if (x.fait || !x.resp || !out[x.resp] || !(x.t || '').trim()) return; const due = parse(x.due); out[x.resp].push({ sev: due && due < sod(now) ? 'bad' : 'warn', t: x.t, d: `${m.titre}${due ? ' · ' + fmtDay(due) : ''}`, id: m.id, tab: 'taches', k: 'tache', at: due || undefined }); });
+    /* Prestataire muet : demande de dispo envoyée depuis plus de 24 h pour le véhicule de la demande, tant qu'elle est ouverte. */
+    if (OPEN_ST.includes(m.statut)) (m.dispoDemandes || []).forEach((x) => { const e = parse(x.envoyeAt); if (x.statut !== 'envoyee' || x.vehiculeId !== m.vehiculeId || !e || +now - +e < 864e5) return; const p = byId(D.partenaires, x.partenaireId), v = byId(D.vehicules, x.vehiculeId); out.youssouf.push({ sev: 'bad', t: 'Prestataire sans réponse depuis 24 h', d: [p?.nom, v?.nom, m.titre].filter(Boolean).join(' · '), id: m.id, k: 'dispo', at: a || undefined, days: Math.floor((+now - +e) / 864e5) }); });
     const dv = m.devis; if (dv && dv.factureNumero) { const tt = devisTotals(dv); const fd = parse(dv.factureDate); if (tt.solde > 0.005 && fd && +now - +fd > 7 * 864e5) out.aziz.push({ sev: 'bad', t: `Facture ${dv.factureNumero} en retard`, d: `${cn} · ${fmtE(tt.solde)}`, id: m.id, tab: 'devis', k: 'facture', days: Math.floor((+now - +fd) / 864e5) - 7 }); }
   });
+  inscriptions(D.partenaires).forEach((p) => { const e = parse(p.inscription?.at || p.createdAt); out.youssouf.push({ sev: 'warn', t: 'Inscription prestataire à valider', d: [p.societe || p.nom, p.inscription?.vehicules].filter(Boolean).join(' · '), pid: p.id, k: 'inscription', days: e ? Math.max(0, Math.floor((+now - +e) / 864e5)) : undefined }); });
   D.vehicules.forEach((v) => {
+    if (v.aValider) out.youssouf.push({ sev: 'warn', t: 'Véhicule proposé à valider', d: [v.nom, proprio(D.partenaires, v)?.nom].filter(Boolean).join(' · '), vid: v.id, k: 'vehicule' });
     const e = v.echeances || {}; ([['assurance', 'Assurance'], ['ct', 'Contrôle technique'], ['leasing', 'Fin de leasing']] as const).forEach(([k, l]) => { const d = parse(e[k]); if (d && +d - +now < 30 * 864e5) out.youssouf.push({ sev: +d - +now < 7 * 864e5 ? 'bad' : 'warn', t: `${l} ${v.nom}`, d: `Échéance ${fmtDay(d)}`, vid: v.id, k: 'echeance', at: d }); });
     (v.journal || []).forEach((j) => { if (j.type === 'pv' && !j.traite) { const m = driverAt(ms, v.id, j.dt); out.aziz.push({ sev: 'bad', t: `PV à désigner · ${v.nom}`, d: m ? `Conducteur : ${cl(m)?.nom || '?'}` : 'Date et heure à vérifier', vid: v.id, vtab: 'journal', k: 'pv', days: Math.max(0, Math.floor((+now - +(parse(j.dt) || now)) / 864e5)) }); } });
     const r = parse(v.revision); if (r && +r - +now < 30 * 864e5) out.youssouf.push({ sev: +r - +now < 7 * 864e5 ? 'bad' : 'warn', t: `Révision ${v.nom}`, d: `Prévue ${fmtDay(r)}`, vid: v.id, k: 'echeance', at: r });
@@ -130,7 +163,7 @@ export function finData(D: Data, ref: Date) {
   let facture = 0, encaisse = 0; const factures: { m: Mission; t: ReturnType<typeof devisTotals>; date: Date | null }[] = [];
   ms.forEach((m) => { const dv = m.devis; if (!dv) return; const t = devisTotals(dv); if (dv.factureNumero) { if (inM(dv.factureDate)) facture += t.ttc; if (t.solde > 0.005) factures.push({ m, t, date: parse(dv.factureDate) }); } (dv.paiements || []).forEach((q) => { if (inM(q.date)) encaisse += +q.montant || 0; }); });
   let comR = 0, comA = 0; ms.forEach((m) => (m.commissions || []).forEach((c) => { const due = (+(c.base ?? 0)) * (+(c.pct ?? 0)) / 100; if (c.statut === 'recue') { if (inM(c.recueLe)) comR += due; } else comA += due; }));
-  const vs = D.vehicules; const fixe = vs.reduce((x, v) => x + (+(v.loyerMois || 0)) + (+(v.chargesMois || 0)), 0); const journ = vs.reduce((x, v) => x + (v.journal || []).filter((j) => inM(j.dt)).reduce((y, j) => y + (+(j.cout || 0)), 0), 0);
+  const vs = D.vehicules; const fixe = vs.reduce((x, v) => x + (v.partenaireId ? 0 : (+(v.loyerMois || 0)) + (+(v.chargesMois || 0))), 0); const journ = vs.reduce((x, v) => x + (v.journal || []).filter((j) => inM(j.dt)).reduce((y, j) => y + (+(j.cout || 0)), 0), 0);
   const signe = ms.filter((m) => ACTIVE.includes(m.statut) && inM(m.debut)); const bySvc: Record<string, number> = {}, byVeh: Record<string, number> = {};
   signe.forEach((m) => { const sv = m.service || ''; bySvc[sv] = (bySvc[sv] || 0) + (+(m.montant || 0)); if (m.vehiculeId) byVeh[m.vehiculeId] = (byVeh[m.vehiculeId] || 0) + (+(m.montant || 0)); });
   return { a, b: b0, facture: r2(facture), encaisse: r2(encaisse), factures: factures.sort((x, y) => (+(x.date || 0)) - (+(y.date || 0))), reste: r2(factures.reduce((x, f) => x + f.t.solde, 0)), comR: r2(comR), comA: r2(comA), fixe: r2(fixe), journ: r2(journ), res: r2(encaisse + comR - fixe - journ), bySvc, byVeh };
