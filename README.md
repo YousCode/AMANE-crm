@@ -174,8 +174,8 @@ L'identité légale portée par les devis et factures (raison sociale, adresse d
 
 | Suite | Outil | Nombre |
 |---|---|---|
-| `packages/shared` | `node --test` | 33 |
-| `apps/api` (API HTTP réelle, base en mémoire) | `node --test` | 100 |
+| `packages/shared` | `node --test` | 34 |
+| `apps/api` (API HTTP réelle, base en mémoire) | `node --test` | 101 |
 | `apps/web` (règles, store, composants) | Vitest | 53 |
 | `apps/mobile` | Jest | 28 |
 | CRM historique : parcours, conciergerie, appareil, serveur | Playwright | 32 + 58 + 16 + 100 |

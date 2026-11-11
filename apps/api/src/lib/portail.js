@@ -39,8 +39,12 @@ export const prenomContact = (p) => firstName((p && (p.contact || p.nom)) || '')
 
 /** Prénom du client montré au prestataire : jamais un e-mail, un numéro ni un nom complet. */
 export function prenomClient(nom) {
-  const first = String(nom || '').trim().split(/\s+/)[0] || '';
-  return /[@\d]/.test(first) ? '' : firstName(first);
+  const mots = String(nom || '').trim().split(/[\s.,;_]+/).filter(Boolean);
+  const first = mots[0] || '';
+  if (/[@\d]/.test(first)) return '';
+  // « LAURENT Sophie » : le premier mot en capitales est un nom de famille, on ne montre rien plutôt que lui.
+  if (mots.length > 1 && first.length > 1 && first === first.toUpperCase() && first !== first.toLowerCase()) return '';
+  return firstName(first);
 }
 
 export const messagePortail = (p, url) => fillVars('Bonjour {prenom}, voici votre espace prestataire Amane : vous y déclarez vos jours disponibles et répondez à nos demandes. {lien}', { prenom: prenomContact(p), lien: url });
@@ -120,7 +124,8 @@ export async function portailData(db, p) {
         .map((m) => ({ ...debutFin(m), lieu: lieu(m), prenom: prenom(m), titre: labelOf(SERVICES, m.service, '') })),
     })),
     demandes: dem.sort((a, b) => (a.d.statut === 'envoyee' ? 0 : 1) - (b.d.statut === 'envoyee' ? 0 : 1) || String(a.m.debut || '').localeCompare(String(b.m.debut || '')))
-      .map(({ m, d }) => ({ missionId: m._id, vehiculeId: d.vehiculeId, vehicule: String(byId.get(d.vehiculeId).nom || ''), ...debutFin(m), lieu: lieu(m), prenom: prenom(m), statut: d.statut })),
+      // Demande refusée, ou mission confirmée avec un autre véhicule : le prestataire n'est plus concerné, il ne suit plus ni le lieu ni le prénom.
+      .map(({ m, d }) => { const suivi = d.statut !== 'non' && !(BOOK_STATUTS.includes(m.statut) && m.vehiculeId !== d.vehiculeId); return { missionId: m._id, vehiculeId: d.vehiculeId, vehicule: String(byId.get(d.vehiculeId).nom || ''), ...debutFin(m), lieu: suivi ? lieu(m) : '', prenom: suivi ? prenom(m) : '', statut: d.statut }; }),
   };
 }
 
@@ -248,7 +253,8 @@ export async function repondreDemande(db, { partenaire: p, missionId, vehiculeId
 
 // ---------- WhatsApp entrant ----------
 
-const OUI = new Set(['oui', 'ok', 'dispo', 'disponible', 'oui disponible', 'oui dispo', 'oui ok', 'ok dispo', 'ok disponible', 'yes']);
+// « ok » seul n'est pas une réponse : il répond trop souvent à autre chose, et une réponse est définitive.
+const OUI = new Set(['oui', 'dispo', 'disponible', 'oui disponible', 'oui dispo', 'oui ok', 'ok dispo', 'ok disponible', 'yes']);
 const NON = new Set(['non', 'pas dispo', 'pas disponible', 'indisponible', 'indispo', 'non pas dispo', 'non pas disponible', 'non indisponible', 'no']);
 
 /** Texte seul « oui » / « non » (ou bouton du modèle) → 'oui' | 'non' ; tout autre texte → null. */
@@ -259,17 +265,14 @@ export function lireReponse(text) {
 }
 
 /**
- * Partenaire (non supprimé) qui écrit depuis ce numéro, ou null.
- * Une inscription pas encore validée ne détourne pas le numéro d'un client déjà connu : lui reste un client.
+ * Partenaire (non supprimé, validé) qui écrit depuis ce numéro, ou null.
+ * Une inscription pas encore validée ne compte jamais : sinon n'importe qui, par le formulaire public, ferait passer
+ * le numéro d'un futur client pour celui d'un partenaire (plus de fiche client, plus de demande, plus de réponse automatique).
  */
 export async function partenaireParTel(db, phone) {
   if (!phone) return null;
   const list = await db.collection('partenaires').find({ telNorm: phone, _deleted: ALIVE }).toArray();
-  if (!list.length) return null;
-  const valide = list.find(estPrestataire) || list.find((p) => !p.aValider);
-  if (valide) return valide;
-  const client = await db.collection('clients').findOne({ telNorm: phone, _deleted: ALIVE }, { projection: { _id: 1 } });
-  return client ? null : list[0];
+  return list.find(estPrestataire) || list.find((p) => !p.aValider) || null;
 }
 
 // ---------- inscription publique ----------

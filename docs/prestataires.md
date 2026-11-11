@@ -74,7 +74,7 @@ Une inscription ne donne **aucun accès** : c'est la validation par l'équipe qu
 
 ### WhatsApp entrant d'un prestataire
 
-Un message venant du numéro d'un partenaire (`telNorm` d'un partenaire non supprimé) ne crée **ni client ni demande** (comme les numéros de l'équipe). Il est rangé dans une conversation marquée `partenaireId`. S'il répond à une demande en attente — bouton du modèle ou texte seul `oui` / `non` (insensible à la casse, variantes `ok`, `dispo`, `pas dispo`, `indisponible`) — la réponse s'applique à **sa demande `envoyee` la plus récente**, exactement comme sur le portail, avec `canal: 'whatsapp'`, et il reçoit un accusé (« Merci, c'est noté : … »). Tout autre texte reste un message normal, lu par l'équipe.
+Un message venant du numéro d'un partenaire **validé** (`telNorm` d'un partenaire non supprimé, sans `aValider`) ne crée **ni client ni demande** (comme les numéros de l'équipe). Il est rangé dans une conversation marquée `partenaireId`. S'il répond à une demande en attente — bouton du modèle ou texte seul `oui` / `non` (insensible à la casse, variantes `dispo`, `disponible`, `pas dispo`, `indisponible` ; « ok » seul n'est pas une réponse) — la réponse s'applique à **sa demande `envoyee` la plus récente**, exactement comme sur le portail, avec `canal: 'whatsapp'`, et il reçoit un accusé (« Merci, c'est noté : … »). Tout autre texte reste un message normal, lu par l'équipe.
 
 Modèle Meta à créer (catégorie Utility, français) — `amane_dispo` :
 `Bonjour {{1}}, Amane a une demande pour votre {{2}}, {{3}}. Est-il disponible ? Répondez OUI ou NON, ou ouvrez votre espace : {{4}}`
@@ -94,7 +94,13 @@ avec deux boutons de réponse rapide « Oui, disponible » et « Non ». À ajou
 - `reservations[].titre` et le libellé des demandes valent le **service** (« Van VIP »), jamais le titre libre de la mission : les titres automatiques contiennent le nom ou le numéro du client.
 - `POST /api/missions/:id/dispo` répond 409 `mission_fermee` pour une mission terminée ou perdue.
 - Une réponse de prestataire est **définitive** de son côté : la même réponse répétée → 200 `deja: true`, la réponse contraire → 409 `deja_repondu`. Pour corriger, l'équipe redemande la dispo (l'entrée repasse à `envoyee`).
-- WhatsApp entrant : une inscription encore `aValider` dont le numéro est celui d'un client connu ne compte pas comme partenaire (sinon le formulaire public permettrait de couper les demandes d'un client). Le « oui / non » n'est appliqué que pour un loueur validé.
+- WhatsApp entrant : une inscription encore `aValider` ne compte **jamais** comme partenaire (sinon le formulaire public permettrait de couper les demandes d'un client, connu ou futur) ; son message suit le circuit habituel. Le « oui / non » n'est appliqué que pour un loueur validé.
+- Alertes à l'équipe : l'inscription n'y porte que le numéro (aucun texte libre de l'inscrit) ; les noms de prestataire et de véhicule y sont dépouillés de toute adresse web.
+- L'extraction IA n'attribue seule qu'un véhicule de la flotte de la maison.
+- Un « oui » du prestataire vaut jours déclarés sur la période de la mission (`vehicleOn`), même si les `dispos` de la fiche ont été réécrites entre-temps.
+- Dans `demandes`, le lieu et le prénom ne sont plus renvoyés pour une demande refusée, ni pour une mission confirmée avec un autre véhicule.
+- Limite de débit : l'adresse du client est celle que voit le proxy de confiance (`TRUST_PROXY`, 1 par défaut), jamais `X-Real-IP` ni un `X-Forwarded-For` fourni par le client ; les inscriptions sont en plus plafonnées à 40 par heure toutes adresses confondues.
+- Suppression d'un partenaire : son lien est détruit, `aValider` est conservé (une inscription refusée puis ré-enregistrée ne revient pas validée).
 - Réponses enrichies : `dispos` → `{ok, dispos}` ; `vehicules` → `{ok, id, vehicule}` ; `demandes/:missionId` → `{ok, statut, deja}`.
 - Sans JavaScript, la page du portail permet de répondre à une demande et de proposer un véhicule ; déclarer des jours demande JavaScript.
 

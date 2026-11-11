@@ -108,13 +108,12 @@ export async function readJson(req, limit = 64 * 1024) {
   return data;
 }
 
+/**
+ * Adresse du client telle que la voit le proxy de confiance (`trust proxy`, réglé dans app.js) : `X-Real-IP` et les
+ * entrées de `X-Forwarded-For` ajoutées par le client lui-même ne comptent pas — sinon chaque limite de débit se contourne.
+ */
 export function clientIp(req) {
-  const h = req.headers || {};
-  const real = h['x-real-ip'];
-  if (real) return String(real).trim();
-  const fwd = h['x-forwarded-for'];
-  if (fwd) return String(fwd).split(',')[0].trim();
-  return (req.socket && req.socket.remoteAddress) || 'inconnue';
+  return String(req.ip || (req.socket && req.socket.remoteAddress) || 'inconnue').slice(0, 64);
 }
 
 /**

@@ -52,7 +52,7 @@ test('cycle complet : inscription publique → partenaire à valider → validat
   assert.ok(db.dump('activity').some((a) => a.action === 'inscription' && a.user === 'site' && a.resume === 'Inscription prestataire à valider : Luxe Cars'));
   const alerte = texts(net, '33600000001');
   assert.equal(alerte.length, 1, 'alerte à l’équipe');
-  assert.deepEqual(alerte[0].body.template.components[0].parameters.map((x) => x.text), ['Luxe Cars', 'Inscription prestataire à valider']);
+  assert.deepEqual(alerte[0].body.template.components[0].parameters.map((x) => x.text), ['+33611223344', 'Inscription prestataire à valider']);
   assert.equal(db.dump('clients').length + db.dump('missions').length, 0, 'ni client ni demande');
   // Une inscription ne donne aucun accès : pas de portail avant la validation par l'équipe.
   const cookie = await login();
@@ -545,7 +545,8 @@ test('WhatsApp d’un prestataire : « oui » / « non » appliqués à la deman
   assert.equal(db.dump('messages').filter((x) => x.convId === TEL && x.dir === 'in').length, 4, 'tous les messages sont gardés, lus par l’équipe');
   // Variantes reconnues, casse et accents indifférents ; le reste n'est pas une réponse.
   const { lireReponse } = await import('../src/lib/portail.js');
-  for (const t of ['oui', 'OUI', 'Oui.', 'ok', 'Dispo', 'disponible', 'Oui, disponible', 'OK 👍']) assert.equal(lireReponse(t), 'oui', t);
+  for (const t of ['oui', 'OUI', 'Oui.', 'Dispo', 'disponible', 'Oui, disponible', 'Ok dispo']) assert.equal(lireReponse(t), 'oui', t);
+  for (const t of ['ok', 'OK 👍', 'Ok merci']) assert.equal(lireReponse(t), null, '« ok » seul n’est pas une réponse : ' + t);
   for (const t of ['non', 'NON !', 'Pas dispo', 'pas disponible', 'Indisponible', 'indispo']) assert.equal(lireReponse(t), 'non', t);
   for (const t of ['', 'oui mais seulement le matin', 'non pas avant lundi prochain', 'Bonjour', 'disponible à partir du 5', '[Photo] oui']) assert.equal(lireReponse(t), null, t);
 });
@@ -561,18 +562,19 @@ test('WhatsApp : un partenaire quelconque n’est jamais un client ; une inscrip
   assert.equal(one(db, 'conversations', '33600000099').partenaireId, 'ch1');
   assert.equal(texts(net, '33600000099').length, 0);
   assert.match(texts(net, '33600000001')[0].body.template.components[0].parameters[0].text, /^Karim Chauffeur$/);
-  // Loueur inscrit par le formulaire, pas encore validé, numéro inconnu : traité en partenaire, sans « oui/non ».
+  // Inscription pas encore validée : son numéro reste un numéro ordinaire (sinon n'importe qui ferait passer le numéro
+  // d'un futur client pour celui d'un partenaire, et ses demandes seraient perdues). Le message suit le circuit habituel.
   await post('/api/prestataires/inscription', { nom: 'Nadia Vans', tel: '06 22 33 44 55' });
-  await postWebhook(inboundPayload({ from: '33622334455', name: 'Nadia', id: 'w2', text: 'Bonjour, avez-vous reçu mon inscription ?' }));
-  assert.equal(db.dump('clients').length + db.dump('missions').length, 0);
-  assert.equal(texts(net, '33622334455').length, 0);
+  await postWebhook(inboundPayload({ from: '33622334455', name: 'Nadia', id: 'w2', text: 'Bonjour, je voudrais une voiture demain' }));
+  assert.equal(one(db, 'conversations', '33622334455').partenaireId, undefined, 'pas marquée partenaire');
+  assert.deepEqual([db.dump('clients').length, db.dump('missions').length], [1, 1], 'traité comme tout numéro inconnu');
+  assert.equal(texts(net, '33622334455').length, 1, 'réponse automatique');
   // Quelqu'un inscrit le numéro d'un client existant : le client reste un client (demande créée, réponse automatique).
   await put(cookie, 'clients', 'vip', { nom: 'M. Al Thani', tel: '+971501234567' });
   assert.deepEqual((await post('/api/prestataires/inscription', { nom: 'Faux loueur', tel: '+971 50 123 4567' }, { ip: '198.51.100.9' })).json, { ok: true });
   assert.equal(db.dump('partenaires').filter((p) => p.telNorm === '971501234567' && p.aValider).length, 1);
   await postWebhook(inboundPayload({ from: '971501234567', name: 'Al Thani', id: 'w3', text: 'Hello, I need a car tomorrow' }));
-  assert.equal(db.dump('missions').length, 1);
-  assert.equal(db.dump('missions')[0].clientId, 'vip');
+  assert.equal(db.dump('missions').filter((m) => m.clientId === 'vip').length, 1);
   assert.equal(one(db, 'conversations', '971501234567').partenaireId, undefined);
   assert.equal(texts(net, '971501234567').length, 1, 'réponse automatique au client');
   // Partenaire supprimé : son numéro redevient un numéro ordinaire, la marque de la conversation tombe.
@@ -580,7 +582,7 @@ test('WhatsApp : un partenaire quelconque n’est jamais un client ; une inscrip
   at('2026-11-03T11:00:00Z');
   await postWebhook(inboundPayload({ from: '33600000099', name: 'Karim', id: 'w4', text: 'Bonjour, une voiture pour samedi' }));
   assert.equal(one(db, 'conversations', '33600000099').partenaireId, undefined);
-  assert.equal(db.dump('missions').length, 2);
+  assert.equal(db.dump('missions').length, 3, 'Nadia, le client VIP et l’ancien partenaire');
 });
 
 test('inscription publique : champ piège, limite de débit, validations, doublon de numéro sans fuite, même origine', async () => {
@@ -683,4 +685,32 @@ test('rentabilité : véhicule d’un prestataire → coûts = prix d’achat pa
   assert.deepEqual([u.partenaireId, u.loyer, u.charges, u.couts, u.margeNette], ['', 2430, 500, 2930, 1000 - 2930], 'véhicule de la maison : inchangé');
   assert.equal(r.json.total.couts, r.json.vehicules.reduce((x, l) => x + l.couts, 0));
   assert.equal(r.json.total.margeNette, Math.round(r.json.vehicules.reduce((x, l) => x + l.margeNette, 0) * 100) / 100);
+});
+
+test('revue de sécurité : en-têtes d’adresse choisis par le client, alerte sans texte libre, IA limitée à la flotte de la maison, inscription refusée, « oui » qui vaut jours déclarés', async () => {
+  const { db, net } = fresh({ TEAM_ALERT_NUMBERS: 'amel:33600000001' });
+  at(DAY);
+  const cookie = await login();
+  // 1. Limite d'inscription : X-Real-IP et un X-Forwarded-For préfixé par le client ne donnent pas une nouvelle adresse.
+  const ins = (i, headers) => call(H.doc, { method: 'POST', url: '/api/prestataires/inscription', body: { nom: 'Loueur ' + i, tel: '+3361200000' + i }, headers: { origin: 'https://amane.test', ...headers }, ip: '203.0.113.50' });
+  const codes = [];
+  for (let i = 0; i < 8; i++) codes.push((await ins(i, { 'x-real-ip': '10.9.9.' + i })).status);
+  assert.deepEqual(codes, [200, 200, 200, 200, 200, 429, 429, 429], 'X-Real-IP ignoré');
+  // 3. L'alerte à l'équipe ne reprend aucun texte libre de l'inscrit.
+  const r = await call(H.doc, { method: 'POST', url: '/api/prestataires/inscription', body: { nom: 'URGENT reconnectez-vous sur https://evil.example/app', societe: 'https://evil.example', vehicules: 'www.evil.example', tel: '+33 6 55 44 33 22' }, headers: { origin: 'https://amane.test' }, ip: '203.0.113.51' });
+  assert.equal(r.status, 200);
+  const alertes = JSON.stringify(net.graphCalls.filter((c) => c.body.to === '33600000001').map((c) => c.body));
+  assert.ok(alertes.includes('+33655443322') && !/evil|URGENT|reconnectez/i.test(alertes), 'ni nom, ni société, ni lien dans l’alerte');
+  // 5. Inscription refusée puis ré-enregistrée depuis un écran en retard : elle ne revient pas validée.
+  const p = db.dump('partenaires').find((x) => x.telNorm === '33655443322');
+  await call(H.doc, { method: 'DELETE', url: `/api/doc/partenaires/${p._id}`, cookie });
+  assert.equal((await put(cookie, 'partenaires', p._id, { nom: 'Loueur revenu', type: 'loueur', tel: '+33655443322' })).status, 200);
+  assert.equal(one(db, 'partenaires', p._id).aValider, true, 'toujours à valider');
+  assert.equal((await call(H.doc, { method: 'POST', url: `/api/partenaires/${p._id}/portail`, body: {}, cookie })).json.error, 'a_valider');
+  // 4. L'extraction IA ne choisit pas un véhicule de prestataire au nom attrape-tout.
+  await put(cookie, 'partenaires', 'p1', { nom: 'Luxe Cars', type: 'loueur', tel: '+33611000001' });
+  await put(cookie, 'vehicules', 'piege', { nom: 'Ferrari Bentley Rolls Urus Cullinan', partenaireId: 'p1', statut: 'disponible' });
+  const { matchVehiculePourTest } = await import('../src/lib/whatsapp.js');
+  assert.equal(await matchVehiculePourTest(db, 'Bentley Bentayga'), null, 'véhicule de prestataire jamais attribué seul');
+  assert.equal(await matchVehiculePourTest(db, 'Lamborghini Urus'), 'urus', 'la flotte de la maison reste reconnue');
 });

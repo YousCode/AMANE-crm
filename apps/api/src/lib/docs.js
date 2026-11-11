@@ -15,6 +15,8 @@ const SERVER_FIELDS = new Set(['_id', 'id', 'updatedAt', 'updatedBy', 'createdAt
 const IGNORED_IN_SUMMARY = new Set([...SERVER_FIELDS]);
 /** Champs posés par le serveur uniquement : un PUT du CRM ne peut ni les créer, ni les changer, ni les retirer. */
 export const PROTECTED = { partenaires: ['portailToken', 'portailAt', 'aValider'], missions: ['dispoDemandes'] };
+/** Détruits à la suppression. `aValider` reste : une inscription refusée puis ré-enregistrée depuis un écran en retard ne revient pas validée. */
+const DROPPED_ON_DELETE = { partenaires: ['portailToken', 'portailAt'] };
 
 export const STATUT_MISSION = {
   nouvelle: 'Nouvelle', proposition: 'Proposition', confirmee: 'Confirmée', encours: 'En cours', terminee: 'Terminée', perdue: 'Perdue',
@@ -158,7 +160,7 @@ export async function softDelete(db, col, id, by) {
   const at = nowIso();
   const update = { $set: { _deleted: true, updatedAt: at, updatedBy: by } };
   // Un partenaire supprimé perd son lien de portail pour de bon : le recréer ne ranime pas l'ancien jeton.
-  if (PROTECTED[col]) update.$unset = Object.fromEntries(PROTECTED[col].map((k) => [k, '']));
+  if (DROPPED_ON_DELETE[col]) update.$unset = Object.fromEntries(DROPPED_ON_DELETE[col].map((k) => [k, '']));
   await c.updateOne({ _id: id }, update);
   await logActivity(db, { user: by, col, docId: id, action: 'delete', resume: `Suppression : ${label(old, id)}` });
   if (BROADCAST.includes(col)) emit('deleted', { col, id, by });

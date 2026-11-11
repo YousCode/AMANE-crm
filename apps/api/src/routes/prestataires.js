@@ -216,6 +216,8 @@ router.all('/api/prestataires/inscription', pub(async (req, res) => {
   if (str(body.website, 200)) return fini(); // champ piège : réponse normale, rien n'est créé
   const db = await getDb();
   if (await rateHit(db, 'presta:ip:' + clientIp(req), HOUR) > 5) throw tooMany('Trop de demandes envoyées. Réessayez plus tard ou écrivez-nous sur WhatsApp.');
+  // Plafond toutes adresses confondues : une rafale d'inscriptions ne noie ni le Carnet ni les alertes de l'équipe.
+  if (await rateHit(db, 'presta:tous', HOUR) > 40) throw tooMany('Trop de demandes en ce moment. Réessayez plus tard ou écrivez-nous sur WhatsApp.');
   const societe = line(body.societe, 120);
   const contact = line(body.nom, 120);
   const telRaw = line(body.tel, 40);

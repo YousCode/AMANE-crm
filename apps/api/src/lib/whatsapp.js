@@ -602,7 +602,8 @@ const GENERIC = new Set(['se', 'vip', 'gtb', 'touring', 'classe', 'class', 'spor
 async function matchVehicule(db, name) {
   const n = String(name).toLowerCase().replace(/[^a-z0-9]/g, '');
   if (!n) return null;
-  const list = await db.collection('vehicules').find({ _deleted: { $ne: true } }, { projection: { nom: 1 } }).toArray();
+  // Flotte de la maison seulement : un véhicule de prestataire (nom libre, parfois pas encore validé) ne s'attribue pas tout seul.
+  const list = (await db.collection('vehicules').find({ _deleted: { $ne: true } }, { projection: { nom: 1, partenaireId: 1, aValider: 1 } }).toArray()).filter((v) => !v.partenaireId && !v.aValider);
   for (const v of list) {
     const vid = String(v._id).toLowerCase();
     if (n.includes(vid)) return v._id;
@@ -757,3 +758,6 @@ export async function runFollowups(tasks, budgetMs = 12000) {
 export const clientFirstName = (client, conv) => firstName((client && client.nom) || (conv && conv.profil) || '');
 /** Texte traduit d'une clé pour un client (t de @amane/shared). */
 export const tClient = (lang, key, vars) => tr(lang, key, vars);
+
+/** Exposé pour les tests seulement. */
+export const matchVehiculePourTest = (db, name) => matchVehicule(db, name);

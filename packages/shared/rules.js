@@ -69,7 +69,13 @@ export function vehicleOn(v, missions, a, b, excl) {
   const op = ov.find((m) => OPT_STATUTS.includes(m.statut));
   if (op) return { k: 'o', m: op };
   // Véhicule d'un prestataire : libre seulement sur les jours qu'il a déclarés ; sinon il faut lui demander.
-  if (v.partenaireId && !dispoCovers(v, from, to)) return { k: 'off', t: 'Dispo à demander', ask: true };
+  if (v.partenaireId) {
+    // Un « oui » du prestataire à une demande vaut jours déclarés sur la période de cette mission (la réponse est posée par le serveur ;
+    // les `dispos` de la fiche, elles, peuvent avoir été réécrites depuis un écran en retard).
+    const oui = (missions || []).filter((m) => m && !m._deleted && parseDate(m.debut) && (dispoDemandeOf(m, vid) || {}).statut === 'oui')
+      .map((m) => ({ du: dayKey(parseDate(m.debut)), au: dayKey(parseDate(m.fin) || parseDate(m.debut)) }));
+    if (!dispoCovers({ dispos: [...(Array.isArray(v.dispos) ? v.dispos : []), ...oui] }, from, to)) return { k: 'off', t: 'Dispo à demander', ask: true };
+  }
   return { k: 'f' };
 }
 

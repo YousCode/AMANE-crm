@@ -81,7 +81,9 @@ export async function createApp(opts = {}) {
 
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', true);
+  // Un seul proxy de confiance devant l'application (Railway, Render, Fly) : `req.ip` est l'adresse qu'il a vue, pas un en-tête du client.
+  // TRUST_PROXY=2 si un second proxy (CDN) est placé devant.
+  app.set('trust proxy', Math.max(0, Math.min(5, Number.parseInt(process.env.TRUST_PROXY ?? '1', 10) || 0)));
   app.set('etag', false);
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');

@@ -57,3 +57,11 @@ test('validation : champs prestataire du véhicule et demandes de dispo de la mi
   assert.ok(validate.mission({ titre: 'T', dispoDemandes: [{ vehiculeId: 'v', partenaireId: 'p', statut: 'oui' }] }).ok);
   assert.ok(validate.mission({ titre: 'T', dispoDemandes: [{ vehiculeId: 'v', statut: 'peut-etre' }] }).errors['dispoDemandes.0']);
 });
+
+test('un « oui » du prestataire vaut jours déclarés sur la période de la mission, même si les dispos de la fiche ont été effacées', () => {
+  const ext = { id: 'van1', nom: 'Classe V', statut: 'disponible', partenaireId: 'p1', dispos: [] };
+  const m = M({ id: 'a', statut: 'proposition', vehiculeId: 'van1', dispoDemandes: [{ vehiculeId: 'van1', partenaireId: 'p1', statut: 'oui' }] });
+  assert.equal(vehicleOn(ext, [m], '2026-11-20T10:00', '2026-11-22T18:00', 'a').k, 'f');
+  assert.equal(vehicleOn(ext, [m], '2026-11-23T10:00', '2026-11-24T18:00', 'a').ask, true, 'hors de la période confirmée : à demander');
+  assert.equal(vehicleOn(ext, [{ ...m, dispoDemandes: [{ vehiculeId: 'van1', partenaireId: 'p1', statut: 'non' }] }], '2026-11-20T10:00', '2026-11-22T18:00', 'a').ask, true, 'un « non » ne déclare rien');
+});
