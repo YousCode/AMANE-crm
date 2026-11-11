@@ -113,6 +113,7 @@ export const WA_TEMPLATES = freeze([
   { name: 'amane_rappel', label: 'Rappel de mission', vars: ['prenom', 'service', 'date', 'heure', 'lieu'], langs: ['fr', 'en', 'es', 'ar', 'ru'] },
   { name: 'amane_devis', label: 'Devis à consulter', vars: ['prenom', 'numero', 'lien'], langs: ['fr', 'en', 'es', 'ar', 'ru'] },
   { name: 'amane_alerte', label: 'Alerte équipe', vars: ['nom', 'extrait'], langs: ['fr'] },
+  { name: 'amane_dispo', label: 'Demande de disponibilité (prestataire)', vars: ['prenom', 'vehicule', 'periode', 'lien'], langs: ['fr'] },
 ]);
 
 /** Types de rappels automatiques (collection `rappels`). */

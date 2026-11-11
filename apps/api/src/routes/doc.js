@@ -2,7 +2,7 @@
 import { Router, wrap, sendJson, HttpError, auth, requireOrigin, query, methodNotAllowed } from './_common.js';
 import { readJson, ID_RE } from '../lib/http.js';
 import { isDuplicate } from '../lib/db.js';
-import { checkCol, checkId, cleanFields, saveDoc, softDelete } from '../lib/docs.js';
+import { checkCol, checkId, cleanFields, saveDoc, softDelete, PROTECTED } from '../lib/docs.js';
 import { nowIso } from '../lib/clock.js';
 import { alertPv } from '../lib/alerts.js';
 import { track } from '../lib/background.js';
@@ -36,7 +36,7 @@ async function doc(req, res, col, id) {
   const fields = cleanFields(await readJson(req, DOC_LIMIT));
   let before = null;
   if (col === 'vehicules' && Array.isArray(fields.journal)) before = await db.collection(col).findOne({ _id: id }, { projection: { journal: 1, nom: 1, responsable: 1 } });
-  const r = await saveDoc(db, col, id, fields, user.id, { replace: true });
+  const r = await saveDoc(db, col, id, fields, user.id, { replace: true, keep: PROTECTED[col] });
   if (before !== null || (col === 'vehicules' && Array.isArray(fields.journal))) {
     const seen = new Set(((before && before.journal) || []).map((j) => JSON.stringify(j)));
     const fresh = fields.journal.filter((j) => j && j.type === 'pv' && !seen.has(JSON.stringify(j)));

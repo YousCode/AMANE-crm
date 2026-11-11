@@ -257,7 +257,7 @@ test('13. Fenêtre de 24 h : 409 window_closed, modèle approuvé avec paramètr
   await postWebhook(inboundPayload({ text: 'Bonjour' }));
   const list = await call(H.whatsapp, { url: '/api/whatsapp/templates', cookie });
   assert.equal(list.status, 200);
-  assert.deepEqual(list.json.modeles.map((m) => m.name), ['amane_relance', 'amane_rappel', 'amane_devis', 'amane_alerte']);
+  assert.deepEqual(list.json.modeles.map((m) => m.name), ['amane_relance', 'amane_rappel', 'amane_devis', 'amane_alerte', 'amane_dispo']);
   assert.deepEqual(list.json.modeles[1].vars, ['prenom', 'service', 'date', 'heure', 'lieu']);
   assert.match(list.json.modeles[1].body, /\{\{5\}\}/);
   assert.ok(db.dump('reglages').some((r) => r._id === 'templates'), 'modèles posés dans reglages/templates au démarrage');
@@ -274,7 +274,7 @@ test('13. Fenêtre de 24 h : 409 window_closed, modèle approuvé avec paramètr
   await put(cookie, 'reglages', 'templates', { modeles: [{ name: 'amane_relance', label: 'Relance maison', body: 'Bonjour {{1}}, {{2}}' }, { name: 'amane_bienvenue', label: 'Bienvenue', vars: ['prenom'], langs: ['fr', 'en'], body: 'Bienvenue {{1}}' }] });
   const list2 = (await call(H.whatsapp, { url: '/api/whatsapp/templates', cookie })).json.modeles;
   assert.equal(list2.find((m) => m.name === 'amane_relance').label, 'Relance maison');
-  assert.equal(list2.length, 5);
+  assert.equal(list2.length, 6);
   assert.equal(list2.at(-1).name, 'amane_bienvenue');
 });
 

@@ -24,7 +24,7 @@ type Props = {
 };
 
 const TPL_LANG: Record<string, string> = { FR: 'fr', EN: 'en', AR: 'ar', ES: 'es', RU: 'ru', IT: 'it', DE: 'de', ZH: 'zh_CN' };
-const TPL_DEFAULT: Template[] = WA_TEMPLATES.filter((x) => x.name !== 'amane_alerte').map((x) => ({ name: x.name, label: x.label, vars: [...x.vars] }));
+const TPL_DEFAULT: Template[] = WA_TEMPLATES.filter((x) => x.name !== 'amane_alerte' && x.name !== 'amane_dispo').map((x) => ({ name: x.name, label: x.label, vars: [...x.vars] }));
 
 export function Composer(p: Props) {
   const { c, dark } = useTheme();

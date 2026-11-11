@@ -1,4 +1,5 @@
 // Rentabilité de la flotte par mois : loyer, charges, jours loués, CA, coûts du journal, marge nette, taux d'occupation.
+// Véhicule d'un prestataire : ni loyer ni charges, le coût est le prix d'achat par jour × jours loués.
 import { ACTIVE_STATUTS, devisTotals, overlapDays, round2 } from '@amane/shared';
 import { now } from './clock.js';
 import { parisDay } from './paris.js';
@@ -30,11 +31,13 @@ export async function rentabilite(db, mois, nowMs = now()) {
       const totalDays = Math.max(1, overlapDays({ debut: m.debut, fin: m.fin }, m.debut, m.fin || m.debut));
       ca += total * (d / totalDays); // part du CA au prorata des jours dans le mois
     }
-    const loyer = +v.loyerMois || 0; const charges = +v.chargesMois || 0;
+    const presta = Boolean(v.partenaireId);
+    const loyer = presta ? 0 : +v.loyerMois || 0; const charges = presta ? 0 : +v.chargesMois || 0;
+    const couts = presta ? (+v.prixAchatJour || 0) * joursLoues : loyer + charges;
     const coutsJournal = (Array.isArray(v.journal) ? v.journal : []).filter((j) => j && String(j.dt || j.date || '').slice(0, 7) === b.mois).reduce((x, j) => x + (+j.cout || 0), 0);
-    const marge = ca - loyer - charges - coutsJournal;
-    return { id: v._id, nom: v.nom, categorie: v.categorie || '', loyer, charges, joursLoues, missions: nb, ca: round2(ca), coutsJournal: round2(coutsJournal), margeNette: round2(marge), tauxOccupation: round2(joursLoues / b.days), tarifJour: +v.tarifJour || 0 };
+    const marge = ca - couts - coutsJournal;
+    return { id: v._id, nom: v.nom, categorie: v.categorie || '', partenaireId: v.partenaireId || '', loyer, charges, couts: round2(couts), joursLoues, missions: nb, ca: round2(ca), coutsJournal: round2(coutsJournal), margeNette: round2(marge), tauxOccupation: round2(joursLoues / b.days), tarifJour: +v.tarifJour || 0, prixAchatJour: presta ? +v.prixAchatJour || 0 : 0 };
   });
-  const total = lignes.reduce((x, l) => ({ loyer: x.loyer + l.loyer, charges: x.charges + l.charges, joursLoues: x.joursLoues + l.joursLoues, ca: round2(x.ca + l.ca), coutsJournal: round2(x.coutsJournal + l.coutsJournal), margeNette: round2(x.margeNette + l.margeNette) }), { loyer: 0, charges: 0, joursLoues: 0, ca: 0, coutsJournal: 0, margeNette: 0 });
+  const total = lignes.reduce((x, l) => ({ loyer: x.loyer + l.loyer, charges: x.charges + l.charges, couts: round2(x.couts + l.couts), joursLoues: x.joursLoues + l.joursLoues, ca: round2(x.ca + l.ca), coutsJournal: round2(x.coutsJournal + l.coutsJournal), margeNette: round2(x.margeNette + l.margeNette) }), { loyer: 0, charges: 0, couts: 0, joursLoues: 0, ca: 0, coutsJournal: 0, margeNette: 0 });
   return { mois: b.mois, du: b.from, au: b.to, jours: b.days, vehicules: lignes, total: { ...total, tauxOccupation: lignes.length ? round2(total.joursLoues / (b.days * lignes.length)) : 0 } };
 }

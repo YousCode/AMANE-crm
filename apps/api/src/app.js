@@ -1,4 +1,5 @@
-// Application Express d'Amane : API JSON, WebSocket /ws, pages publiques, fichiers statiques (back-office /app, CRM /crm, site /).
+// Application Express d'Amane : API JSON, WebSocket /ws, pages publiques (devis, espace client, portail prestataire, inscription),
+// fichiers statiques (back-office /app, CRM /crm, site /).
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,6 +28,7 @@ import { router as devis } from './routes/devis.js';
 import { router as espace } from './routes/espace.js';
 import { router as flotte } from './routes/flotte.js';
 import { router as push } from './routes/push.js';
+import { router as prestataires } from './routes/prestataires.js';
 import { devRouter } from './routes/dev.js';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -90,7 +92,7 @@ export async function createApp(opts = {}) {
   app.use(cors());
 
   // API
-  for (const r of [health, meteo, auth, sync, doc, photo, ai, whatsapp, lead, relances, devis, espace, flotte, push]) app.use(r);
+  for (const r of [health, meteo, auth, sync, doc, photo, ai, whatsapp, lead, relances, devis, espace, flotte, push, prestataires]) app.use(r);
 
   const server = http.createServer(app);
   const ws = attachWs(server, { path: '/ws', getDb });

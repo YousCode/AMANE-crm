@@ -14,6 +14,7 @@ import { downloadInboundMedia, uploadToMeta, toBuffer, GRAPH_BASE as MEDIA_GRAPH
 import { transcribeConfigured, transcribeMessage } from './transcribe.js';
 import { emit } from './bus.js';
 import { effectiveTemplates } from './templates.js';
+import { partenaireParTel, estPrestataire, lireReponse, demandeEnAttente, repondreDemande, messageAccuse } from './portail.js';
 
 export const GRAPH_VERSION = 'v21.0';
 export const GRAPH_BASE = MEDIA_GRAPH_BASE;
@@ -318,6 +319,8 @@ async function handleInbound(db, value, msg) {
   const locked = await withLock(db, 'wa:' + phone, async () => {
     const prev = await convCol.findOne({ _id: phone });
     const team = teamMemberFor(phone);
+    // Numéro d'un partenaire (prestataire, chauffeur…) : comme l'équipe, ni client ni demande.
+    const partenaire = team ? null : await partenaireParTel(db, phone);
     const detected = detectLang(content.media ? content.media.caption || '' : text);
     const lang = detected || (prev && prev.lang) || langFromPhone(phone) || 'FR';
 
@@ -325,7 +328,7 @@ async function handleInbound(db, value, msg) {
     let mission = null;
     let createdClient = false;
     let createdMission = false;
-    if (!team) {
+    if (!team && !partenaire) {
       // 2. Client retrouvé par téléphone normalisé, sinon créé.
       client = await db.collection('clients').findOne({ telNorm: phone, _deleted: { $ne: true } });
       if (!client) {
@@ -370,7 +373,7 @@ async function handleInbound(db, value, msg) {
     // 5. Conversation : non lus +1, fenêtre de 24 h, langue.
     const set = {
       phone,
-      nom: (client && client.nom) || (team ? `Équipe — ${team}` : '') || profileName || (prev && prev.nom) || '+' + phone,
+      nom: (client && client.nom) || (team ? `Équipe — ${team}` : '') || (partenaire && partenaire.nom) || profileName || (prev && prev.nom) || '+' + phone,
       lang,
       lastAt: at,
       lastText: text.slice(0, 200),
@@ -385,17 +388,17 @@ async function handleInbound(db, value, msg) {
     if (client) set.clientId = client._id;
     if (mission) set.missionId = mission._id;
     if (team) set.equipe = team;
-    await convCol.updateOne(
-      { _id: phone },
-      { $set: set, $inc: { unread: 1 }, $setOnInsert: { createdAt: stamp, lastOutAt: '' } },
-      { upsert: true },
-    );
+    if (partenaire) set.partenaireId = partenaire._id;
+    const update = { $set: set, $inc: { unread: 1 }, $setOnInsert: { createdAt: stamp, lastOutAt: '' } };
+    if (!partenaire && prev && prev.partenaireId) update.$unset = { partenaireId: '' }; // le partenaire a été supprimé depuis
+    await convCol.updateOne({ _id: phone }, update, { upsert: true });
     if (!prev && !createdMission && !team) {
       await logActivity(db, { user: 'whatsapp', col: 'conversations', docId: phone, action: 'whatsapp', resume: `Nouvelle conversation WhatsApp : ${set.nom}` });
     }
-    return { prev, team, lang, client, mission, createdMission };
+    return { prev, team, partenaire, lang, client, mission, createdMission };
   });
-  const { prev, team, lang, client, mission, createdMission } = locked;
+  const { prev, team, partenaire, lang, client, mission, createdMission } = locked;
+  if (partenaire) return partenaireInbound(db, { phone, partenaire, profileName, lang, text, prev, at, type: msg.type, messageId: String(msg.id), media: content.media || null });
   await emitConversation(db, phone);
   if (team) return [];
 
@@ -408,6 +411,60 @@ async function handleInbound(db, value, msg) {
   const lastIn = prev && prev.lastInAt ? Date.parse(prev.lastInAt) : 0;
   if (createdMission || !lastIn || now() - lastIn > 6 * 3600 * 1000) tasks.push(() => alertTeam(db, ctx));
   return tasks;
+}
+
+/**
+ * Message d'un partenaire : jamais de réponse automatique jour/nuit ni d'extraction IA.
+ * Texte seul « oui » / « non » (ou bouton du modèle `amane_dispo`) d'un prestataire validé : la réponse s'applique
+ * tout de suite à sa demande `envoyee` la plus récente, comme sur le portail ; l'accusé part ensuite.
+ * Tout autre message reste un message normal, signalé à l'équipe.
+ */
+async function partenaireInbound(db, ctx) {
+  const p = ctx.partenaire;
+  const tasks = [];
+  if (ctx.media) tasks.push(() => mediaFollowup(db, ctx));
+  const reponse = ['text', 'button', 'interactive'].includes(ctx.type) && estPrestataire(p) ? lireReponse(ctx.text) : null;
+  let applied = null;
+  if (reponse) {
+    try {
+      const d = await demandeEnAttente(db, p);
+      if (d) applied = await repondreDemande(db, { partenaire: p, missionId: d.mission._id, vehiculeId: d.demande.vehiculeId, reponse, canal: 'whatsapp' });
+    } catch (e) {
+      console.error('[amane] réponse du prestataire non appliquée', e && (e.code || e.message));
+    }
+  }
+  if (applied) {
+    // Réponse traitée : pas d'alerte « sans réponse depuis 6 h » pour ce message.
+    await db.collection('conversations').updateOne({ _id: ctx.phone }, { $set: { alerte6hFor: ctx.messageId } });
+    await emitConversation(db, ctx.phone);
+    tasks.push(() => accusePartenaire(db, ctx, applied));
+    return tasks;
+  }
+  await emitConversation(db, ctx.phone);
+  emit('message_in', { convId: ctx.phone, nom: p.nom || ctx.profileName || '+' + ctx.phone, text: ctx.text, responsable: 'amel', createdMission: false, missionId: '', clientId: '', partenaireId: p._id });
+  const lastIn = ctx.prev && ctx.prev.lastInAt ? Date.parse(ctx.prev.lastInAt) : 0;
+  if (!lastIn || now() - lastIn > 6 * 3600 * 1000) {
+    tasks.push(() => sendTeamAlert(db, {
+      who: 'amel',
+      texte: `Amane — nouveau message WhatsApp de ${p.nom || '+' + ctx.phone}, partenaire (+${ctx.phone}) : « ${shortTitle(ctx.text)} »`,
+      params: [p.nom || '+' + ctx.phone, shortTitle(ctx.text)],
+    }));
+  }
+  return tasks;
+}
+
+/** Accusé de réception envoyé au prestataire après un « oui » / « non ». Jamais d'exception. */
+async function accusePartenaire(db, ctx, r) {
+  if (!waConfigured()) return { skipped: 'whatsapp_off' };
+  const text = messageAccuse(r.vehicule, r.mission, r.statut);
+  try {
+    const id = await graphSend(textPayload(ctx.phone, text), { timeoutMs: 4000 });
+    await recordOutgoing(db, { convId: ctx.phone, id, type: 'text', text, by: 'auto' });
+    return { sent: id };
+  } catch (e) {
+    console.error('[amane] accusé au prestataire impossible', e && e.message);
+    return { error: e && e.message };
+  }
 }
 
 // ---------- suites (après la réponse à Meta) ----------
