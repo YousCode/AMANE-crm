@@ -5,6 +5,7 @@ node_modules/
 !.env.example
 .vercel/
 apps/*/dist/
+apps/*/dist-demo/
 apps/*/dist-api/
 apps/mobile/.expo/
 # Capture écrite par crm/tests/e2e.js
