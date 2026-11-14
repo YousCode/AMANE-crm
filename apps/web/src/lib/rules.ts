@@ -1,48 +1,76 @@
-/* Règles d'affichage dérivées des données (portées de crm/index.html) : à faire, disponibilité des véhicules, finances, exports. */
-import { STATUTS, PART_TYPES, PROG_TYPES, MOYENS, SERVICES, clashes, chClashes, devisTotals, durDays, docLang, t as tr, LOCALES, type Mission, type Client, type Vehicule, type Partenaire, type Service, type Devis } from '../shared';
-import { parse, sod, addD, fmtE, fmtDay, fmtDT, overlapDays, monthBounds, r2, esc, fmtL, pad } from './format';
-import { LOGO_PATH } from '../components/Icon';
+/* Règles d'affichage dérivées des données (portées de crm/index.html) : à faire, disponibilité des véhicules, finances, exports.
+   Véhicules des prestataires : l'état vient du paquet partagé (`vehicleOn`, `dispoDemandeOf`, `dispoCovers`), jamais recopié ici. */
+import { STATUTS, PART_TYPES, PROG_TYPES, SERVICES, devisDoc, carnetDoc, maisonInfo, clashes, chClashes, devisTotals, durDays, docLang, t as tr, LOCALES, vehicleOn as sharedVehicleOn, dispoDemandeOf, dispoCovers, margePrestataire, type Mission, type Client, type Vehicule, type Partenaire, type Service, type Devis, type DispoDemande } from '../shared';
+import { parse, sod, addD, fmtE, fmtDay, fmtDT, overlapDays, monthBounds, r2, esc, pad, relTime } from './format';
 
 /* Libellé d'unité/type de document : « doc.type.x », repli « doc.type.autre » pour un type inconnu. */
 const tl = (L: string, k: string) => { const v = tr(L, 'doc.' + k); return v === 'doc.' + k ? tr(L, 'doc.type.autre') : v; };
 export const ACTIVE = ['confirmee', 'encours', 'terminee'];
 export const BOOK = ['confirmee', 'encours'], OPT = ['nouvelle', 'proposition'];
 export const OPEN_ST = ['nouvelle', 'proposition', 'confirmee', 'encours'];
-export interface Data { missions: Mission[]; clients: Client[]; vehicules: Vehicule[]; partenaires: Partenaire[]; services: Service[] }
+export interface Data { missions: Mission[]; clients: Client[]; vehicules: Vehicule[]; partenaires: Partenaire[]; services: Service[]; reglages?: { id: string }[] }
 export const byId = <T extends { id: string }>(arr: T[], id?: string | null) => (id ? arr.find((x) => x.id === id) : undefined);
 export const services = (s: Service[]): Service[] => [...(s.length ? s : (SERVICES as unknown as Service[]))].sort((a, b) => (a.ordre || 99) - (b.ordre || 99));
 export const svcName = (s: Service[], id?: string) => services(s).find((x) => x.id === id)?.nom || 'Service';
 export const vehicles = (v: Vehicule[]) => [...v].sort((a, b) => (a.ordre || 99) - (b.ordre || 99));
 export const chauffeurs = (p: Partenaire[]) => p.filter((x) => x.type === 'chauffeur' && x.actif !== false);
+/** Prestataires validés (ceux à qui un véhicule peut appartenir et qui ont un portail). */
+export const loueurs = (p: Partenaire[]) => p.filter((x) => x.type === 'loueur' && !x.aValider && x.actif !== false);
+/** Inscriptions reçues par le formulaire public, pas encore validées. */
+export const inscriptions = (p: Partenaire[]) => p.filter((x) => x.type === 'loueur' && x.aValider).sort((a, b) => String(a.inscription?.at || a.createdAt || '').localeCompare(String(b.inscription?.at || b.createdAt || '')));
+/** Prestataire propriétaire d'un véhicule (undefined = la maison). */
+export const proprio = (p: Partenaire[], v?: Pick<Vehicule, 'partenaireId'> | null) => byId(p, v?.partenaireId);
 export const isVan = (v: Vehicule) => /van|classe v/i.test((v.nom || '') + ' ' + (v.categorie || ''));
-export const seuil = (v: Vehicule) => { const t = +(v.tarifJour || 0); return t ? ((+(v.loyerMois || 0)) + (+(v.chargesMois || 0))) / t : 0; };
+/** Point mort en jours loués par mois ; sans objet (0) pour un véhicule de prestataire : ni loyer ni charges. */
+export const seuil = (v: Vehicule) => { const t = +(v.tarifJour || 0); return t && !v.partenaireId ? ((+(v.loyerMois || 0)) + (+(v.chargesMois || 0))) / t : 0; };
 export const caMois = (ms: Mission[], ref: Date) => { const [a, b] = monthBounds(ref); return ms.filter((m) => ACTIVE.includes(m.statut)).reduce((s, m) => { const d = durDays(m); const o = overlapDays(m, a, b); return s + (+(m.montant || 0)) * (d ? o / d : 0); }, 0); };
 export const joursLoues = (ms: Mission[], v: Vehicule, ref: Date) => { const [a, b] = monthBounds(ref); return ms.filter((m) => m.vehiculeId === v.id && ACTIVE.includes(m.statut)).reduce((s, m) => s + overlapDays(m, a, b), 0); };
 export function contratScore(m: Mission) { const k = m.contrat || ({} as Mission['contrat']); const p = k?.pieces || {}; const steps = [!!p.permis, !!p.passeport, !!p.domicile, k?.statut === 'signe', !!(k?.edlDepart && k.edlDepart.fait), !!(k?.edlRetour && k.edlRetour.fait)]; return { done: steps.filter(Boolean).length, total: steps.length }; }
 
 export function vehMissions(ms: Mission[], v: Vehicule, excl?: string) { return ms.filter((m) => m.vehiculeId === v.id && m.id !== excl && [...BOOK, ...OPT].includes(m.statut) && parse(m.debut)); }
-export type VehState = { k: 'f' | 'b' | 'o' | 'off'; m?: Mission; t?: string };
-export function vehicleOn(ms: Mission[], v: Vehicule, a: Date | null, b: Date | null, excl?: string): VehState {
-  if (v.statut && v.statut !== 'disponible') return { k: 'off', t: v.statut === 'entretien' ? 'En entretien' : 'Indisponible' };
-  if (!a) return { k: 'f' }; b = b || a;
-  const ov = vehMissions(ms, v, excl).filter((m) => (parse(m.debut) as Date) < (b as Date) && ((parse(m.fin) || parse(m.debut)) as Date) > a);
-  const bk = ov.find((m) => BOOK.includes(m.statut)); if (bk) return { k: 'b', m: bk };
-  const op = ov.find((m) => OPT.includes(m.statut)); return op ? { k: 'o', m: op } : { k: 'f' };
-}
+export type VehState = { k: 'f' | 'b' | 'o' | 'off'; m?: Mission; t?: string; ask?: boolean };
+/** État d'un véhicule sur [a, b] : règle du paquet partagé (réservé, option, indisponible ; « À valider » et « Dispo à demander » pour un véhicule de prestataire). */
+export function vehicleOn(ms: Mission[], v: Vehicule, a: Date | null, b: Date | null, excl?: string): VehState { return sharedVehicleOn(v, ms, a || '', b || undefined, excl); }
 export function nowLine(ms: Mission[], v: Vehicule) {
   const now = new Date(); if (v.statut && v.statut !== 'disponible') return v.statut === 'entretien' ? 'En entretien' : 'Indisponible';
+  if (v.aValider) return 'Proposé par le prestataire, à valider';
   const bk = vehMissions(ms, v).filter((m) => BOOK.includes(m.statut));
   const cur = bk.find((m) => (parse(m.debut) as Date) <= now && ((parse(m.fin) || parse(m.debut)) as Date) > now); if (cur) return 'En mission jusqu’au ' + fmtDT(parse(cur.fin));
   const nx = bk.filter((m) => (parse(m.debut) as Date) > now).sort((a, b) => +(parse(a.debut) as Date) - +(parse(b.debut) as Date))[0];
+  if (v.partenaireId && !dispoCovers(v, now)) return 'Dispo à demander au prestataire';
   return nx ? 'Libre jusqu’au ' + fmtDT(parse(nx.debut)) : 'Libre, aucune réservation à venir';
 }
 export const nowState = (ms: Mission[], v: Vehicule) => { const now = new Date(); return vehicleOn(ms, v, now, new Date(+now + 60000)); };
 export const ST_CHIP: Record<string, [string, string]> = { f: ['confirmee', 'Libre'], b: ['perdue', 'Réservé'], o: ['proposition', 'Option'], off: ['proposition', 'Indisponible'] };
+
+/* Disponibilité d'un véhicule de prestataire pour une demande : la réponse à la demande de dispo d'abord (`dispoDemandeOf`), sinon ses jours déclarés (`vehicleOn`). */
+export interface DispoEtat { k: 'a_demander' | 'attente' | 'oui' | 'non' | 'bloque'; label: string; st: '' | 'ok' | 'warn' | 'bad'; d: string; dd: DispoDemande | null }
+/** « 40 min », « 3 h », « 2 j » : durée écoulée depuis `iso`. */
+export function depuis(iso?: string, now = new Date()): string { const d = parse(iso); if (!d) return ''; const mn = Math.max(0, Math.round((+now - +d) / 60000)); return mn < 60 ? `${Math.max(1, mn)} min` : mn < 48 * 60 ? `${Math.round(mn / 60)} h` : `${Math.round(mn / 1440)} j`; }
+const CANAL: Record<string, string> = { portail: 'sur son portail', whatsapp: 'par WhatsApp' };
+export function dispoEtat(ms: Mission[], m: Mission, v: Vehicule, now = new Date()): DispoEtat {
+  const dd = dispoDemandeOf(m, v.id); const a = parse(m.debut), b = parse(m.fin); const s = vehicleOn(ms, v, a, b, m.id);
+  if (s.k === 'off' && !s.ask) return { k: 'bloque', label: s.t || 'Indisponible', st: 'warn', d: v.aValider ? 'Validez d’abord ce véhicule dans la flotte.' : 'Véhicule marqué indisponible dans la flotte.', dd };
+  if (!a) return { k: 'a_demander', label: 'Non demandée', st: '', d: 'Indiquez les dates de la demande.', dd };
+  const rep = dd && dd.reponduAt ? `Réponse du prestataire ${CANAL[String(dd.canal)] ? CANAL[String(dd.canal)] + ', ' : ''}${relTime(dd.reponduAt)}.` : '';
+  if (dd?.statut === 'non') return { k: 'non', label: 'Pas disponible', st: 'bad', d: rep || 'Le prestataire a répondu non.', dd };
+  const couvert = s.k === 'f' || (!s.ask && dispoCovers(v, a, b || a));
+  if (dd?.statut === 'oui' && couvert) return { k: 'oui', label: 'Disponible', st: 'ok', d: rep || 'Le prestataire a répondu oui.', dd };
+  if (dd?.statut === 'envoyee') return { k: 'attente', label: `En attente depuis ${depuis(dd.envoyeAt, now) || 'peu'}`, st: 'warn', d: 'Demande envoyée, pas encore de réponse.', dd };
+  if (couvert) return { k: 'oui', label: 'Disponible', st: 'ok', d: 'Ces dates sont dans les jours déclarés par le prestataire.', dd };
+  return { k: 'a_demander', label: 'Non demandée', st: '', d: dd?.statut === 'oui' ? 'Les dates ont changé depuis sa réponse : à redemander.' : 'Ces dates ne sont pas dans ses jours déclarés.', dd };
+}
+/** Marge d'une demande sur un véhicule de prestataire, prête à afficher (null : véhicule de la maison ou prix d'achat absent ; « — » tant que le montant n'est pas saisi). */
+export function margeLignes(m: Mission, v: Vehicule): { cout: string; coutD: string; marge: string; taux: string; neg: boolean } | null {
+  const x = margePrestataire(m, v); if (!x) return null; const n = durDays(m);
+  return { cout: fmtE(x.cout), coutD: `${n} jour${n > 1 ? 's' : ''} × ${fmtE(v.prixAchatJour)}`, marge: x.vente > 0 ? fmtE(x.marge) : '—', taux: x.vente > 0 ? `${x.taux} %` : '', neg: x.vente > 0 && x.marge < 0 };
+}
 export function driverAt(ms: Mission[], vid: string, dt?: string) { const t = parse(dt); if (!t) return null; return ms.find((m) => m.vehiculeId === vid && ['confirmee', 'encours', 'terminee'].includes(m.statut) && parse(m.debut) && (parse(m.debut) as Date) <= t && ((parse(m.fin) || parse(m.debut)) as Date) >= t) || null; }
 
-export type TodoKind = 'demande' | 'proposition' | 'contrat' | 'pieces' | 'caution' | 'attribuer' | 'prep' | 'solde' | 'conflit' | 'tache' | 'facture' | 'echeance' | 'pv' | 'entretien' | 'anniversaire';
-/** `k` : nature de la tâche (classement dans le Salon) ; `at` : l'instant qui la rend urgente (départ, échéance) ; `days` : jours de retard ou d'attente. */
-export interface Todo { sev: 'bad' | 'warn'; t: string; d: string; id?: string; tab?: string; vid?: string; vtab?: string; cid?: string; k?: TodoKind; at?: Date; days?: number }
+export type TodoKind = 'demande' | 'proposition' | 'contrat' | 'pieces' | 'caution' | 'attribuer' | 'prep' | 'solde' | 'conflit' | 'tache' | 'facture' | 'echeance' | 'pv' | 'entretien' | 'anniversaire' | 'inscription' | 'vehicule' | 'dispo';
+/** `k` : nature de la tâche (classement dans le Salon) ; `at` : l'instant qui la rend urgente (départ, échéance) ; `days` : jours de retard ou d'attente.
+    Fiche ouverte au clic : `cid` client, `pid` partenaire, `vid` véhicule (onglet `vtab`), sinon `id` demande (onglet `tab`). */
+export interface Todo { sev: 'bad' | 'warn'; t: string; d: string; id?: string; tab?: string; vid?: string; vtab?: string; cid?: string; pid?: string; k?: TodoKind; at?: Date; days?: number }
 export function todos(D: Data): Record<string, Todo[]> {
   const ms = D.missions, now = new Date(), out: Record<string, Todo[]> = { amel: [], youssouf: [], aziz: [] };
   const cl = (m: Mission) => byId(D.clients, m.clientId);
@@ -62,9 +90,13 @@ export function todos(D: Data): Record<string, Todo[]> {
     if (clashes(m, ms).length) out.youssouf.push({ sev: 'bad', t: 'Double réservation', d: m.titre, id: m.id, k: 'conflit', at: a || undefined });
     if (chClashes(m, ms).length) out.youssouf.push({ sev: 'bad', t: 'Chauffeur en double réservation', d: m.titre, id: m.id, k: 'conflit', at: a || undefined });
     if (m.statut !== 'perdue') (m.taches || []).forEach((x) => { if (x.fait || !x.resp || !out[x.resp] || !(x.t || '').trim()) return; const due = parse(x.due); out[x.resp].push({ sev: due && due < sod(now) ? 'bad' : 'warn', t: x.t, d: `${m.titre}${due ? ' · ' + fmtDay(due) : ''}`, id: m.id, tab: 'taches', k: 'tache', at: due || undefined }); });
+    /* Prestataire muet : demande de dispo envoyée depuis plus de 24 h pour le véhicule de la demande, tant qu'elle est ouverte. */
+    if (OPEN_ST.includes(m.statut)) (m.dispoDemandes || []).forEach((x) => { const e = parse(x.envoyeAt); if (x.statut !== 'envoyee' || x.vehiculeId !== m.vehiculeId || !e || +now - +e < 864e5) return; const p = byId(D.partenaires, x.partenaireId), v = byId(D.vehicules, x.vehiculeId); out.youssouf.push({ sev: 'bad', t: 'Prestataire sans réponse depuis 24 h', d: [p?.nom, v?.nom, m.titre].filter(Boolean).join(' · '), id: m.id, k: 'dispo', at: a || undefined, days: Math.floor((+now - +e) / 864e5) }); });
     const dv = m.devis; if (dv && dv.factureNumero) { const tt = devisTotals(dv); const fd = parse(dv.factureDate); if (tt.solde > 0.005 && fd && +now - +fd > 7 * 864e5) out.aziz.push({ sev: 'bad', t: `Facture ${dv.factureNumero} en retard`, d: `${cn} · ${fmtE(tt.solde)}`, id: m.id, tab: 'devis', k: 'facture', days: Math.floor((+now - +fd) / 864e5) - 7 }); }
   });
+  inscriptions(D.partenaires).forEach((p) => { const e = parse(p.inscription?.at || p.createdAt); out.youssouf.push({ sev: 'warn', t: 'Inscription prestataire à valider', d: [p.societe || p.nom, p.inscription?.vehicules].filter(Boolean).join(' · '), pid: p.id, k: 'inscription', days: e ? Math.max(0, Math.floor((+now - +e) / 864e5)) : undefined }); });
   D.vehicules.forEach((v) => {
+    if (v.aValider) out.youssouf.push({ sev: 'warn', t: 'Véhicule proposé à valider', d: [v.nom, proprio(D.partenaires, v)?.nom].filter(Boolean).join(' · '), vid: v.id, k: 'vehicule' });
     const e = v.echeances || {}; ([['assurance', 'Assurance'], ['ct', 'Contrôle technique'], ['leasing', 'Fin de leasing']] as const).forEach(([k, l]) => { const d = parse(e[k]); if (d && +d - +now < 30 * 864e5) out.youssouf.push({ sev: +d - +now < 7 * 864e5 ? 'bad' : 'warn', t: `${l} ${v.nom}`, d: `Échéance ${fmtDay(d)}`, vid: v.id, k: 'echeance', at: d }); });
     (v.journal || []).forEach((j) => { if (j.type === 'pv' && !j.traite) { const m = driverAt(ms, v.id, j.dt); out.aziz.push({ sev: 'bad', t: `PV à désigner · ${v.nom}`, d: m ? `Conducteur : ${cl(m)?.nom || '?'}` : 'Date et heure à vérifier', vid: v.id, vtab: 'journal', k: 'pv', days: Math.max(0, Math.floor((+now - +(parse(j.dt) || now)) / 864e5)) }); } });
     const r = parse(v.revision); if (r && +r - +now < 30 * 864e5) out.youssouf.push({ sev: +r - +now < 7 * 864e5 ? 'bad' : 'warn', t: `Révision ${v.nom}`, d: `Prévue ${fmtDay(r)}`, vid: v.id, k: 'echeance', at: r });
@@ -94,29 +126,14 @@ export function progText(D: Data, m: Mission) {
   if (!progSteps(m).length) lines.push('—'); lines.push('', tr(L, 'doc.sign')); return lines.join('\n');
 }
 
-/* Documents HTML (devis, facture, carnet, contrat) */
-function docShell(title: string, L: string, body: string, legal: boolean) {
-  const rtl = L === 'AR'; const a = `<svg width="26" viewBox="40 -60 940 1120"><path fill="#111" d="${LOGO_PATH}"/></svg>`;
-  return `<!doctype html><html lang="${L.toLowerCase()}" dir="${rtl ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>body{font-family:${rtl ? 'Tahoma,"Noto Naskh Arabic",' : ''}'Bodoni Moda',Georgia,"Times New Roman",serif;max-width:760px;margin:48px auto;padding:0 24px;color:#111;line-height:1.55;background:#fff}header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:1px solid #D9D3C9;padding-bottom:18px;margin-bottom:26px}.brand{display:flex;align-items:center;gap:12px;font-size:13px;letter-spacing:.32em;color:#111}h1{font-weight:400;font-size:30px;margin:0 0 4px}.muted{color:#6E675F;font-size:13px}table{width:100%;border-collapse:collapse;margin:14px 0}th,td{padding:8px 6px;border-bottom:1px solid #ECE6DC;text-align:${rtl ? 'right' : 'left'};vertical-align:top;font-size:14px}th{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#6E675F;font-weight:400}td.n,th.n{text-align:${rtl ? 'left' : 'right'};white-space:nowrap}.tot{margin-${rtl ? 'right' : 'left'}:auto;width:min(360px,100%)}.tot td{border:0;padding:4px 6px}.tot tr.g td{border-top:1px solid #111;font-size:16px;padding-top:8px}.ph{background:#FFF3C4;padding:0 3px}h2{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#6E675F;font-weight:400;margin-top:28px}.day{margin-top:22px;font-size:17px;border-bottom:1px solid #ECE6DC;padding-bottom:6px}.st{display:grid;grid-template-columns:70px 1fr;gap:12px;padding:10px 0}.st b{font-weight:400;color:#8A6A3B}footer{margin-top:40px;font-size:11.5px;color:#6E675F;border-top:1px solid #D9D3C9;padding-top:12px}@media print{body{margin:0 auto}}</style></head><body><header><div class="brand">${a}<span>AMANE</span></div>${legal ? `<div class="muted" style="text-align:${rtl ? 'left' : 'right'}">Amane — <span class="ph">[Raison sociale]</span><br><span class="ph">[Adresse]</span><br>SIREN <span class="ph">[SIREN]</span> · TVA <span class="ph">[TVA intracom.]</span></div>` : ''}</header>${body}${legal ? `<footer>Amane · <span class="ph">[Raison sociale]</span> · SIREN <span class="ph">[SIREN]</span> · <span class="ph">[Adresse]</span> · TVA <span class="ph">[TVA intracom.]</span></footer>` : ''}</body></html>`;
-}
+/* Documents HTML (devis, facture, carnet) : gabarit A4 de la maison, partagé avec l'API (@amane/shared/docs).
+   Usage interne : les mentions légales manquantes restent visibles « [SIREN] » pour qu'on pense à les saisir dans Réglages. */
+export const maisonOf = (D: Pick<Data, 'reglages'>) => maisonInfo((byId(D.reglages || [], 'maison') || null) as never);
 export function devisHTML(D: Data, m: Mission, kind: 'devis' | 'facture') {
-  const c = byId(D.clients, m.clientId) || ({} as Client), L = docLang(c), loc = LOCALES[L], dv = m.devis || { lignes: [] }, t = devisTotals(dv), fac = kind === 'facture';
-  const T = (k: string) => tr(L, 'doc.' + k); const num = fac ? dv.factureNumero || '' : dv.numero || ''; const dt = parse(fac ? dv.factureDate : dv.date) || new Date();
-  const rows = (dv.lignes || []).map((l) => `<tr><td>${esc(l.d)}</td><td class="n">${esc(l.q)}</td><td>${esc(tl(L, 'unit.' + l.u) || l.u)}</td><td class="n">${fmtL(l.pu, loc)}</td><td class="n">${fmtL((+l.q || 0) * (+l.pu || 0), loc)}</td></tr>`).join('');
-  const pays = fac && (dv.paiements || []).length ? `<h2>${T('payments')}</h2><table>${(dv.paiements || []).map((q) => `<tr><td>${q.date ? esc((parse(q.date) as Date).toLocaleDateString(loc)) : ''}</td><td>${esc(MOYENS.find((x) => x.id === q.moyen)?.label || '')}</td><td class="n">${fmtL(q.montant, loc)}</td></tr>`).join('')}</table>` : '';
-  const body = `<h1>${fac ? T('invoice') : T('quote')} ${esc(num)}</h1><p class="muted">${T('date')} : ${dt.toLocaleDateString(loc)} · ${T('ref')} : ${esc(m.titre || '')}${fac && dv.numero ? ' · ' + T('quote') + ' ' + esc(dv.numero) : ''}</p>
-  <h2>${T('client')}</h2><p>${esc(c.nom || '')}<br>${esc([c.hotel, c.pays].filter(Boolean).join(', '))}<br>${esc([c.tel, c.email].filter(Boolean).join(' · '))}</p>
-  <table><thead><tr><th>${T('desc')}</th><th class="n">${T('qty')}</th><th>${T('unit')}</th><th class="n">${T('pu')}</th><th class="n">${T('total')}</th></tr></thead><tbody>${rows}</tbody></table>
-  <table class="tot"><tr><td>${T('total')}</td><td class="n">${fmtL(t.ht, loc)}</td></tr>${t.rem ? `<tr><td>${T('discount')} ${esc(dv.remise)} %</td><td class="n">−${fmtL(t.rem, loc)}</td></tr>` : ''}<tr><td>${T('vat')} ${esc(t.rate)} %</td><td class="n">${fmtL(t.tva, loc)}</td></tr><tr class="g"><td>${T('ttc')}</td><td class="n">${fmtL(t.ttc, loc)}</td></tr>${fac ? `<tr><td>${T('paid')}</td><td class="n">${fmtL(t.paid, loc)}</td></tr><tr class="g"><td>${T('due')}</td><td class="n">${fmtL(Math.max(0, t.solde), loc)}</td></tr>` : ''}</table>${pays}
-  <h2>${T('terms')}</h2><p>${T('termsTxt')}</p><h2>${T('bank')}</h2><p>IBAN <span class="ph">[IBAN]</span> · BIC <span class="ph">[BIC]</span></p>`;
-  return docShell(`${fac ? T('invoice') : T('quote')} ${num}`, L, body, true);
+  return devisDoc({ mission: m as never, client: (byId(D.clients, m.clientId) || {}) as never, kind, maison: maisonOf(D), placeholders: true });
 }
 export function carnetHTML(D: Data, m: Mission) {
-  const c = byId(D.clients, m.clientId) || ({} as Client), L = docLang(c), loc = LOCALES[L]; let day = '', h = '';
-  progSteps(m).forEach((x) => { const d = parse(x.dt) as Date; const dl = d.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' }); if (dl !== day) { day = dl; h += `<div class="day">${esc(dl.charAt(0).toUpperCase() + dl.slice(1))}</div>`; } const p = byId(D.partenaires, x.partenaireId);
-    h += `<div class="st"><b>${d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit', hour12: false })}</b><div>${esc(tl(L, 'type.' + x.type))}${p ? ' — ' + esc(p.nom) : ''}${x.lieu || (p && p.adresse) ? `<div class="muted">${esc([x.lieu, p && p.adresse].filter(Boolean).join(' · '))}</div>` : ''}${x.client ? `<div>${esc(x.client)}</div>` : ''}</div></div>`; });
-  const a = parse(m.debut), b = parse(m.fin);
-  return docShell(tr(L, 'doc.prog'), L, `<h1>${tr(L, 'doc.prog')}</h1><p class="muted">${esc(c.nom || '')}${a ? ' · ' + a.toLocaleDateString(loc, { day: 'numeric', month: 'long' }) + (b ? ' — ' + b.toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' }) : '') : ''}</p><p>${tr(L, 'doc.progIntro')}</p>${h || '<p>—</p>'}`, false);
+  return carnetDoc({ mission: m as never, client: (byId(D.clients, m.clientId) || {}) as never, partenaires: D.partenaires as never, maison: maisonOf(D) });
 }
 export function contratHTML(D: Data, m: Mission) {
   const c = byId(D.clients, m.clientId) || ({} as Client), v = byId(D.vehicules, m.vehiculeId) || ({} as Vehicule), k = m.contrat || ({} as NonNullable<Mission['contrat']>); const a = parse(m.debut), b = parse(m.fin);
@@ -146,7 +163,7 @@ export function finData(D: Data, ref: Date) {
   let facture = 0, encaisse = 0; const factures: { m: Mission; t: ReturnType<typeof devisTotals>; date: Date | null }[] = [];
   ms.forEach((m) => { const dv = m.devis; if (!dv) return; const t = devisTotals(dv); if (dv.factureNumero) { if (inM(dv.factureDate)) facture += t.ttc; if (t.solde > 0.005) factures.push({ m, t, date: parse(dv.factureDate) }); } (dv.paiements || []).forEach((q) => { if (inM(q.date)) encaisse += +q.montant || 0; }); });
   let comR = 0, comA = 0; ms.forEach((m) => (m.commissions || []).forEach((c) => { const due = (+(c.base ?? 0)) * (+(c.pct ?? 0)) / 100; if (c.statut === 'recue') { if (inM(c.recueLe)) comR += due; } else comA += due; }));
-  const vs = D.vehicules; const fixe = vs.reduce((x, v) => x + (+(v.loyerMois || 0)) + (+(v.chargesMois || 0)), 0); const journ = vs.reduce((x, v) => x + (v.journal || []).filter((j) => inM(j.dt)).reduce((y, j) => y + (+(j.cout || 0)), 0), 0);
+  const vs = D.vehicules; const fixe = vs.reduce((x, v) => x + (v.partenaireId ? 0 : (+(v.loyerMois || 0)) + (+(v.chargesMois || 0))), 0); const journ = vs.reduce((x, v) => x + (v.journal || []).filter((j) => inM(j.dt)).reduce((y, j) => y + (+(j.cout || 0)), 0), 0);
   const signe = ms.filter((m) => ACTIVE.includes(m.statut) && inM(m.debut)); const bySvc: Record<string, number> = {}, byVeh: Record<string, number> = {};
   signe.forEach((m) => { const sv = m.service || ''; bySvc[sv] = (bySvc[sv] || 0) + (+(m.montant || 0)); if (m.vehiculeId) byVeh[m.vehiculeId] = (byVeh[m.vehiculeId] || 0) + (+(m.montant || 0)); });
   return { a, b: b0, facture: r2(facture), encaisse: r2(encaisse), factures: factures.sort((x, y) => (+(x.date || 0)) - (+(y.date || 0))), reste: r2(factures.reduce((x, f) => x + f.t.solde, 0)), comR: r2(comR), comA: r2(comA), fixe: r2(fixe), journ: r2(journ), res: r2(encaisse + comR - fixe - journ), bySvc, byVeh };

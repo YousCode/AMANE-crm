@@ -22,6 +22,7 @@ Ce dépôt réunit tout le logiciel de la maison : le **CRM** de l'équipe (API,
 | **API** (Express + MongoDB) | Tous les écrans ; webhook WhatsApp ; IA ; rappels automatiques | `apps/api` → `/api`, `/ws` |
 | **CRM historique** (page unique) | Version d'origine, toujours compatible avec l'API | `crm/` → servi sur `/crm` |
 | **Site internet** | Les clients : FR, EN, ES, AR | `site/` → servi sur `/` |
+| **Nouveau site** (en validation) | Les clients : même contenu, scène 3D pilotée par le défilement | `apps/site` → `npm run site` |
 
 ---
 
@@ -73,6 +74,7 @@ flowchart LR
 - **Une seule source de vérité** pour les règles métier (statuts, conflits de réservation, numérotation des devis, montants, langues) : `packages/shared`, utilisé par l'API, le back-office et l'appli.
 - **Temps réel** : chaque écriture est diffusée sur `/ws` ; les écrans se mettent à jour sans recharger.
 - **WhatsApp ne perd rien** : chaque message entrant est stocké, rattaché au client, traduit si besoin, et une alerte part si personne n'a répondu au bout de 6 h.
+- **Prestataires (loueurs)** : ils s'inscrivent sur `/prestataires`, l'équipe valide, chacun reçoit un lien personnel (`/p/…`) pour déclarer ses véhicules et ses jours et répondre aux demandes de dispo. Contrat : [`docs/prestataires.md`](docs/prestataires.md).
 - Le contrat de l'API est décrit dans [`docs/crm-serveur.md`](docs/crm-serveur.md) (v1, toujours valable) et [`docs/architecture-v2.md`](docs/architecture-v2.md) (v2).
 
 ## Démarrer en 5 minutes
@@ -140,6 +142,7 @@ Toutes depuis la racine.
 |---|---|
 | `npm run api` | API en mode démo (`FAKE_DB=1 FAKE_AI=1`) sur le port 3000 |
 | `npm run web` | Back-office en développement (Vite, port 5173, faux serveur msw) |
+| `npm run site` | Nouveau site en développement (Vite, port 5174) ; `npm run build:site` → `apps/site/dist` |
 | `npm run mobile` | Serveur Expo |
 | `npm run build` | Construit le back-office dans `apps/web/dist` (servi ensuite sur `/app`) |
 | `npm start` | API en production (lit les variables d'environnement) |
@@ -147,6 +150,7 @@ Toutes depuis la racine.
 | `npm run typecheck` | Vérification TypeScript du back-office et de l'appli |
 | `npm run test:crm` | Parcours complets du CRM historique (Playwright) |
 | `npm run test:site` | Parcours du formulaire du site (Playwright) |
+| `npm run build:demo --workspace apps/web` | Démo autonome du back-office en un seul fichier (`apps/web/dist-demo/amane-demo.html`), données fictives |
 | `npm run build:vercel` | Régénère `site/vercel.html`, `site/crm/` et `crm-vercel/` après une modification du site ou du CRM |
 
 ## Configuration
@@ -164,17 +168,19 @@ Toutes les variables sont listées et commentées dans [`apps/api/.env.example`]
 | `CRON_ENABLED` | sur une seule instance | Rappels clients, alertes, tableau du lundi |
 | `CRM_ONLY` | non | `1` : le CRM à la racine, sans le site |
 
+L'identité légale portée par les devis et factures (raison sociale, adresse du siège, SIREN, TVA, IBAN, BIC) se saisit dans le back-office : **Réglages → Documents**. Elle s'applique aussitôt aux documents téléchargés et à ceux que le client ouvre par lien.
+
 **Aucun secret ne va dans le dépôt.** Les valeurs vivent dans l'hébergeur (Railway, Render) et dans votre `.env` local. Voir [`SECURITY.md`](SECURITY.md).
 
 ## Tests et qualité
 
 | Suite | Outil | Nombre |
 |---|---|---|
-| `packages/shared` | `node --test` | 21 |
-| `apps/api` (API HTTP réelle, base en mémoire) | `node --test` | 85 |
-| `apps/web` (règles, store, composants) | Vitest | 33 |
+| `packages/shared` | `node --test` | 34 |
+| `apps/api` (API HTTP réelle, base en mémoire) | `node --test` | 101 |
+| `apps/web` (règles, store, composants) | Vitest | 53 |
 | `apps/mobile` | Jest | 28 |
-| CRM historique : parcours, conciergerie, appareil, serveur | Playwright | 32 + 58 + 16 + 99 |
+| CRM historique : parcours, conciergerie, appareil, serveur | Playwright | 32 + 58 + 16 + 100 |
 | Site : formulaire « Être rappelé » | Playwright | 12 |
 
 La CI GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) lance tout à chaque push sur `main` et sur chaque pull request : tests unitaires, TypeScript, build du back-office, puis les parcours Playwright. Une pull request ne se fusionne que si la CI est verte.

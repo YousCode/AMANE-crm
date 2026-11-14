@@ -4,9 +4,9 @@ import { clientIp, ID_RE } from '../lib/http.js';
 import { rateHit, tooMany } from '../lib/auth.js';
 import { ensureEspace, missionByEspaceToken, publicUrl, TOKEN_RE } from '../lib/share.js';
 import { espaceData, espacePage } from '../pages/espace.js';
-import { devisBody, expiredPage } from '../pages/devis.js';
-import { shell } from '../pages/shell.js';
-import { docLang, t, firstName } from '@amane/shared';
+import { expiredPage } from '../pages/devis.js';
+import { docLang, t, firstName, devisDoc } from '@amane/shared';
+import { getMaison } from '../lib/maison.js';
 import { normPhone } from '../lib/phone.js';
 import { toBuffer, IMAGE_TYPES } from '../lib/media.js';
 
@@ -62,8 +62,7 @@ for (const kind of ['devis', 'facture']) {
   router.get(`/api/espace/:token/${kind}`, wrap(async (req, res) => {
     const x = await load(req);
     if (!x.m || !x.m.devis || !Array.isArray(x.m.devis.lignes) || !x.m.devis.lignes.length || (kind === 'facture' && !x.m.devis.factureNumero)) return html(res, 404, expiredPage('EN'));
-    const L = docLang(x.client);
-    html(res, 200, shell({ lang: L, title: `${t(L, kind === 'facture' ? 'doc.invoice' : 'doc.quote')} ${kind === 'facture' ? x.m.devis.factureNumero : x.m.devis.numero || ''}`.trim(), body: devisBody({ mission: x.m, client: x.client, kind, L }) }));
+    html(res, 200, devisDoc({ mission: x.m, client: x.client, kind, maison: await getMaison(x.db) }));
   }));
 }
 

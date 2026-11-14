@@ -42,3 +42,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:crm
       - run: npm run test:site
+      - name: ffmpeg (découpe des films du site en images)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: npm run test:nouveau-site
+      - run: node apps/site/e2e/sequence.mjs

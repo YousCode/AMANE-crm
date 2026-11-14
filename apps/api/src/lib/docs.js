@@ -13,6 +13,10 @@ export const BROADCAST = [...WRITABLE, 'rappels'];
 
 const SERVER_FIELDS = new Set(['_id', 'id', 'updatedAt', 'updatedBy', 'createdAt', '_deleted', 'telNorm']);
 const IGNORED_IN_SUMMARY = new Set([...SERVER_FIELDS]);
+/** Champs posés par le serveur uniquement : un PUT du CRM ne peut ni les créer, ni les changer, ni les retirer. */
+export const PROTECTED = { partenaires: ['portailToken', 'portailAt', 'aValider'], missions: ['dispoDemandes'] };
+/** Détruits à la suppression. `aValider` reste : une inscription refusée puis ré-enregistrée depuis un écran en retard ne revient pas validée. */
+const DROPPED_ON_DELETE = { partenaires: ['portailToken', 'portailAt'] };
 
 export const STATUT_MISSION = {
   nouvelle: 'Nouvelle', proposition: 'Proposition', confirmee: 'Confirmée', encours: 'En cours', terminee: 'Terminée', perdue: 'Perdue',
@@ -96,9 +100,13 @@ export async function logActivity(db, { user, col, docId, action, resume }) {
  *   (sauf champs serveur : createdAt conservé, telNorm recalculé).
  * - sinon (écritures serveur : WhatsApp, site, IA) : fusion, les champs absents sont conservés.
  * opts.activity : false pour ne rien journaliser ; opts.action / opts.resume pour forcer l'entrée.
+ * opts.keep : champs que cette écriture ne touche pas (ni posés, ni retirés : la valeur stockée reste).
+ * opts.unset : champs à retirer (écritures serveur en mode fusion).
  */
 export async function saveDoc(db, col, id, fields, by, opts = {}) {
   const c = db.collection(col);
+  const keep = Array.isArray(opts.keep) ? opts.keep : [];
+  if (keep.length) fields = Object.fromEntries(Object.entries(fields).filter(([k]) => !keep.includes(k)));
   const old = await c.findOne({ _id: id });
   const at = nowIso();
   const set = { ...fields };
@@ -115,8 +123,11 @@ export async function saveDoc(db, col, id, fields, by, opts = {}) {
   const removed = [];
   if (opts.replace && old) {
     for (const k of Object.keys(old)) {
-      if (!(k in fields) && !SERVER_FIELDS.has(k)) { unset[k] = ''; removed.push(k); }
+      if (!(k in fields) && !SERVER_FIELDS.has(k) && !keep.includes(k)) { unset[k] = ''; removed.push(k); }
     }
+  }
+  for (const k of Array.isArray(opts.unset) ? opts.unset : []) {
+    if (!(k in set) && !SERVER_FIELDS.has(k) && old && k in old && !(k in unset)) { unset[k] = ''; removed.push(k); }
   }
   if (Object.keys(unset).length) update.$unset = unset;
   await c.updateOne({ _id: id }, update, { upsert: true });
@@ -147,7 +158,10 @@ export async function softDelete(db, col, id, by) {
   const old = await c.findOne({ _id: id });
   if (!old || old._deleted) return false;
   const at = nowIso();
-  await c.updateOne({ _id: id }, { $set: { _deleted: true, updatedAt: at, updatedBy: by } });
+  const update = { $set: { _deleted: true, updatedAt: at, updatedBy: by } };
+  // Un partenaire supprimé perd son lien de portail pour de bon : le recréer ne ranime pas l'ancien jeton.
+  if (DROPPED_ON_DELETE[col]) update.$unset = Object.fromEntries(DROPPED_ON_DELETE[col].map((k) => [k, '']));
+  await c.updateOne({ _id: id }, update);
   await logActivity(db, { user: by, col, docId: id, action: 'delete', resume: `Suppression : ${label(old, id)}` });
   if (BROADCAST.includes(col)) emit('deleted', { col, id, by });
   return true;

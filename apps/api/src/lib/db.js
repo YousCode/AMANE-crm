@@ -6,7 +6,7 @@ import { nowIso, now as clockNow } from './clock.js';
 import { seedIfEmpty } from './seed.js';
 import { HttpError } from './http.js';
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const G = globalThis;
 G.__amane = G.__amane || { injected: null, conn: null, prepared: new WeakMap() };
 const state = G.__amane;
@@ -67,6 +67,7 @@ async function prepare(db) {
   if (schema && schema.version >= SCHEMA_VERSION && schema.seeded) return;
   if (schema && schema.seeded && schema.version < SCHEMA_VERSION) {
     // Migration 1 → 2 : index supplémentaires et modèles WhatsApp par défaut ; aucune donnée modifiée.
+    // Migration 2 → 3 : index des prestataires (jeton du portail, téléphone, véhicules confiés) ; aucune donnée modifiée.
   }
   const idx = [
     ['ratelimits', { expireAt: 1 }, { expireAfterSeconds: 0 }],
@@ -91,6 +92,9 @@ async function prepare(db) {
     ['missions', { espaceToken: 1 }],
     ['missions', { 'devis.shareToken': 1 }],
     ['photos', { mediaId: 1 }],
+    ['partenaires', { portailToken: 1 }],
+    ['partenaires', { telNorm: 1 }],
+    ['vehicules', { partenaireId: 1 }],
   ];
   await Promise.all(idx.map(([c, k, o]) => db.collection(c).createIndex(k, o || {})));
   await seedIfEmpty(db, nowIso());

@@ -48,3 +48,19 @@
 @media (pointer:coarse){.att span{padding-right:0}.att span button{width:44px;height:44px;margin:-8px 0}.x{width:44px;height:44px}.tabs button{min-height:44px}.ent{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) 44px}}
 /* Tablette (700–1019 px) : fiche en volet latéral plutôt qu'en plein écran. */
 @media (min-width:700px) and (max-width:1019px){.drawer{width:min(600px,100%);border-left:1px solid var(--line)}}
+/* Prestataires : blocs de la fiche loueur (inscription, portail), de la fiche véhicule (jours déclarés) et de la demande (disponibilité, marge). */
+.blk{padding:14px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:none}
+.blk p{margin:0}
+.blkH{display:flex;align-items:center;justify-content:space-between;gap:6px 12px;flex-wrap:wrap}
+.blkT{font-weight:500;overflow-wrap:anywhere}
+.blk :global(.stat)>span:first-child{color:var(--fg2);min-width:0}
+.blk :global(.stat)>b{text-align:end;overflow-wrap:anywhere;min-width:0}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.span{grid-column:1/-1;min-width:0}
+.msg{white-space:pre-wrap;overflow-wrap:anywhere;font-size:0.8125rem;color:var(--fg2);border-left:2px solid var(--accent);padding:4px 10px}
+.per{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 10px;align-items:end}
+.per>button{justify-self:start}
+.perRow{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line2);font-size:0.8438rem}
+.perRow:first-child{border-top:0}
+.perRow>span:first-child{flex:1;min-width:0}
+.perRow>span:nth-child(2){color:var(--fg3);white-space:nowrap}

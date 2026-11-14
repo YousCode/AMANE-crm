@@ -14,7 +14,7 @@ export type PaiementStatut = 'non' | 'acompte' | 'solde';
 export type DevisStatut = 'brouillon' | 'envoye' | 'accepte' | 'refuse';
 export type Unite = 'jour' | 'heure' | 'forfait';
 export type Moyen = 'virement' | 'cb' | 'especes' | 'lien';
-export type PartType = 'chauffeur' | 'restaurant' | 'hotel' | 'boutique' | 'garage' | 'assurance' | 'autre';
+export type PartType = 'chauffeur' | 'loueur' | 'restaurant' | 'hotel' | 'boutique' | 'garage' | 'assurance' | 'autre';
 export type ProgType = 'transfert' | 'restaurant' | 'shopping' | 'visite' | 'hotel' | 'autre';
 export type JournalType = 'entretien' | 'reparation' | 'dommage' | 'pv' | 'controle' | 'autre';
 export type Priorite = 'haute' | 'normale' | 'basse';
@@ -93,6 +93,8 @@ export interface Contrat {
 
 export interface Mission extends ServerFields {
   titre: string;
+  /** Demandes de disponibilité envoyées aux prestataires (une par véhicule). */
+  dispoDemandes?: DispoDemande[];
   clientId?: string;
   service?: ServiceId | string;
   vehiculeId?: string;
@@ -123,6 +125,11 @@ export interface Mission extends ServerFields {
 }
 
 export interface JournalEntree { dt: string; type: JournalType | string; cout?: number | string; notes?: string; km?: number | string }
+export interface DispoPeriode { du: string; au: string }
+export type DispoStatut = 'envoyee' | 'oui' | 'non';
+/** Demande de disponibilité envoyée à un prestataire pour une mission. */
+export interface DispoDemande { vehiculeId: string; partenaireId: string; statut: DispoStatut; envoyeAt?: string; reponduAt?: string; canal?: 'whatsapp' | 'lien' | 'portail' | string; par?: string }
+
 export interface Vehicule extends ServerFields {
   nom: string;
   categorie?: string;
@@ -138,6 +145,14 @@ export interface Vehicule extends ServerFields {
   ordre?: number;
   photos?: string[];
   journal?: JournalEntree[];
+  /** Prestataire (partenaire de type « loueur ») propriétaire du véhicule ; vide = véhicule de la maison. */
+  partenaireId?: string;
+  /** Ce que la maison paie au prestataire, par jour. */
+  prixAchatJour?: number | string;
+  /** Jours où le prestataire déclare le véhicule disponible. */
+  dispos?: DispoPeriode[];
+  /** Véhicule proposé par le prestataire depuis son portail, pas encore validé par l'équipe. */
+  aValider?: boolean;
 }
 
 export interface Service extends ServerFields { nom: string; description?: string; tarif?: string; ordre?: number }
@@ -152,6 +167,15 @@ export interface Partenaire extends ServerFields {
   langues?: string;
   adresse?: string;
   commission?: number | string;
+  /** Jeton du portail prestataire (/p/:token), posé par le serveur. */
+  portailToken?: string;
+  portailAt?: string;
+  /** Inscription reçue par le formulaire public, pas encore validée par l'équipe. */
+  aValider?: boolean;
+  /** Société, SIREN et véhicules annoncés à l'inscription. */
+  societe?: string;
+  siren?: string;
+  inscription?: { at: string; vehicules?: string; message?: string };
   notes?: string;
   actif?: boolean;
   photoId?: string;
@@ -264,7 +288,7 @@ export interface Relance {
 }
 
 export interface DevisTotals { ht: number; rem: number; base: number; tva: number; rate: number; ttc: number; paid: number; solde: number }
-export interface VehicleState { k: 'f' | 'b' | 'o' | 'off'; m?: Mission; t?: string }
+export interface VehicleState { k: 'f' | 'b' | 'o' | 'off'; m?: Mission; t?: string; /** véhicule de prestataire hors de ses jours déclarés : il faut lui demander */ ask?: boolean }
 export interface ValidationResult { ok: boolean; errors: Record<string, string> }
 
 export interface SyncResponse {
@@ -410,3 +434,26 @@ export function validateDevis(obj: unknown): ValidationResult;
 export function validateVehicule(obj: unknown): ValidationResult;
 export function validatePartenaire(obj: unknown): ValidationResult;
 export function validateService(obj: unknown): ValidationResult;
+
+// ---------- documents A4 (devis, facture, carnet de séjour) ----------
+export type MaisonKey = 'raison' | 'adresse' | 'siren' | 'tva' | 'iban' | 'bic' | 'tel' | 'email' | 'site';
+export type Maison = Record<MaisonKey, string>;
+export const MAISON_FIELDS: readonly { k: MaisonKey; label: string; placeholder: string }[];
+export const DOC_COLORS: Readonly<Record<string, string>>;
+export function escHtml(s: unknown): string;
+/** reglages/maison complété par des valeurs par défaut (ex. BANK_IBAN côté serveur). */
+export function maisonInfo(raw?: Partial<Record<MaisonKey, unknown>> | null, defaults?: Partial<Record<MaisonKey, unknown>> | null): Maison;
+/** Champs légaux manquants pour une facture conforme. */
+export function maisonMissing(m?: Partial<Maison> | null): MaisonKey[];
+export function docShell(o: { lang?: string; title?: string; body?: string; legal?: boolean; kind?: string; num?: string; meta?: string; maison?: Partial<Maison> | null; placeholders?: boolean; after?: string; extraHead?: string }): string;
+export function devisDoc(o: { mission: Partial<Mission> & Record<string, any>; client?: Partial<Client> | null; kind?: 'devis' | 'facture'; maison?: Partial<Maison> | null; placeholders?: boolean; after?: string; lang?: string }): string;
+export function programmeSteps<T extends { dt?: string }>(mission: { programme?: T[] } | null | undefined): T[];
+export function carnetDoc(o: { mission: Partial<Mission> & Record<string, any>; client?: Partial<Client> | null; partenaires?: readonly { id?: string; _id?: string; nom?: string; adresse?: string }[]; maison?: Partial<Maison> | null; lang?: string }): string;
+
+// ---------- véhicules des prestataires ----------
+export const DISPO_ST: readonly Labelled<DispoStatut>[];
+export function normDispos(list: unknown): DispoPeriode[];
+export function dispoCovers(v: { dispos?: DispoPeriode[] } | null | undefined, a: string | Date, b?: string | Date): boolean;
+export function addDispo(dispos: DispoPeriode[] | undefined, a: string | Date, b?: string | Date): DispoPeriode[];
+export function dispoDemandeOf(m: { dispoDemandes?: DispoDemande[] } | null | undefined, vehiculeId: string): DispoDemande | null;
+export function margePrestataire(m: { debut?: string; fin?: string; montant?: number | string } | null | undefined, v: { partenaireId?: string; prixAchatJour?: number | string } | null | undefined): { cout: number; vente: number; marge: number; taux: number } | null;

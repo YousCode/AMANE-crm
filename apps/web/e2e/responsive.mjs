@@ -50,6 +50,8 @@ async function seed(page) {
       createdAt: now, updatedAt: now, updatedBy: 'amel' });
     sim.inbound(LONG_TEL, 'مرحباً، نحن عائلة آل مكتوم وسنصل إلى باريس يوم الخميس على متن طيران الإمارات. نرغب في سيارة كلاس في مع سائق يتحدث العربية طوال الإقامة، بالإضافة إلى سيارة جي ٦٣ لحفل الزفاف يوم السبت. هل يمكنكم تأكيد التوفر والسعر الإجمالي؟', { name: LONG_CLIENT });
     sim.inbound(LONG_TEL, 'Le lien de notre réservation d’hôtel : https://www.dorchestercollection.com/paris/hotel-plaza-athenee/reservations/confirmation/ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', { name: LONG_CLIENT });
+    /* Prestataires : un véhicule proposé depuis le portail (à valider), au nom long. */
+    sim.change('vehicules', { id: 'v_prop', nom: 'Range Rover Sport Autobiography P530 — proposé par le prestataire', categorie: 'SUV', plaque: 'GJ-530-LT', couleur: 'Vert Belgravia', statut: 'disponible', partenaireId: 'p_rivoli', prixAchatJour: 480, tarifJour: '', aValider: true, dispos: [], photos: [], journal: [], echeances: {}, createdAt: now, updatedAt: now, updatedBy: 'prestataire' });
     const cv = S.db.conversations.get(LONG_TEL); if (cv) { cv.clientId = 'c_long'; cv.missionId = 'm_long'; cv.lang = 'AR'; cv.aiSummary = 'La famille Al Maktoum arrive jeudi (Emirates) : Classe V avec chauffeur arabophone pour tout le séjour, G 63 pour le mariage samedi. Demande le prix total.'; cv.aiFields = { service: 'sejour', vehicule: 'Classe V', debut: at(1, 9), lieu: 'Aéroport CDG', passagers: 6, langue: 'AR' }; }
   }, { LONG_CLIENT, LONG_TEL });
   await page.reload(); await page.waitForFunction(() => document.querySelector('[data-testid="live"]')?.textContent?.includes('Synchronisé'), null, { timeout: 15000 });
@@ -58,8 +60,10 @@ async function seed(page) {
 const go = async (page, path) => { await page.goto(BASE + path); await page.waitForFunction(() => document.querySelector('[data-testid="live"]')?.textContent?.includes('Synchronisé'), null, { timeout: 15000 }); await page.waitForTimeout(150); };
 const click = async (page, sel) => { await page.click(sel); await page.waitForTimeout(200); };
 const seg = async (page, label) => { await page.locator('.seg button', { hasText: label }).first().click(); await page.waitForTimeout(200); };
-const openMission = async (page, id) => { await go(page, '/demandes'); const li = page.locator(`[data-testid="lcard-${id}"]`); if (await li.count()) await li.first().click(); else await page.click(`[data-testid="card-${id}"]`); await page.waitForSelector('[data-testid="drawer"]'); await page.waitForTimeout(150); };
+const openMission = async (page, id) => { await go(page, '/demandes'); const li = page.locator(`[data-testid="lcard-${id}"]`); if (await li.count()) await li.first().click({ position: { x: 60, y: 22 } }); /* sur le titre : au centre d'une carte courte se trouvent les boutons ronds (appeler, WhatsApp) */ else await page.click(`[data-testid="card-${id}"]`); await page.waitForSelector('[data-testid="drawer"]'); await page.waitForTimeout(150); };
 const tab = async (page, t) => { await click(page, `[data-testid="tab-${t}"]`); };
+/* Amène un bloc de la fiche sous les onglets en ne faisant défiler que le corps du tiroir (en paysage bas, c'est le tiroir entier qui défile : on le laisse en haut, en-tête visible). */
+const show = async (page, sel) => { await page.evaluate((q) => { const d = document.querySelector('[data-testid="drawer"]'), b = document.querySelector('[data-drawer-body]'), el = document.querySelector(q); if (d) d.scrollTop = 0; if (b && el && /(auto|scroll)/.test(getComputedStyle(b).overflowY)) b.scrollTop += el.getBoundingClientRect().top - b.getBoundingClientRect().top - 12; }, sel); await page.waitForTimeout(150); };
 
 /* États visités : nom → mise en place (la page est connectée et les données ajoutées). */
 export const STATES = {
@@ -84,7 +88,17 @@ export const STATES = {
   async 'client-plus'(p) { await go(p, '/clients'); await click(p, '[data-testid="client-c_long"]'); await p.waitForSelector('[data-testid="drawer"]'); await tab(p, 'plus'); },
   async 'client-hist'(p) { await go(p, '/clients'); await click(p, '[data-testid="client-c_long"]'); await p.waitForSelector('[data-testid="drawer"]'); await tab(p, 'hist'); await p.waitForTimeout(300); },
   async carnet(p) { await go(p, '/carnet'); },
-  async 'partenaire-drawer'(p) { await go(p, '/carnet'); await click(p, '.row'); await p.waitForSelector('[data-testid="drawer"]'); },
+  async 'partenaire-drawer'(p) { await go(p, '/carnet'); await click(p, '[data-testid="part-p_karim"] .main-t'); await p.waitForSelector('[data-testid="drawer"]'); },
+  /* Prestataires : inscription à valider, fiche loueur avec le lien de son portail, véhicule de prestataire (fiche, jours déclarés, à valider), dispo d'une demande. */
+  async 'loueur-inscription'(p) { await go(p, '/carnet'); await click(p, '[data-testid="insc-p_marais"] .main-t'); await p.waitForSelector('[data-testid="insc"]'); },
+  async 'loueur-drawer'(p) { await go(p, '/carnet'); await click(p, '[data-testid="part-p_rivoli"] .main-t'); await p.waitForSelector('[data-testid="portail"]'); if (await p.locator('[data-testid="portail-btn"]').count()) await click(p, '[data-testid="portail-btn"]'); await p.waitForSelector('[data-testid="portail-url"]'); await show(p, '[data-testid="portail"]'); },
+  async 'loueur-regenerer'(p) { await STATES['loueur-drawer'](p); await click(p, '[data-testid="portail-reset"]'); await p.waitForSelector('[data-testid="portail-reset-oui"]'); await show(p, '[data-testid="portail"]'); },
+  async 'vehicule-presta'(p) { await go(p, '/flotte'); await click(p, '[data-testid="veh-v_rivoli_s"]'); await p.waitForSelector('[data-testid="drawer"]'); },
+  async 'vehicule-presta-jours'(p) { await STATES['vehicule-presta'](p); await tab(p, 'dispo'); await p.waitForSelector('[data-testid="jours"]'); },
+  async 'vehicule-a-valider'(p) { await go(p, '/flotte'); await click(p, '[data-testid="aval-v_prop"] .main-t'); await p.waitForSelector('[data-testid="veh-avalider"]'); },
+  async 'mission-dispo'(p) { await openMission(p, 'm_seminaire'); await p.waitForSelector('[data-testid="dispo"]'); await show(p, '[data-testid="dispo"]'); },
+  async 'mission-dispo-lien'(p) { await openMission(p, 'm_seminaire'); await p.waitForSelector('[data-testid="dispo"]'); await p.evaluate(() => { window.__amaneMock.state().whatsappOn = false; }); await click(p, '[data-testid="dispo-btn"]'); await p.waitForSelector('[data-testid="dispo-msg"]'); await show(p, '[data-testid="dispo"]'); },
+  async 'mission-dispo-oui'(p) { await openMission(p, 'm_seminaire'); await p.waitForSelector('[data-testid="dispo"]'); if (await p.locator('[data-testid="dispo-etat"][data-etat="a_demander"]').count()) { await click(p, '[data-testid="dispo-btn"]'); await p.waitForSelector('[data-testid="dispo-etat"][data-etat="attente"]'); } await p.evaluate(() => window.__amaneMock.dispoReponse('m_seminaire', 'v_rivoli_v', 'oui')); await p.waitForFunction(() => document.querySelector('[data-testid="dispo-etat"]')?.dataset.etat === 'oui'); await show(p, '[data-testid="dispo"]'); },
   async flotte(p) { await go(p, '/flotte'); },
   async 'vehicule-drawer'(p) { await go(p, '/flotte'); await click(p, '[data-testid="veh-g63"]'); await p.waitForSelector('[data-testid="drawer"]'); },
   async 'vehicule-dispo'(p) { await go(p, '/flotte'); await click(p, '[data-testid="veh-classev"]'); await p.waitForSelector('[data-testid="drawer"]'); await tab(p, 'dispo'); },

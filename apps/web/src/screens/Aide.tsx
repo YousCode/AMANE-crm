@@ -1,5 +1,5 @@
 import type React from 'react';
-/* Aide : prise en main en cinq étapes, qui fait quoi, outils de conciergerie, raccourcis, sauvegarde JSON. */
+/* Aide : prise en main en six étapes, qui fait quoi, outils de conciergerie (dont les prestataires), raccourcis, sauvegarde JSON. */
 import { useNavigate } from 'react-router-dom';
 import s from './Lists.module.css';
 import { Icon } from '../components/Icon';
@@ -28,7 +28,7 @@ export function Aide() {
     ['Bouclez le dossier', 'Dès qu’une demande est confirmée, elle apparaît dans Contrats : contrat (à rédiger, envoyé, signé), pièces du client, caution, état des lieux au départ et au retour, paiement. Le devis s’envoie par lien : le client l’accepte d’un geste.', <button className="btn sm" type="button" onClick={() => nav('/contrats')}>Ouvrir les contrats</button>],
     ['Tenez la flotte à jour', 'Dans Flotte : photos de chaque voiture, « Qui est libre ? » sur une période, révisions, journal (entretiens, PV) et rentabilité par véhicule.', <button className="btn sm" type="button" onClick={() => nav('/flotte')}>Ouvrir la flotte</button>],
   ];
-  const roles: [string, string][] = [['amel', 'Répond aux demandes et aux messages, relance les propositions, tient les fiches clients et les goûts de chacun.'], ['youssouf', 'Attribue les véhicules, prépare les départs, suit révisions, photos, journal et doubles réservations.'], ['aziz', 'Contrats, pièces d’identité, cautions, états des lieux, encaissement des soldes, finances.']];
+  const roles: [string, string][] = [['amel', 'Répond aux demandes et aux messages, relance les propositions, tient les fiches clients et les goûts de chacun.'], ['youssouf', 'Attribue les véhicules, prépare les départs, suit révisions, photos, journal et doubles réservations. Valide les prestataires et leurs véhicules.'], ['aziz', 'Contrats, pièces d’identité, cautions, états des lieux, encaissement des soldes, finances.']];
   return <>
     <div className="view-h"><div><div className="label">Prise en main</div><h2>Comment fonctionne le CRM</h2></div></div>
     <div className={s.aide}>
@@ -40,6 +40,7 @@ export function Aide() {
             <div><i>·</i><span><b style={{ fontWeight: 500, color: 'var(--fg)' }}>Devis & facture</b> : numéro D-année-0001 automatique, envoi par lien au client, transformation en facture, règlements. Le statut de paiement suit tout seul.</span></div>
             <div><i>·</i><span><b style={{ fontWeight: 500, color: 'var(--fg)' }}>Programme</b> : les étapes du séjour, envoyées sur WhatsApp ou en carnet dans la langue du client (FR, EN, ES, AR), et l’espace client en ligne.</span></div>
             <div><i>·</i><span><b style={{ fontWeight: 500, color: 'var(--fg)' }}>Carnet</b> : chauffeurs, restaurants, hôtels, boutiques, garages. Un chauffeur pris deux fois apparaît en rouge dans le Planning. Les commissions se notent dans le devis.</span></div>
+            <div><i>·</i><span><b style={{ fontWeight: 500, color: 'var(--fg)' }}>Prestataires</b> (Youssouf) : un loueur s’inscrit sur la page « Devenir prestataire », ou se crée dans le Carnet (type Loueur). L’inscription se valide dans le Carnet : son lien personnel est créé, à lui envoyer par WhatsApp. Avec ce lien, sans mot de passe, il déclare ses véhicules et ses jours libres. Dans une demande, choisissez son véhicule puis « Demander la dispo » : sa réponse et la marge s’affichent dans la fiche.</span></div>
             <div><i>·</i><span><b style={{ fontWeight: 500, color: 'var(--fg)' }}>Tâches</b> : une checklist par demande, avec un modèle par service ; chaque tâche arrive dans « À faire » de son responsable.</span></div>
             <div><i>·</i><span><b style={{ fontWeight: 500, color: 'var(--fg)' }}>Journal de flotte</b> (Youssouf) : entretiens, dommages, coûts, échéances. Pour un PV, la date suffit : le conducteur à désigner est retrouvé, et Aziz le voit dans « À faire ».</span></div>
             <div><i>·</i><span><b style={{ fontWeight: 500, color: 'var(--fg)' }}>Finances</b> (Aziz) : facturé, encaissé, factures en retard, commissions, coûts de la flotte, export CSV.</span></div>

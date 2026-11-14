@@ -57,6 +57,7 @@ export const chClashes = (m, all) => overlapping(m, all, 'chauffeurId');
  */
 export function vehicleOn(v, missions, a, b, excl) {
   if (v.statut && v.statut !== 'disponible') return { k: 'off', t: v.statut === 'entretien' ? 'En entretien' : 'Indisponible' };
+  if (v.aValider) return { k: 'off', t: 'À valider' };
   const from = parseDate(a);
   if (!from) return { k: 'f' };
   const to = parseDate(b) || from;
@@ -66,7 +67,73 @@ export function vehicleOn(v, missions, a, b, excl) {
   const bk = ov.find((m) => BOOK_STATUTS.includes(m.statut));
   if (bk) return { k: 'b', m: bk };
   const op = ov.find((m) => OPT_STATUTS.includes(m.statut));
-  return op ? { k: 'o', m: op } : { k: 'f' };
+  if (op) return { k: 'o', m: op };
+  // Véhicule d'un prestataire : libre seulement sur les jours qu'il a déclarés ; sinon il faut lui demander.
+  if (v.partenaireId) {
+    // Un « oui » du prestataire à une demande vaut jours déclarés sur la période de cette mission (la réponse est posée par le serveur ;
+    // les `dispos` de la fiche, elles, peuvent avoir été réécrites depuis un écran en retard).
+    const oui = (missions || []).filter((m) => m && !m._deleted && parseDate(m.debut) && (dispoDemandeOf(m, vid) || {}).statut === 'oui')
+      .map((m) => ({ du: dayKey(parseDate(m.debut)), au: dayKey(parseDate(m.fin) || parseDate(m.debut)) }));
+    if (!dispoCovers({ dispos: [...(Array.isArray(v.dispos) ? v.dispos : []), ...oui] }, from, to)) return { k: 'off', t: 'Dispo à demander', ask: true };
+  }
+  return { k: 'f' };
+}
+
+// ---------- véhicules des prestataires (loueurs) ----------
+
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const dayKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+/** Périodes de disponibilité propres : [{du, au}] en « AAAA-MM-JJ », du ≤ au, triées, fusionnées quand elles se touchent, 60 au plus. */
+export function normDispos(list) {
+  const ok = (Array.isArray(list) ? list : [])
+    .filter((p) => p && DAY_RE.test(String(p.du)) && DAY_RE.test(String(p.au)) && parseDate(p.du) && parseDate(p.au))
+    .map((p) => (p.du <= p.au ? { du: p.du, au: p.au } : { du: p.au, au: p.du }))
+    .sort((x, y) => x.du.localeCompare(y.du));
+  const out = [];
+  for (const p of ok) {
+    const last = out[out.length - 1];
+    const [y, m, d] = last ? last.au.split('-').map(Number) : [];
+    const next = last ? dayKey(new Date(y, m - 1, d + 1)) : '';
+    if (last && p.du <= next) { if (p.au > last.au) last.au = p.au; } else out.push(p);
+  }
+  return out.slice(0, 60);
+}
+
+/** Vrai si chaque jour de [a, b] est dans une période déclarée du véhicule (`v.dispos`). */
+export function dispoCovers(v, a, b) {
+  const from = parseDate(a); if (!from) return false;
+  const to = parseDate(b) || from;
+  const periods = normDispos(v && v.dispos);
+  if (!periods.length) return false;
+  const end = dayKey(to);
+  let cur = startOfDay(from);
+  for (let i = 0; i < 400; i++) {
+    const k = dayKey(cur);
+    if (!periods.some((p) => p.du <= k && k <= p.au)) return false;
+    if (k >= end) return true;
+    cur = addDays(cur, 1);
+  }
+  return false;
+}
+
+/** Ajoute la période [a, b] (dates de mission) aux disponibilités d'un véhicule. */
+export function addDispo(dispos, a, b) {
+  const from = parseDate(a); if (!from) return normDispos(dispos);
+  const to = parseDate(b) || from;
+  return normDispos([...(Array.isArray(dispos) ? dispos : []), { du: dayKey(from), au: dayKey(to) }]);
+}
+
+/** Demande de disponibilité d'une mission pour un véhicule (ou null). */
+export const dispoDemandeOf = (m, vehiculeId) => ((m && Array.isArray(m.dispoDemandes) ? m.dispoDemandes : []).find((d) => d && d.vehiculeId === vehiculeId)) || null;
+
+/** Coût d'achat d'une mission auprès du prestataire (prix d'achat / jour × jours) et marge sur le montant TTC. */
+export function margePrestataire(m, v) {
+  const pa = +((v && v.prixAchatJour) || 0);
+  if (!v || !v.partenaireId || !pa) return null;
+  const cout = round2(pa * durDays(m));
+  const vente = +((m && m.montant) || 0);
+  return { cout, vente, marge: round2(vente - cout), taux: vente > 0 ? Math.round(((vente - cout) / vente) * 100) : 0 };
 }
 
 /** « Qui est libre ? » : véhicules disponibles et sans réservation ferme sur [from, to], triés par `ordre`. Les options sont tolérées (voir `vehicleOn`). */

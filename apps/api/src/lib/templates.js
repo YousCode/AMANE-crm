@@ -6,6 +6,7 @@ export const DEFAULT_TEMPLATE_BODIES = {
   amane_rappel: 'Bonjour {{1}}, nous vous attendons pour votre {{2}} le {{3}} à {{4}}, {{5}}. Toute la maison Amane se réjouit de vous accueillir.',
   amane_devis: 'Bonjour {{1}}, votre devis {{2}} est prêt : {{3}}. Vous pouvez l’accepter en un geste ou nous poser une question en répondant ici.',
   amane_alerte: 'Amane — nouvelle demande de {{1}} : « {{2}} ». Ouvrez le CRM pour répondre.',
+  amane_dispo: 'Bonjour {{1}}, Amane a une demande pour votre {{2}}, {{3}}. Est-il disponible ? Répondez OUI ou NON, ou ouvrez votre espace : {{4}}',
 };
 
 /** reglages/templates (ou null) → liste effective, défauts complétés. */

@@ -1,4 +1,5 @@
-// Application Express d'Amane : API JSON, WebSocket /ws, pages publiques, fichiers statiques (back-office /app, CRM /crm, site /).
+// Application Express d'Amane : API JSON, WebSocket /ws, pages publiques (devis, espace client, portail prestataire, inscription),
+// fichiers statiques (back-office /app, CRM /crm, site /).
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,6 +28,7 @@ import { router as devis } from './routes/devis.js';
 import { router as espace } from './routes/espace.js';
 import { router as flotte } from './routes/flotte.js';
 import { router as push } from './routes/push.js';
+import { router as prestataires } from './routes/prestataires.js';
 import { devRouter } from './routes/dev.js';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -79,7 +81,9 @@ export async function createApp(opts = {}) {
 
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', true);
+  // Un seul proxy de confiance devant l'application (Railway, Render, Fly) : `req.ip` est l'adresse qu'il a vue, pas un en-tête du client.
+  // TRUST_PROXY=2 si un second proxy (CDN) est placé devant.
+  app.set('trust proxy', Math.max(0, Math.min(5, Number.parseInt(process.env.TRUST_PROXY ?? '1', 10) || 0)));
   app.set('etag', false);
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -90,7 +94,7 @@ export async function createApp(opts = {}) {
   app.use(cors());
 
   // API
-  for (const r of [health, meteo, auth, sync, doc, photo, ai, whatsapp, lead, relances, devis, espace, flotte, push]) app.use(r);
+  for (const r of [health, meteo, auth, sync, doc, photo, ai, whatsapp, lead, relances, devis, espace, flotte, push, prestataires]) app.use(r);
 
   const server = http.createServer(app);
   const ws = attachWs(server, { path: '/ws', getDb });

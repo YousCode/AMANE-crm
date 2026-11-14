@@ -23,6 +23,7 @@ Ce que sert le processus :
 | `/crm` | le CRM historique (`crm/index.html` enveloppé en document complet, sinon `site/crm/index.html`) |
 | `/` et fichiers de `site/` | le site vitrine (`site/vercel.html`) |
 | `/d/:token`, `/api/espace/:token` (alias `/espace/:token`) | pages publiques : devis partagé, espace client |
+| `/p/:token`, `/prestataires` | pages publiques des prestataires (loueurs) : portail par lien personnel, inscription |
 
 ## Mode développement (`FAKE_DB=1`)
 
@@ -69,7 +70,7 @@ Toutes en JSON sauf mention. Erreurs : `{error:'code', message:'texte français'
 | POST | `/d/:token/accepter` | accepte (303 vers la page, ou JSON avec `Accept: application/json`) : `devis.statut='accepte'`, `acceptedAt`, demande → confirmée, activité, alerte + push équipe, WS |
 | POST | `/api/missions/:id/espace` | `{token, url, created, message, waLink}` |
 | GET | `/api/espace/:token` | page HTML de l'espace client (`Accept: application/json` ou `?format=json` → données : client, séjour, chauffeur, programme, documents, solde, contact) ; `/devis`, `/facture`, `/photo/:id` |
-| GET | `/api/flotte/rentabilite?mois=AAAA-MM` | par véhicule : loyer, charges, joursLoues, ca (prorata des jours dans le mois), coutsJournal, margeNette, tauxOccupation + total |
+| GET | `/api/flotte/rentabilite?mois=AAAA-MM` | par véhicule : loyer, charges, couts, joursLoues, ca (prorata des jours dans le mois), coutsJournal, margeNette (= ca − couts − coutsJournal), tauxOccupation, partenaireId + total. Véhicule de la maison : `couts` = loyer + charges. Véhicule d'un prestataire (`partenaireId`) : ni loyer ni charges, `couts` = `prixAchatJour` × jours loués |
 | POST | `/api/push/register` · `/api/push/unregister` | `{token:'ExponentPushToken[…]', platform}` ; envois Expo à : nouvelle demande / message reçu (responsable), demande du site (Amel), devis accepté, rappel envoyé, message sans réponse 6 h, révision J-7 |
 | GET | `/api/media/:id` | tout média stocké (`photos`) : images, vidéos, PDF, vocaux (`?download=1`) |
 | POST | `/api/whatsapp/send` | en plus du texte et du modèle : `{convId, media:{type:'image'|'document'|'video'|'audio', photoId|url, caption, filename}}` (une `photoId` est téléversée chez Meta), `{convId, location:{lat,lng,name,address}}`, `{convId, contact:{partenaireId}|{nom,tel,email,org}}`, `replyTo` (wamid cité), `originalText` (le français d'origine, rangé en `originalText` et `translation`). `media.url` = `/api/missions/:id/devis.pdf` ou `facture.pdf` → envoi du lien public (devis / espace client) dans la langue du client ; `location` sans coordonnées → itinéraire en texte. |
@@ -80,10 +81,34 @@ Toutes en JSON sauf mention. Erreurs : `{error:'code', message:'texte français'
 | PUT | `/api/doc/clients/:id` | champs enrichis acceptés tels quels : `entourage[]`, `datesImportantes[{date:'AAAA-MM-JJ'|'MM-JJ', label}]`, `allergies`, `marques`, `attentions[]`, `langue`, `tags[]` |
 | PUT | `/api/doc/vehicules/:id` | une nouvelle entrée `journal[]` de type `pv` déclenche l'alerte « PV reçu » ; `revision` (AAAA-MM-JJ) alimente l'alerte J-7 |
 
+### Prestataires (loueurs) — contrat : `docs/prestataires.md`
+
+Les loueurs confient leurs véhicules à la maison. L'équipe passe par la session ; le prestataire par un lien personnel (jeton de 24 caractères, pas de mot de passe) ; l'inscription est publique. Code : `src/routes/prestataires.js`, `src/lib/portail.js`, `src/pages/portail.js` ; règles dans `@amane/shared` (`vehicleOn`, `normDispos`, `addDispo`, `dispoDemandeOf`, `margePrestataire`).
+
+| Méthode | Chemin | Rôle |
+|---|---|---|
+| POST | `/api/partenaires/:id/portail` | session. `{reset?: true}` crée, renvoie, ou régénère le jeton (l'ancien lien répond alors 404) → `{token, url, created, message, waLink}` ; 409 `pas_loueur`, 409 `a_valider`, 404 |
+| POST | `/api/partenaires/:id/valider` | session. Valide une inscription (retire `aValider`) et crée le portail → même réponse ; sans effet si déjà validé |
+| POST | `/api/missions/:id/dispo` | session. `{vehiculeId}` : pose ou remet à `envoyee` l'entrée de `dispoDemandes` (une par véhicule), crée le portail au besoin, tente WhatsApp (texte libre dans la fenêtre de 24 h, sinon modèle `amane_dispo`) → `{ok, canal:'whatsapp'|'lien', url, message, waLink}` ; `canal:'lien'` si WhatsApp est absent, refuse l'envoi, ou si le prestataire n'a pas de téléphone. 409 `pas_prestataire` (véhicule de la maison, prestataire non validé ou supprimé), 409 `mission_fermee` (demande terminée ou perdue) |
+| GET | `/p/:token` | page HTML du portail (français, téléphone d'abord) : demandes en attente (« Disponible » / « Pas disponible »), jours déclarés par véhicule (ajout « du / au », suppression), réservations à venir, « Proposer un véhicule » |
+| GET | `/api/portail/:token` | `{partenaire:{nom}, vehicules:[{id, nom, categorie, plaque, aValider, dispos, reservations:[{du, au, lieu, prenom, titre}]}], demandes:[{missionId, vehiculeId, vehicule, du, au, lieu, prenom, statut}]}` — `reservations` : missions confirmées ou en cours à venir ; `demandes` : missions ouvertes ; `titre` = le libellé du service (jamais le titre libre de la demande, qui porte souvent le nom ou le numéro du client) |
+| POST | `/api/portail/:token/dispos` | `{vehiculeId, dispos:[{du, au}]}` remplace les jours déclarés (`normDispos`) → `{ok, dispos}` ; 60 périodes au plus, pas de date à plus de 2 ans, 404 si le véhicule n'est pas le sien |
+| POST | `/api/portail/:token/vehicules` | `{nom, categorie?, plaque?, prixJour?, notes?}` → `{ok, id, vehicule}` ; créé avec `partenaireId`, `aValider: true`, `prixAchatJour = prixJour` ; 20 véhicules au plus (409 `trop_de_vehicules`) ; alerte équipe |
+| POST | `/api/portail/:token/demandes/:missionId` | `{vehiculeId, reponse:'oui'|'non'}` → `{ok, statut, deja}` ; `reponduAt`, `canal:'portail'` ; « oui » ajoute la période de la mission aux `dispos` (`addDispo`) ; alerte + push au responsable (sinon Amel) ; journal. Même réponse répétée : sans effet (`deja: true`) ; réponse contraire après coup : 409 `deja_repondu` (l'équipe redemande la dispo) |
+| GET | `/prestataires` | page publique « Devenir prestataire » |
+| POST | `/api/prestataires/inscription` | `{societe, nom, tel, email, siren, vehicules, message}` → `{ok:true}` ; même origine, champ piège `website`, 5 envois par heure et par IP, téléphone valide obligatoire ; crée un partenaire `loueur` avec `aValider: true` et `inscription`, alerte équipe. Numéro déjà au carnet : rien n'est créé, même réponse. Aucun accès tant que l'équipe n'a pas validé |
+
+- Routes publiques : `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, `X-Frame-Options: DENY`, CSP stricte sur les pages (script de la page par nonce), limite de débit par IP (240 requêtes et 120 écritures par heure), même origine pour les écritures. Un jeton mal formé, inconnu, révoqué, d'un partenaire à valider, supprimé ou qui n'est plus un loueur donne le même 404.
+- Les routes `vehicules`, `demandes` et `inscription` acceptent aussi un formulaire HTML classique (`application/x-www-form-urlencoded`) : la page fonctionne sans JavaScript pour répondre à une demande, proposer un véhicule et s'inscrire (303 vers `/p/:token`, ou page de confirmation). Les jours déclarés demandent JavaScript.
+- Le prestataire ne lit jamais un prix de vente, un montant, un téléphone, un e-mail ni un nom complet de client : il voit le prénom (`firstName`), les dates et le lieu de remise. Il n'écrit que les `dispos` de ses véhicules, la proposition d'un véhicule et la réponse à une demande qui le concerne.
+- `portailToken` et `portailAt` sont posés par le serveur seulement : `PUT /api/doc/partenaires/:id` les ignore et garde la valeur stockée ; `DELETE` les détruit (recréer la fiche ne ranime pas l'ancien lien). `GET /api/sync` les renvoie à l'équipe, qui copie le lien.
+- WhatsApp entrant : un message venant du numéro d'un partenaire non supprimé ne crée ni client ni demande, n'a ni réponse automatique ni extraction IA ; la conversation porte `partenaireId`. Texte seul `oui` / `non` (ou `ok`, `dispo`, `pas dispo`, `indisponible`, bouton du modèle) d'un loueur validé : appliqué à sa demande `envoyee` la plus récente avec `canal:'whatsapp'`, puis accusé « Merci, c’est noté : … ». Tout autre message est signalé à l'équipe comme un message normal. Exception : une inscription pas encore validée ne détourne pas le numéro d'un client déjà connu, qui reste traité en client.
+
 ### Données ajoutées
 - `messages` : `media:{id, mime, filename?, caption?, voice?, photoId?, url?}`, `location`, `contacts[]`, `reactionTo`+`emoji`, `replyTo`, `translation`/`translationLang`/`sourceLang`, `transcript`/`transcriptLang`, `originalText`, `erreurCode`+`erreur` (texte Meta lisible), `dir:'note'`, `rappel`. Sortants : `by` = membre, `auto`, `rappel`.
 - `conversations` : `assigne`, `lastInId`, `lastReadId`, `lastHumanOutAt` (la réponse automatique ne compte pas comme réponse), `alerte6hFor`.
-- `missions` : `devis.shareToken/shareAt/vuAt/acceptedAt/sentAt`, `espaceToken`.
+- `missions` : `devis.shareToken/shareAt/vuAt/acceptedAt/sentAt`, `espaceToken`, `dispoDemandes[{vehiculeId, partenaireId, statut, envoyeAt, reponduAt, canal, par}]`.
+- `partenaires` : type `loueur`, `societe`, `siren`, `aValider`, `inscription{at, vehicules, message}`, `portailToken`, `portailAt`. `vehicules` : `partenaireId`, `prixAchatJour`, `dispos[{du, au}]`, `aValider`. `conversations` : `partenaireId`. Écritures du prestataire : `updatedBy: 'prestataire'` ; journal : actions `inscription`, `portail`, `dispo`.
 - Collections : `translations`, `rappels` (`_id` = `type:missionId`, `statut` envoye|echec|ignore), `push_tokens`, `photos` (tout média, ≤ 16 Mo, `mediaId` Meta).
 - `reglages/rappels` : `{actifs:{veille,merci,acompte}, textes:{FR|EN|ES|AR|RU:{veille,merci,acompte}}}` (variables `{prenom} {service} {voiture} {date} {heure} {lieu} {montant}`). `reglages/templates` : `{modeles:[{name,label,vars,langs,body}]}`.
 
@@ -103,7 +128,7 @@ Client Anthropic en HTTP direct (`src/lib/ai.js`) : modèle `claude-sonnet-5-5`,
 Cluster `amane` (Paris, EU_WEST_3), base `amane`, utilisateur `amane-app` (readWrite). Les index et les données de départ sont posés au premier démarrage (`meta/schema`). Autoriser l'IP sortante de l'hébergeur (ou `0.0.0.0/0` avec un mot de passe fort).
 
 ### Railway / Render / Fly (Docker)
-Image : `docker build -f apps/api/Dockerfile -t amane-api .` depuis la racine (le Dockerfile copie `packages/shared`, `apps/api`, `crm`, `site` et `apps/web/dist` : construire le back-office avant, ou créer un dossier `apps/web/dist` vide). `apps/api/railway.json` et `apps/api/render.yaml` sont fournis ; sur Fly : `fly launch --dockerfile apps/api/Dockerfile`, `fly secrets set …`, une seule machine avec `CRON_ENABLED=1`. Variables : voir `.env.example`. `PUBLIC_URL` = l'URL publique (liens `/d/:token`, CORS du back-office). Santé : `GET /api/health`.
+Image : `docker build -f apps/api/Dockerfile -t amane-api .` depuis la racine (le Dockerfile construit lui-même le back-office React dans une première étape, puis copie `packages/shared`, `apps/api`, `crm`, `site` et `apps/web/dist` : rien à préparer, Railway et Render peuvent construire directement depuis GitHub). `apps/api/railway.json` et `apps/api/render.yaml` sont fournis ; sur Fly : `fly launch --dockerfile apps/api/Dockerfile`, `fly secrets set …`, une seule machine avec `CRON_ENABLED=1`. Variables : voir `.env.example`. `PUBLIC_URL` = l'URL publique (liens `/d/:token`, CORS du back-office). Santé : `GET /api/health`.
 
 ### Projet « CRM seul », relié à la base
 
@@ -126,6 +151,7 @@ Pour déployer uniquement le CRM (sans le site vitrine), relié à MongoDB Atlas
 | `amane_rappel` | fr, en, es, ar, ru | `Bonjour {{1}}, nous vous attendons pour votre {{2}} le {{3}} à {{4}}, {{5}}. Toute la maison Amane se réjouit de vous accueillir.` (prénom, service, date, heure, lieu) |
 | `amane_devis` | fr, en, es, ar, ru | `Bonjour {{1}}, votre devis {{2}} est prêt : {{3}}. Vous pouvez l’accepter en un geste ou nous poser une question en répondant ici.` (prénom, numéro, lien) |
 | `amane_alerte` | fr | `Amane — nouvelle demande de {{1}} : « {{2}} ». Ouvrez le CRM pour répondre.` (nom du client, extrait ≤ 60 car.) |
+| `amane_dispo` | fr | `Bonjour {{1}}, Amane a une demande pour votre {{2}}, {{3}}. Est-il disponible ? Répondez OUI ou NON, ou ouvrez votre espace : {{4}}` (prénom du contact, véhicule, « du … au … », lien du portail) — avec deux boutons de réponse rapide « Oui, disponible » et « Non ». Envoyé aux prestataires par `POST /api/missions/:id/dispo` hors fenêtre de 24 h |
 
 Les traductions des corps (en/es/ar/ru) se font dans WhatsApp Manager ; les textes exacts attendus par l'équipe sont modifiables dans `reglages/templates` (`body`), ce qui n'a d'effet que sur l'affichage côté CRM. `TEAM_ALERT_NUMBERS` = numéros personnels de l'équipe (`amel:33600000001,…`) ; ils doivent avoir écrit une fois au numéro professionnel pour recevoir du texte libre, sinon le modèle `amane_alerte` est utilisé.
 
@@ -136,10 +162,10 @@ Les applis enregistrent leur jeton via `POST /api/push/register`. L'envoi passe 
 `WHISPER_API_KEY` (clé OpenAI, modèle `whisper-1`) active la transcription des vocaux à la réception et `POST /api/transcribe`. Sans clé : 503 `transcribe_off`, les vocaux restent lisibles via `/api/media/:id`.
 
 ## Sécurité
-PIN scrypt + sel, cookie httpOnly/Secure/SameSite=Lax signé HMAC (version de PIN incluse), 5 échecs / 15 min, signature Meta à temps constant, ids validés (`^[A-Za-z0-9_-]{1,64}$`), jetons publics de 24 caractères aléatoires avec limite de débit par IP, corps limités (fiches 512 Ko, photo 600 Ko, webhook 1 Mo, médias Meta 16 Mo), médias servis avec `nosniff` + CSP `sandbox`, aucun secret journalisé, erreurs 500 sans détail.
+PIN scrypt + sel, cookie httpOnly/Secure/SameSite=Lax signé HMAC (version de PIN incluse), 5 échecs / 15 min, signature Meta à temps constant, ids validés (`^[A-Za-z0-9_-]{1,64}$`), jetons publics de 24 caractères aléatoires avec limite de débit par IP (devis, espace client, portail prestataire : 404 identique pour tout jeton refusé, jeton du portail jamais écrit par un PUT), corps limités (fiches 512 Ko, photo 600 Ko, webhook 1 Mo, médias Meta 16 Mo), médias servis avec `nosniff` + CSP `sandbox`, aucun secret journalisé, erreurs 500 sans détail.
 
 ## Tests
-`npm test` : 81 tests `node --test` — les 50 tests historiques portés sur Express (HTTP réel), le mode développement, les 20 points de la liste WhatsApp, les ajouts v2, et `test/legacy-crm.test.js` qui pilote l'ancien `crm/index.html` avec Playwright à travers le serveur (connexion PIN, création d'un client et d'une demande, synchro).
+`npm test` : 100 tests `node --test` — les 50 tests historiques portés sur Express (HTTP réel), le mode développement, les 20 points de la liste WhatsApp, les ajouts v2, les prestataires (`test/prestataires.test.js` : inscription, validation, portail par jeton, jours déclarés, demandes de disponibilité par le portail et par WhatsApp, protection du jeton, rentabilité), et `test/legacy-crm.test.js` qui pilote l'ancien `crm/index.html` avec Playwright à travers le serveur (connexion PIN, création d'un client et d'une demande, synchro).
 
 ## Limites connues
 - Pas de génération de PDF côté serveur : les documents sont des pages HTML imprimables (`/d/:token`, `/api/espace/:token/devis|facture`) ; une demande de « PDF » via `/api/whatsapp/send` envoie le lien public.
