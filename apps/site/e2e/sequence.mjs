@@ -1,15 +1,16 @@
 /* Essai du moteur de films (`src/sequence.ts`) sur sa page d'essai (`e2e/sequence.html`), servie par Vite en mode dev sur un port libre
-   (serveur à part : ni `vite.config.ts`, ni le cache du site) : première image, chargement, images dessinées, cadrage, image manquante,
-   économie de dessin, redimensionnement, destroy.
+   (serveur à part : ni `vite.config.ts`, ni le cache du site) : planches sur disque, première image, chargement par planches,
+   images dessinées (découpées dans leur planche), cadrage, planche manquante, repli sans createImageBitmap, économie de dessin,
+   redimensionnement, destroy.
    node apps/site/e2e/sequence.mjs [--captures <dossier>]   (le dossier reçoit une vue du canvas à mi-parcours par film) */
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { createServer as tcp } from 'node:net';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildSequences } from '../scripts/frames.mjs';
+import { buildSequences, layout, PER, SEQ_DIR } from '../scripts/frames.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ALL = JSON.parse(readFileSync(join(root, 'sequences.json'), 'utf8'));
@@ -17,7 +18,8 @@ let FILMS = ALL; // moins les films "optional" dont la source n'est pas encore l
 const shots = process.argv.includes('--captures') ? process.argv[process.argv.indexOf('--captures') + 1] : '';
 const res = []; const ok = (name, cond, info = '') => res.push((cond ? 'PASS ' : 'FAIL ') + name + (!cond && info !== '' ? ' — ' + info : ''));
 const part = async (name, fn) => { try { await fn(); } catch (e) { ok(`${name} : exécution`, false, e.message.split('\n')[0]); } };
-const file = (n) => String(n).padStart(3, '0') + '.jpg';
+const file = (n) => String(n).padStart(3, '0');
+const sheetOf = (n) => 's' + String(Math.ceil(n / PER)).padStart(2, '0') + '.jpg'; // planche de l'image n (à partir de 1)
 const at = (p, n) => Math.round(p * (n - 1)) + 1; // numéro de l'image attendue à l'avancement p
 const SAME = 2, OTHER = 3; // écart moyen par couche (0…255) : même image en dessous de SAME ; une autre image s'en écarte d'au moins OTHER fois plus
 
@@ -33,18 +35,21 @@ const look = (p, sel = '#film') => p.evaluate((s) => {
   return { w: c.width, h: c.height, cssW: c.clientWidth, cssH: c.clientHeight, holes, contrast: max - min, sig };
 }, sel);
 const dist = (a, b) => a.sig.reduce((s, v, i) => s + Math.abs(v - b.sig[i]), 0) / a.sig.length;
-/** écart moyen entre le canvas et l'image n du film cadrée « cover » autour de (fx, fy) par un calcul indépendant du moteur */
-const gap = (p, a) => p.evaluate(async ({ film, mobile, n, fx = 0.5, fy = 0.5 }) => {
+/** écart moyen entre le canvas et l'image n du film (découpée dans sa planche selon layout() de frames.mjs) cadrée « cover »
+    autour de (fx, fy) par un calcul indépendant du moteur */
+const gap = (p, a) => p.evaluate(async ({ film, mobile, n, fx = 0.5, fy = 0.5, g, PER }) => {
   const c = document.querySelector('#film'), img = new Image();
-  img.src = `/media/seq/${film}/${mobile ? 'm/' : ''}${String(n).padStart(3, '0')}.jpg`; await img.decode();
+  img.src = `/media/seq/${film}/${mobile ? 'm/' : ''}s${String(Math.ceil(n / PER)).padStart(2, '0')}.jpg`; await img.decode();
+  const j = (n - 1) % PER, one = document.createElement('canvas'); one.width = g.w; one.height = g.h;
+  one.getContext('2d').drawImage(img, (j % 4) * g.cellW, Math.floor(j / 4) * g.cellH, g.w, g.h, 0, 0, g.w, g.h);
   const k = document.createElement('canvas'); k.width = c.width; k.height = c.height;
   const x = k.getContext('2d'); x.imageSmoothingQuality = 'high';
-  const iw = img.naturalWidth, ih = img.naturalHeight, s = Math.max(k.width / iw, k.height / ih), sw = k.width / s, sh = k.height / s;
-  x.drawImage(img, Math.min(Math.max(fx * iw - sw / 2, 0), iw - sw), Math.min(Math.max(fy * ih - sh / 2, 0), ih - sh), sw, sh, 0, 0, k.width, k.height);
+  const iw = g.w, ih = g.h, s = Math.max(k.width / iw, k.height / ih), sw = k.width / s, sh = k.height / s;
+  x.drawImage(one, Math.min(Math.max(fx * iw - sw / 2, 0), iw - sw), Math.min(Math.max(fy * ih - sh / 2, 0), ih - sh), sw, sh, 0, 0, k.width, k.height);
   const A = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, B = x.getImageData(0, 0, c.width, c.height).data;
   let sum = 0; for (let i = 0; i < A.length; i += 4) sum += Math.abs(A[i] - B[i]) + Math.abs(A[i + 1] - B[i + 1]) + Math.abs(A[i + 2] - B[i + 2]);
   return sum / ((A.length / 4) * 3);
-}, a);
+}, { ...a, g: layout(ALL[a.film], !!a.mobile), PER });
 /** le canvas montre l'image n, et pas une de ses voisines */
 const shows = async (p, a, total, lost = 0) => {
   const g = await gap(p, a), near = [];
@@ -64,6 +69,11 @@ try {
   const waiting = built.filter((f) => f.skipped).map((f) => f.name);
   FILMS = Object.fromEntries(Object.entries(ALL).filter(([name]) => !waiting.includes(name)));
   if (waiting.length) console.log(`films en attente de leur source, non essayés : ${waiting.join(', ')}\n`);
+  for (const [film, d] of Object.entries(FILMS)) {
+    const look = (sub) => readdirSync(join(SEQ_DIR, film, sub)).filter((f) => f.endsWith('.jpg'));
+    const a = look(''), b = look('m'), G = layout(d), GM = layout(d, true);
+    ok(`${film} : ${G.sheets} planches sur ordinateur, ${GM.sheets} sur téléphone, plus aucune image isolée`, a.length === G.sheets && b.length === GM.sheets && [...a, ...b].every((f) => /^s\d{2}\.jpg$/.test(f)), `${a.join(',')} | ${b.join(',')}`);
+  }
   const PORT = await freePort(), BASE = `http://127.0.0.1:${PORT}/e2e/sequence.html`;
   server = await createServer({ configFile: false, root, base: './', logLevel: 'silent', cacheDir: cache, optimizeDeps: { noDiscovery: true, include: [] }, server: { port: PORT, strictPort: true, host: '127.0.0.1', hmr: false, watch: null } });
   await server.listen();
@@ -80,13 +90,13 @@ try {
       const tNav = Date.now() - t0, first = await look(p), s0 = await state(p);
       ok(`${film} : la première image s'affiche vite (${s0.tReady} ms après le script, ${tNav} ms après l'ouverture), avant les autres`, s0.tReady < 1000 && s0.doneAtReady <= 1 && first.holes === 0 && first.contrast > 30, JSON.stringify({ ...s0, progress: s0.progress.length, holes: first.holes, contrast: first.contrast }));
       await until(p, 'loaded', 30000);
-      const s1 = await state(p), steps = s1.progress.map((x) => x[0]);
-      ok(`${film} : loaded se résout, onProgress compte de 1 à ${d.count}`, steps.length === d.count && steps.every((v, i) => v === i + 1) && s1.progress.every((x) => x[1] === d.count), steps.join(','));
+      const s1 = await state(p), steps = s1.progress.map((x) => x[0]), G = layout(d);
+      ok(`${film} : loaded se résout, onProgress compte en images jusqu'à ${d.count}, une fois par planche (${G.sheets})`, steps.length === G.sheets && steps.at(-1) === d.count && steps.every((v, i) => v > (steps[i - 1] ?? 0) && v - (steps[i - 1] ?? 0) <= PER) && s1.progress.every((x) => x[1] === d.count), steps.join(','));
       const views = [];
       for (const v of [0, 0.5, 1]) {
         await set(p, v); views.push(await look(p));
         const r = await shows(p, { film, n: at(v, d.count) }, d.count);
-        ok(`${film} : set(${v}) dessine l'image ${file(at(v, d.count))}`, r.yes, r.info);
+        ok(`${film} : set(${v}) dessine l'image ${file(at(v, d.count))} (planche ${sheetOf(at(v, d.count))})`, r.yes, r.info);
         if (v === 0.5) await save(p, film);
       }
       const ds = [dist(views[0], views[1]), dist(views[1], views[2]), dist(views[0], views[2])];
@@ -103,37 +113,50 @@ try {
     const p = await open(desk, 'film=porte&manuel=1', async (pg) => {
       pg.on('request', (r) => { if (!r.url().includes('/media/seq/')) return; if (asked.length === 1 && ended.length === 0) alone = false; asked.push(r.url().split('/seq/')[1]); peak = Math.max(peak, ++flying); });
       for (const ev of ['requestfinished', 'requestfailed']) pg.on(ev, (r) => { if (r.url().includes('/media/seq/')) { ended.push(r.url()); flying--; } });
-      await pg.route('**/media/seq/**', async (route) => { await new Promise((r) => setTimeout(r, 40)); await route.continue(); });
+      await pg.route('**/media/seq/**', async (route) => { await new Promise((r) => setTimeout(r, 80)); await route.continue(); });
     });
     await until(p, 'loaded', 30000);
-    ok('chargement : la première image part seule', asked[0] === 'porte/001.jpg' && alone, asked.slice(0, 3).join(', '));
-    const preview = ['porte/009.jpg', 'porte/017.jpg', 'porte/025.jpg', 'porte/033.jpg', 'porte/041.jpg', 'porte/048.jpg'];
-    ok('chargement : puis un aperçu de tout le film (une image sur 8 et la dernière)', preview.every((u) => asked.slice(1, 7).includes(u)), asked.slice(1, 7).join(', '));
-    ok(`chargement : 48 images demandées une seule fois, ${peak} de front au plus (limite 6)`, asked.length === 48 && new Set(asked).size === 48 && peak <= 6 && peak >= 4, `${asked.length} demandes, ${peak} de front`);
+    ok('chargement : la planche de la première image part seule', asked[0] === 'porte/s01.jpg' && alone, asked.slice(0, 3).join(', '));
+    ok('chargement : puis la dernière planche, puis le milieu du film', asked[1] === 'porte/s06.jpg' && asked.slice(2, 4).includes('porte/s05.jpg'), asked.join(', '));
+    ok(`chargement : 6 planches demandées une seule fois, ${peak} de front au plus (limite 3)`, asked.length === 6 && new Set(asked).size === 6 && peak <= 3 && peak >= 2, `${asked.length} demandes, ${peak} de front`);
     await p.close();
   });
 
   // ---- images manquantes
   await part('image manquante', async () => {
     const lost = (...names) => (pg) => pg.route('**/media/seq/porte/**', (route) => (names.some((n) => route.request().url().endsWith(n)) ? route.fulfill({ status: 404, body: '' }) : route.continue()));
-    let p = await open(desk, 'film=porte&manuel=1', lost('/025.jpg'));
+    let p = await open(desk, 'film=porte&manuel=1', lost('/s04.jpg'));
     await until(p, 'loaded', 30000);
     let s = await state(p);
-    ok('image 025 en 404 : loaded se résout quand même, onProgress va au bout', s.loaded && s.progress.length === 48);
+    ok('planche s04 (images 025 à 032) en 404 : loaded se résout quand même, onProgress va jusqu\'à 48', s.loaded && s.progress.length === 6 && s.progress.at(-1)[0] === 48, JSON.stringify(s.progress));
     await set(p, 24 / 47);
     let r = await shows(p, { film: 'porte', n: 24 }, 48, 25);
-    ok('image 025 en 404 : set() dessine la voisine 024, sans bande vide', r.yes && (await look(p)).holes === 0, r.info);
+    ok('planche s04 en 404 : set() vers l\'image 025 dessine la voisine chargée 024, sans bande vide', r.yes && (await look(p)).holes === 0, r.info);
+    await set(p, 31 / 47);
+    r = await shows(p, { film: 'porte', n: 33 }, 48, 32);
+    ok('planche s04 en 404 : set() vers l\'image 032 dessine la voisine chargée 033', r.yes, r.info);
     await p.close();
 
-    p = await open(desk, 'film=porte&manuel=1', lost('/001.jpg'));
+    p = await open(desk, 'film=porte&manuel=1', lost('/s01.jpg'));
     await until(p, 'ready', 8000); await until(p, 'loaded', 30000);
-    r = await shows(p, { film: 'porte', n: 2 }, 48, 1);
-    ok('première image en 404 : ready se résout, la suivante est dessinée', r.yes, r.info);
+    r = await shows(p, { film: 'porte', n: 9 }, 48, 8);
+    ok('première planche en 404 : ready se résout, l\'image 009 (planche suivante) est dessinée', r.yes, r.info);
     await p.close();
 
     p = await open(desk, 'film=porte&manuel=1', (pg) => pg.route('**/media/seq/porte/**', (route) => route.fulfill({ status: 404, body: '' })));
     await until(p, 'loaded', 30000); s = await state(p); await set(p, 0.5);
-    ok('toutes les images en 404 : ready et loaded se résolvent, set() ne casse rien', s.ready && s.loaded && s.progress.length === 48);
+    ok('toutes les planches en 404 : ready et loaded se résolvent, set() ne casse rien', s.ready && s.loaded && s.progress.length === 6);
+    await p.close();
+  });
+
+  // ---- repli sans createImageBitmap : balise <img> puis découpe sur canvas hors écran
+  await part('repli', async () => {
+    const p = await open(desk, 'film=rivoli&manuel=1', (pg) => pg.addInitScript(() => { window.createImageBitmap = undefined; }));
+    await until(p, 'ready', 8000); await until(p, 'loaded', 30000);
+    const views = [];
+    for (const v of [0.5, 1]) { await set(p, v); const r = await shows(p, { film: 'rivoli', n: at(v, 52) }, 52); views.push(r); }
+    const v = await look(p);
+    ok('sans createImageBitmap : les planches passent par <img> et un canvas, set(0.5) et set(1) (planche incomplète) dessinent la bonne image', views.every((r) => r.yes) && v.holes === 0, views.map((r) => r.info).join(' | '));
     await p.close();
   });
 
@@ -180,7 +203,7 @@ try {
       const s = window.essai.createSequence({ canvas: k, name: 'cles', focus: (t) => [0.3 + 0.4 * t, 0.5] }); s.set(1); await s.ready; await s.loaded; obs.takeRecords().forEach((e) => seen.push(e.name)); obs.disconnect();
       const out = { first: seen.filter((u) => u.includes('/seq/cles/'))[0]?.split('/seq/')[1], w: k.width, h: k.height }; s.destroy(); k.remove(); return out;
     });
-    ok('second film sur la même page, set(1) dès la création : la dernière image est chargée la première', first.first === 'cles/052.jpg' && first.w === 320 && first.h === 180, JSON.stringify(first));
+    ok('second film sur la même page, set(1) dès la création : la planche de la dernière image est chargée la première', first.first === 'cles/s07.jpg' && first.w === 320 && first.h === 180, JSON.stringify(first));
 
     const before = await count();
     const after = await p.evaluate(async () => {
@@ -204,7 +227,7 @@ try {
     await until(p, 'ready', 8000); await p.waitForTimeout(80);
     const done = await p.evaluate(async () => { const s = window.essai.seq; s.destroy(); await s.loaded; return window.essai.progress.length; });
     const n = asked.length; await p.waitForTimeout(700);
-    ok(`destroy() pendant le chargement : loaded se résout, les demandes en cours sont annulées (${failed}), aucune autre ne part`, done < 52 && asked.length === n && n <= 7 && failed >= 1, `${done} terminées, ${n} → ${asked.length} demandes, ${failed} annulées`);
+    ok(`destroy() pendant le chargement : loaded se résout, les demandes en cours sont annulées (${failed}), aucune autre ne part`, done < 7 && asked.length === n && n <= 4 && failed >= 1, `${done} planches terminées, ${n} → ${asked.length} demandes, ${failed} annulées`);
     await p.close();
   });
   await desk.close();
@@ -213,14 +236,18 @@ try {
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   for (const [film, d] of Object.entries(FILMS)) {
     await part(`téléphone, ${film}`, async () => {
-      const asked = [], nM = Math.ceil(d.count / 2);
+      const asked = [], GM = layout(d, true), nM = GM.count;
       const p = await open(phone, `film=${film}&manuel=1`, (pg) => pg.on('request', (r) => { if (r.url().includes('/media/seq/')) asked.push(r.url().split('/seq/')[1]); }));
       await until(p, 'loaded', 30000);
-      ok(`téléphone, ${film} : ${nM} images (une sur deux), toutes dans m/`, asked.length === nM && asked.every((u) => u.startsWith(`${film}/m/`)), `${asked.length} demandes, ${asked.filter((u) => !u.includes('/m/')).length} hors m/`);
+      const s = await state(p);
+      ok(`téléphone, ${film} : ${nM} images (une sur deux) en ${GM.sheets} planches, toutes dans m/`, asked.length === GM.sheets && asked.every((u) => u.startsWith(`${film}/m/s`)) && s.progress.at(-1)[0] === nM, `${asked.length} demandes, ${asked.filter((u) => !u.includes('/m/')).length} hors m/`);
       await set(p, 0.5);
       const v = await look(p), r = await shows(p, { film, mobile: true, n: at(0.5, nM) }, nM);
       ok(`téléphone, ${film} : cadrage « cover » en 390×844, définition × 2 au plus (780×1688), aucune bande vide`, v.w === 780 && v.h === 1688 && v.cssW === 390 && v.cssH === 844 && v.holes === 0 && r.yes, `${v.w}×${v.h}, ${v.holes} points vides, ${r.info}`);
       await save(p, `${film}-telephone`);
+      await set(p, 1);
+      const last = await shows(p, { film, mobile: true, n: nM }, nM);
+      ok(`téléphone, ${film} : set(1) dessine la dernière image (${file(nM)}, ${nM % PER ? `planche incomplète de ${nM % PER}` : 'planche pleine'})`, last.yes, last.info);
       await p.close();
     });
   }
