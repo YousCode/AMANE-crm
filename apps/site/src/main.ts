@@ -8,20 +8,19 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CONFIG } from './config';
 import { applyLang, detectLang, type Lang } from './i18n';
-import { createScene, type Pose } from './three/scene';
+import { lazySequence } from './lazy';
 import { initForm } from './form';
-import { mountLogos, renderDynamic, initReveal, initVideos, initFilm, initManifesto, initDoors, initTilt, initMessage, initMarquee, initCursor } from './sections';
+import { mountStatic, renderDynamic, initReveal, initProgress, initSeuil, initHeure, initRituel, initManifesto, initServices, initFleet, initFrises } from './sections';
 
 gsap.registerPlugin(ScrollTrigger);
 const html = document.documentElement;
 html.classList.add('js');
-// Posés ici plutôt que dans le HTML : la page reste entière quand un hébergeur fournit lui-même la balise <body>.
+// Posé ici plutôt que dans le HTML : la page reste entière quand un hébergeur fournit lui-même la balise <body>.
 document.body.classList.add('loading');
-document.body.dataset.tone = 'night';
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
-const mobile = matchMedia('(max-width: 899px)').matches || !fine;
+const mobile = matchMedia('(max-width: 899px)').matches;
+if (reduced) html.classList.add('still');
 const one = <T extends HTMLElement>(s: string) => document.querySelector<T>(s)!;
 const all = <T extends HTMLElement>(s: string) => [...document.querySelectorAll<T>(s)];
 
@@ -30,7 +29,7 @@ let lang: Lang = detectLang();
 async function arabicFonts() {
   await Promise.all([import('@fontsource/amiri/400.css'), import('@fontsource/amiri/400-italic.css'), import('@fontsource/ibm-plex-sans-arabic/300.css'), import('@fontsource/ibm-plex-sans-arabic/400.css')]);
 }
-mountLogos();
+mountStatic();
 applyLang(lang);
 renderDynamic(lang);
 if (lang === 'ar') void arabicFonts();
@@ -39,25 +38,27 @@ one<HTMLAnchorElement>('#partnerLink').href = CONFIG.api + '/prestataires';
 const form = initForm(() => lang);
 form.update();
 
-// ─── Scène 3D ───────────────────────────────────────────────────────────
-const scene = createScene(one<HTMLCanvasElement>('#gl'), { mobile, reduced });
-if (!scene) html.classList.add('no-gl');
+// ─── Films pilotés par le défilement ────────────────────────────────────
+const loaderBar = one('#loaderBar');
+const porte = lazySequence({
+  canvas: one<HTMLCanvasElement>('#porte'), name: 'porte', mobile,
+  // Sur un écran étroit, on garde la porte dans le cadre : elle est à gauche au début, au centre à la fin.
+  focus: (p) => (mobile ? [0.34 + p * 0.16, 0.5] : [0.5, 0.5]),
+  onProgress: (n, total) => { loaderBar.style.transform = `scaleX(${Math.min(1, n / Math.min(total, 12)).toFixed(3)})`; },
+}, one('#top'));
+// Les films plus bas dans la page ne chargent qu'à l'approche de leur section, et se libèrent quand on s'en éloigne.
+const rivoli = lazySequence({ canvas: one<HTMLCanvasElement>('#rivoli'), name: 'rivoli', mobile, focus: [0.42, 0.5] }, one('#heure'));
+const cles = lazySequence({ canvas: one<HTMLCanvasElement>('#cles'), name: 'cles', mobile, focus: [0.42, 0.5] }, one('#rituel'));
 
 // ─── Défilement doux ────────────────────────────────────────────────────
-let velocity = 0;
-let lastY = window.scrollY;
-const lenis = reduced ? null : new Lenis({ lerp: 0.1, wheelMultiplier: 0.9, touchMultiplier: 1.2 });
+const lenis = reduced ? null : new Lenis({ lerp: 0.085, wheelMultiplier: 0.85, touchMultiplier: 1.15 });
 if (lenis) {
-  lenis.on('scroll', (e: { velocity: number }) => { velocity = e.velocity; ScrollTrigger.update(); });
+  lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((t) => lenis.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
-} else {
-  window.addEventListener('scroll', () => { velocity = window.scrollY - lastY; lastY = window.scrollY; }, { passive: true });
 }
-gsap.ticker.add(() => { scene?.kick(velocity); velocity *= 0.9; });
-
 const nav = one('#nav');
-const onScroll = () => nav.classList.toggle('solid', window.scrollY > 40);
+const onScroll = () => nav.classList.toggle('solid', window.scrollY > window.innerHeight * 0.6);
 window.addEventListener('scroll', onScroll, { passive: true });
 onScroll();
 
@@ -69,36 +70,27 @@ document.addEventListener('click', (e) => {
   if (!target) return;
   e.preventDefault();
   if (a.dataset.ask) form.pick(a.dataset.ask);
-  if (lenis) lenis.scrollTo(target, { offset: 0, duration: 1.4 });
+  if (lenis) lenis.scrollTo(target, { duration: 1.6 });
   else target.scrollIntoView();
 });
 
-// ─── Sections ───────────────────────────────────────────────────────────
+// ─── Parties de la page ─────────────────────────────────────────────────
 const watchReveal = initReveal();
-const watchVideos = initVideos(mobile);
-if (!reduced) { initFilm(); initManifesto(); }
-else all('#manifesto .w').forEach((w) => w.classList.add('lit'));
-const refreshDoors = initDoors(!mobile && !reduced);
-if (fine && !reduced) { initTilt(); initCursor(); }
-const showThread = initMessage(reduced);
-initMarquee(() => velocity, reduced);
-
-// Fond, encre et place du A selon la section en vue.
-const pose = (el: HTMLElement): Pose => {
-  const raw = (mobile && el.dataset.keyM) || el.dataset.key || '0,0,0,0';
-  const [x, y, s, r] = raw.split(',').map(Number);
-  return { x: html.dir === 'rtl' ? -x : x, y, s, r };
-};
-let active: HTMLElement | null = null;
-const activate = (el: HTMLElement) => {
-  active = el;
-  const tone = el.dataset.tone || 'night';
-  document.body.dataset.tone = tone;
-  scene?.setTone(tone === 'night' || tone === 'bordeaux');
-  scene?.setPose(el.dataset.key !== undefined ? pose(el) : { x: 0, y: 0, s: 0, r: 7 });
-};
-all('main > section, .foot').forEach((el) => ScrollTrigger.create({ trigger: el, start: 'top 70%', end: 'bottom 70%', onToggle: (st) => { if (st.isActive) activate(el); } }));
-activate(one('#top'));
+initProgress();
+const bindServices = initServices({ mobile, animate: !reduced });
+let bindFleet: () => void = () => undefined;
+if (reduced) {
+  // Sans animation : chaque film reste sur une image choisie, tout le texte est là.
+  porte.set(0.5); rivoli.set(0.5); cles.set(0.6);
+  all('#manifesto .w').forEach((w) => w.classList.add('lit'));
+} else {
+  initSeuil(porte);
+  initManifesto();
+  initHeure(rivoli);
+  initRituel(cles);
+  bindFleet = initFleet();
+  initFrises();
+}
 ScrollTrigger.sort();
 ScrollTrigger.refresh();
 
@@ -110,21 +102,20 @@ all<HTMLButtonElement>('[data-lang]').forEach((b) => b.addEventListener('click',
   if (lang === 'ar') await arabicFonts();
   applyLang(lang);
   renderDynamic(lang);
-  all('.hero .reveal, .hero [data-lines]').forEach((el) => el.classList.add('in'));
+  one('.seuil-title').classList.add('in');
   if (reduced) all('#manifesto .w').forEach((w) => w.classList.add('lit'));
   watchReveal();
-  watchVideos();
-  showThread();
+  bindServices();
+  bindFleet();
   form.update();
-  if (active) activate(active);
-  refreshDoors();
   ScrollTrigger.refresh();
 }));
 
-// ─── Fin du chargement ──────────────────────────────────────────────────
+// ─── Fin du chargement : dès que la première image du film d'ouverture est là ─
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-Promise.race([Promise.all([document.fonts?.ready ?? Promise.resolve(), wait(reduced ? 0 : 1500)]), wait(3500)]).then(() => {
+Promise.race([Promise.all([porte.ready, document.fonts?.ready ?? Promise.resolve(), wait(reduced ? 0 : 900)]), wait(4500)]).then(() => {
+  loaderBar.style.transform = 'scaleX(1)';
   document.body.classList.remove('loading');
-  all('.hero .reveal, .hero [data-lines]').forEach((el, i) => window.setTimeout(() => el.classList.add('in'), reduced ? 0 : 250 + i * 130));
+  window.setTimeout(() => one('.seuil-title').classList.add('in'), reduced ? 0 : 350);
   ScrollTrigger.refresh();
 });
