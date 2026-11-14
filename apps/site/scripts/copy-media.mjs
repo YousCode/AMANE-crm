@@ -1,6 +1,6 @@
-// Les films et les photos vivent dans `site/` (dépôt) : on en copie ce que la page utilise dans `public/media/` (non versionné),
+// Les affiches et les photos vivent dans `site/` (dépôt) : on en copie ce que la page utilise dans `public/media/` (non versionné),
 // puis on prépare les films qui avancent au défilement (`sequences.json` → `public/media/seq/`, voir `frames.mjs` ; ffmpeg requis).
-import { cpSync, mkdirSync, existsSync } from 'node:fs';
+import { cpSync, mkdirSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildSequences } from './frames.mjs';
@@ -8,15 +8,16 @@ import { buildSequences } from './frames.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..', '..', '..', 'site');
 const out = join(here, '..', 'public', 'media');
-const VIDEOS = ['hero', 'hero-portrait', 'jour-montaigne', 'm-chauffeur', 'volant', 'm-van', 'van', 'arrivee', 'shopping', 'salon', 'vendome', 'rivoli', 'cles'];
+// Affiches des services (la porte en arche les montre pendant que leur film charge) ; les films eux-mêmes passent par `frames.mjs`.
+const POSTERS = ['jour-montaigne', 'm-chauffeur', 'm-van', 'arrivee', 'shopping', 'salon', 'vendome', 'hero'];
 const IMAGES = ['fleet-m5', 'fleet-g63', 'fleet-f296', 'fleet-classev'];
 mkdirSync(out, { recursive: true });
+// Vidéos laissées par une version précédente du site : la page n'en lit plus aucune.
+for (const f of readdirSync(out)) if (/\.(mp4|webm)$/.test(f)) rmSync(join(out, f));
 let n = 0;
-for (const v of VIDEOS) {
-  for (const [dir, file] of [['video', v + '.mp4'], ['video', v + '.webm'], ['img', v + '-poster.jpg']]) {
-    const from = join(src, dir, file);
-    if (existsSync(from)) { cpSync(from, join(out, file)); n++; }
-  }
+for (const v of POSTERS) {
+  const from = join(src, 'img', v + '-poster.jpg');
+  if (existsSync(from)) { cpSync(from, join(out, v + '-poster.jpg')); n++; }
 }
 for (const i of IMAGES) { const from = join(src, 'img', i + '.jpg'); if (existsSync(from)) { cpSync(from, join(out, i + '.jpg')); n++; } }
 console.log(`médias copiés : ${n}`);
