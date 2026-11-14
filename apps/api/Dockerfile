@@ -8,6 +8,7 @@ COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY apps/mobile/package.json apps/mobile/
+COPY apps/site/package.json apps/site/
 # Tous les manifestes du monorepo sont présents (lockfile cohérent) ; on n'installe que shared + web, devDependencies comprises.
 RUN npm ci --workspace packages/shared --workspace apps/web --include=dev --no-audit --no-fund --legacy-peer-deps
 COPY packages/shared packages/shared

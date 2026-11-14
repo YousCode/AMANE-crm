@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Amane — Conciergerie privée à Paris</title>
+<meta name="description" content="Voitures d’exception, chauffeurs, vans VIP, transferts, personal shopping et séjours sur mesure à Paris. Un seul interlocuteur, du premier message à la remise des clés.">
+<meta name="theme-color" content="#0B0A0D">
+<meta property="og:title" content="Amane — Conciergerie privée à Paris">
+<meta property="og:description" content="Toutes les portes de Paris. Une seule clé.">
+<meta property="og:type" content="website">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+</head>
+<body>
+
+<!-- Chargement : le A se remplit d'or -->
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="loader-mark"><span data-logo="faint"></span><span class="loader-fill" data-logo="gold"></span></div>
+</div>
+
+<canvas class="gl" id="gl" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+<div class="cursor" id="cursor" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <a class="nav-logo" href="#top" aria-label="Amane"><span data-logo="mark"></span><b>AMANE</b></a>
+  <nav class="nav-links" aria-label="Sections">
+    <a href="#services" data-i18n="n1">Services</a>
+    <a href="#rituel" data-i18n="n2">Le rituel</a>
+    <a href="#flotte" data-i18n="n3">La flotte</a>
+    <a href="#questions" data-i18n="n4">Questions</a>
+  </nav>
+  <div class="nav-end">
+    <div class="langs" role="group" data-i18n-aria="langLabel" aria-label="Langue">
+      <button type="button" data-lang="fr" aria-pressed="true">FR</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      <button type="button" data-lang="es" aria-pressed="false">ES</button>
+      <button type="button" data-lang="ar" aria-pressed="false">ع</button>
+    </div>
+    <a class="btn btn-gold btn-sm" href="#demande" data-i18n="cta">Faire une demande</a>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- 1. Ouverture -->
+  <section class="hero" id="top" data-tone="night" data-key="0.25,0,0.74,0" data-key-m="0,0.25,0.32,0">
+    <div class="wrap hero-grid">
+      <div class="hero-text">
+        <p class="eyebrow reveal" data-i18n="hk">Conciergerie privée · Paris</p>
+        <h1 class="display hero-title" data-i18n="h1" data-lines>Toutes les portes de Paris. <em>Une seule clé.</em></h1>
+        <p class="lead reveal" data-i18n="hs">Voitures d’exception, chauffeurs et séjours sur mesure. Un seul interlocuteur, du premier message à la remise des clés.</p>
+        <div class="cta-row reveal">
+          <a class="btn btn-gold" href="#demande" data-i18n="cta">Faire une demande</a>
+          <a class="btn btn-line" href="#services" data-i18n="cta2">Découvrir nos services</a>
+        </div>
+        <p class="meta reveal" data-i18n="hm">Paris · Île-de-France · CDG · Orly · Le Bourget</p>
+      </div>
+      <!-- Sans WebGL : le A reste là, immobile -->
+      <div class="hero-mark" aria-hidden="true"><span data-logo="gold"></span></div>
+    </div>
+    <div class="scroll-hint" aria-hidden="true"><i></i><span data-i18n="scroll">Défiler</span></div>
+  </section>
+
+  <!-- Bandeau des services -->
+  <div class="marquee" aria-hidden="true"><div class="marquee-track" id="marquee"></div></div>
+
+  <!-- 2. Le film -->
+  <section class="film" id="film" data-tone="night" data-key="0,0,0,0.6">
+    <div class="film-frame" id="filmFrame">
+      <video muted loop playsinline preload="none" poster="./media/hero-poster.jpg" data-src="hero" data-src-m="hero-portrait"></video>
+      <div class="film-veil"></div>
+      <div class="film-caption wrap">
+        <p class="eyebrow" data-i18n="bk">L’heure bleue</p>
+        <h2 class="display" data-i18n="bt">Paris se reflète. <em>Passez la main.</em></h2>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. La maison -->
+  <section class="manifesto" id="maison" data-tone="night" data-key="-0.31,0,0.84,0.5" data-key-m="0,0,0,0.5">
+    <div class="wrap narrow">
+      <p class="eyebrow reveal" data-i18n="mk">La maison</p>
+      <p class="manifesto-text" id="manifesto" data-i18n="mp" data-words></p>
+      <ul class="pillars">
+        <li class="reveal"><h3 data-i18n="p1t"></h3><p data-i18n="p1"></p></li>
+        <li class="reveal"><h3 data-i18n="p2t"></h3><p data-i18n="p2"></p></li>
+        <li class="reveal"><h3 data-i18n="p3t"></h3><p data-i18n="p3"></p></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 4. Les services : une enfilade de portes -->
+  <section class="doors" id="services" data-tone="cream" data-key="0,0,0,1.2">
+    <div class="doors-pin" id="doorsPin">
+      <div class="wrap doors-head">
+        <div>
+          <p class="eyebrow reveal" data-i18n="sk">Nos services</p>
+          <h2 class="display reveal" data-i18n="st8">Huit façons d’ouvrir <em>Paris.</em></h2>
+        </div>
+        <p class="note reveal" data-i18n="sn"></p>
+      </div>
+      <div class="doors-viewport" id="doorsViewport">
+        <div class="doors-track" id="doorsTrack"></div>
+      </div>
+      <div class="wrap doors-foot" aria-hidden="true"><span class="doors-bar"><i id="doorsBar"></i></span><span class="meta" data-i18n="drag">Faites défiler</span></div>
+    </div>
+  </section>
+
+  <!-- 5. Le rituel -->
+  <section class="ritual" id="rituel" data-tone="stone" data-key="0,0,0,2.2">
+    <div class="wrap ritual-grid">
+      <div class="ritual-head">
+        <p class="eyebrow reveal" data-i18n="rk">Le rituel</p>
+        <h2 class="display reveal" data-i18n="rt"></h2>
+        <ol class="steps" id="steps"></ol>
+      </div>
+      <div class="ritual-seal tilt" data-tilt="8">
+        <div class="arch arch-lg"><video muted loop playsinline preload="none" poster="./media/cles-poster.jpg" data-src="cles"></video></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Par message -->
+  <section class="message" id="message" data-tone="cream" data-key="0,0,0,3">
+    <div class="wrap message-grid">
+      <div class="message-text">
+        <p class="eyebrow reveal" data-i18n="wk">Par message</p>
+        <h2 class="display reveal" data-i18n="wt"></h2>
+        <p class="lead reveal" data-i18n="wp"></p>
+        <a class="btn btn-ink reveal" href="#demande" data-i18n="cta">Faire une demande</a>
+      </div>
+      <div class="message-stage">
+        <div class="phone tilt" data-tilt="7" id="phone" role="img" aria-label="Échange par message avec Amane">
+          <header><span data-logo="mark"></span><b>Amane</b><i></i></header>
+          <div class="thread" id="thread"></div>
+        </div>
+        <div class="proposal tilt" data-tilt="10" id="proposal">
+          <p class="eyebrow" data-i18n="pr.k"></p>
+          <dl>
+            <div><dt data-i18n="pr.v"></dt><dd data-i18n="pr.vv"></dd></div>
+            <div><dt data-i18n="pr.d"></dt><dd data-i18n="pr.dv"></dd></div>
+            <div><dt data-i18n="pr.p"></dt><dd data-i18n="pr.pv"></dd></div>
+            <div><dt data-i18n="pr.c"></dt><dd data-i18n="pr.cv"></dd></div>
+          </dl>
+          <button type="button" class="btn btn-gold btn-block" id="accept"><span data-i18n="pr.a"></span></button>
+          <p class="proposal-ok" id="acceptOk" hidden><span class="seal" aria-hidden="true"></span><span data-i18n="pr.ok"></span></p>
+          <p class="fine" data-i18n="pr.n"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. La flotte -->
+  <section class="fleet" id="flotte" data-tone="night" data-key="0,0,0,4">
+    <div class="wrap">
+      <div class="fleet-head">
+        <p class="eyebrow reveal" data-i18n="fk">La flotte</p>
+        <h2 class="display reveal" data-i18n="ft"></h2>
+        <p class="lead reveal" data-i18n="fp"></p>
+      </div>
+      <div class="fleet-grid" id="fleet"></div>
+    </div>
+  </section>
+
+  <!-- 8. Prestataires -->
+  <section class="partners" id="prestataires" data-tone="bordeaux" data-key="0.3,0,0.5,5" data-key-m="0,0,0,5">
+    <div class="wrap partners-inner">
+      <p class="eyebrow reveal" data-i18n="xk">Prestataires</p>
+      <h2 class="display reveal" data-i18n="xt"></h2>
+      <p class="lead reveal" data-i18n="xp"></p>
+      <a class="btn btn-cream reveal" href="/prestataires" id="partnerLink" data-i18n="xc">Devenir prestataire</a>
+    </div>
+  </section>
+
+  <!-- 9. Questions -->
+  <section class="faq" id="questions" data-tone="cream" data-key="0,0,0,5.6">
+    <div class="wrap faq-grid">
+      <div>
+        <p class="eyebrow reveal" data-i18n="qk">Questions</p>
+        <h2 class="display reveal" data-i18n="qt"></h2>
+      </div>
+      <div class="faq-list" id="faq"></div>
+    </div>
+  </section>
+
+  <!-- 10. La demande -->
+  <section class="ask" id="demande" data-tone="night" data-key="-0.3,0.08,0.5,6.3" data-key-m="0,0,0,6.3">
+    <div class="wrap ask-grid">
+      <div class="ask-head">
+        <p class="eyebrow reveal" data-i18n="ak">Faire une demande</p>
+        <h2 class="display reveal" data-i18n="at"></h2>
+        <p class="lead reveal" data-i18n="ap"></p>
+      </div>
+      <form class="ask-form reveal" id="askForm" novalidate>
+        <div class="f"><label for="f-name" data-i18n="l1">Votre nom</label><input id="f-name" name="name" autocomplete="name"></div>
+        <div class="f half"><label for="f-date" data-i18n="l2">Date</label><input id="f-date" name="date" type="date"></div>
+        <div class="f half"><label for="f-guests" data-i18n="l4">Passagers</label><input id="f-guests" name="guests" type="number" min="1" max="60" inputmode="numeric"></div>
+        <div class="f half"><label for="f-service" data-i18n="l3">Service</label><select id="f-service" name="service"></select></div>
+        <div class="f half"><label for="f-lang" data-i18n="l5">Langue de contact</label><select id="f-lang" name="lang"><option>Français</option><option>English</option><option>Español</option><option>العربية</option></select></div>
+        <div class="f"><label for="f-msg" data-i18n="l6">L’occasion, en quelques mots</label><textarea id="f-msg" name="message" rows="3"></textarea></div>
+        <div class="f cbf" id="cbField" hidden><label for="f-tel" data-i18n="l7">Téléphone, pour être rappelé</label><input id="f-tel" name="tel" type="tel" autocomplete="tel" inputmode="tel"></div>
+        <div class="hp" aria-hidden="true"><label for="f-web">Site web</label><input id="f-web" name="website" tabindex="-1" autocomplete="off"></div>
+        <div class="preview"><p class="eyebrow" data-i18n="pk">Votre message</p><p id="preview" dir="auto"></p></div>
+        <div class="ask-actions">
+          <a class="btn btn-gold" id="wa" href="#" target="_blank" rel="noopener" data-i18n="send">Envoyer sur WhatsApp</a>
+          <button class="btn btn-line" type="button" id="callback" hidden data-i18n="cb">Être rappelé</button>
+          <button class="btn btn-ghost" type="button" id="copy" data-i18n="copy">Copier le message</button>
+        </div>
+        <p class="fine" id="priv" data-i18n="priv"></p>
+        <p class="fine contact" id="contactLine" hidden><span id="waShow"></span> · <span id="mailShow"></span></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="foot" data-tone="night">
+  <div class="wrap foot-grid">
+    <div class="foot-brand"><span data-logo="gold"></span><p class="slogan" data-i18n="slogan" dir="ltr">Arrive as a <em>Guest</em>. Leave with a <em>Story</em>.</p></div>
+    <div class="foot-meta"><p data-i18n="fo1"></p><p data-i18n="fo2"></p><p>© <span id="yr"></span> Amane</p></div>
+    <a class="link" href="#top" data-i18n="top">Haut de page</a>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

@@ -22,6 +22,7 @@ Ce dépôt réunit tout le logiciel de la maison : le **CRM** de l'équipe (API,
 | **API** (Express + MongoDB) | Tous les écrans ; webhook WhatsApp ; IA ; rappels automatiques | `apps/api` → `/api`, `/ws` |
 | **CRM historique** (page unique) | Version d'origine, toujours compatible avec l'API | `crm/` → servi sur `/crm` |
 | **Site internet** | Les clients : FR, EN, ES, AR | `site/` → servi sur `/` |
+| **Nouveau site** (en validation) | Les clients : même contenu, scène 3D pilotée par le défilement | `apps/site` → `npm run site` |
 
 ---
 
@@ -141,6 +142,7 @@ Toutes depuis la racine.
 |---|---|
 | `npm run api` | API en mode démo (`FAKE_DB=1 FAKE_AI=1`) sur le port 3000 |
 | `npm run web` | Back-office en développement (Vite, port 5173, faux serveur msw) |
+| `npm run site` | Nouveau site en développement (Vite, port 5174) ; `npm run build:site` → `apps/site/dist` |
 | `npm run mobile` | Serveur Expo |
 | `npm run build` | Construit le back-office dans `apps/web/dist` (servi ensuite sur `/app`) |
 | `npm start` | API en production (lit les variables d'environnement) |
