@@ -19,5 +19,8 @@
 .free{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:14px 18px;margin-bottom:16px}
 .free label{font-size:0.6875rem;letter-spacing:.2em;text-transform:uppercase;color:var(--fg3)}
 .freeList{display:flex;gap:6px;flex-wrap:wrap;width:100%}
+/* Nom de véhicule long (véhicule proposé par un prestataire) : la pastille ne dépasse pas l'écran, le nom est coupé, l'état reste lisible. */
+.freeList>button{max-width:100%;min-width:0}
+.fn{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .legend{color:var(--fg3);font-size:0.7812rem;margin-top:10px}
 @media (max-width:1019px){.pair{flex:1 1 240px}.pair .field-inline{flex:1}.wrap{margin:0 -16px;border-radius:0;border-left:0;border-right:0;scroll-padding-left:130px}.plan{min-width:860px}.h,.r{grid-template-columns:130px repeat(7,minmax(0,1fr))}.lanes{left:130px}.rl{padding:10px 8px;font-size:0.8125rem}.free{padding:12px 14px}.free .field-inline{flex:1 1 140px}.free>span:last-of-type{margin-left:0!important;flex-basis:100%}}

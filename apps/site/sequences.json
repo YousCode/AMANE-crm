@@ -1,0 +1,13 @@
+{
+  "porte": { "source": "frames", "count": 48, "width": 1280, "height": 726 },
+  "rivoli": { "source": "video", "video": "rivoli", "count": 52, "width": 1280, "height": 720 },
+  "cles": { "source": "video", "video": "cles", "count": 52, "width": 1280, "height": 720 },
+  "porte-location": { "source": "video", "video": "porte-location", "count": 48, "width": 1280, "height": 726, "optional": true },
+  "porte-chauffeur": { "source": "video", "video": "porte-chauffeur", "count": 48, "width": 1280, "height": 726, "optional": true },
+  "porte-van": { "source": "video", "video": "porte-van", "count": 48, "width": 1280, "height": 726, "optional": true },
+  "porte-transfert": { "source": "video", "video": "porte-transfert", "count": 48, "width": 1280, "height": 726, "optional": true },
+  "porte-shopping": { "source": "video", "video": "porte-shopping", "count": 48, "width": 1280, "height": 726, "optional": true },
+  "porte-sejour": { "source": "video", "video": "porte-sejour", "count": 48, "width": 1280, "height": 726, "optional": true },
+  "porte-conciergerie": { "source": "video", "video": "porte-conciergerie", "count": 48, "width": 1280, "height": 726, "optional": true },
+  "porte-clip": { "source": "video", "video": "porte-clip", "count": 48, "width": 1280, "height": 726, "optional": true }
+}

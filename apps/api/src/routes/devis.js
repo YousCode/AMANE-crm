@@ -7,6 +7,7 @@ import { ensureDevisShare, missionByShareToken, markDevisViewed, acceptDevis, pu
 import { devisPage, expiredPage } from '../pages/devis.js';
 import { docLang, t, firstName } from '@amane/shared';
 import { normPhone } from '../lib/phone.js';
+import { getMaison } from '../lib/maison.js';
 
 export const router = Router();
 
@@ -57,7 +58,7 @@ router.get('/d/:token', wrap(async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.end(JSON.stringify({ numero: m.devis.numero || '', statut: m.devis.statut || 'envoye', lang: docLang(client), titre: m.titre, lignes: m.devis.lignes || [], remise: m.devis.remise || 0, tva: m.devis.tva ?? 20, acceptedAt: m.devis.acceptedAt || null }));
   }
-  res.end(devisPage({ mission: m, client, token, waNumber, nowIso: nowIso() }));
+  res.end(devisPage({ mission: m, client, token, waNumber, nowIso: nowIso(), maison: await getMaison(db) }));
 }));
 
 router.post('/d/:token/accepter', wrap(async (req, res) => {

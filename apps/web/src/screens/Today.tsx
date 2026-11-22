@@ -17,7 +17,7 @@ import { ConvRow } from './Messages';
 export function TodoList({ T, sel, setSel, limit }: { T: Record<string, Todo[]>; sel: string; setSel: (s: string) => void; limit?: number }) {
   const { openDrawer } = useUI(); const [all, setAll] = useState(false);
   const mine = T[sel] || []; const sh = limit && !all ? mine.slice(0, limit) : mine;
-  const go = (x: Todo) => { if (x.cid) openDrawer('client', x.cid); else if (x.vid) openDrawer('vehicule', x.vid, x.vtab || 'main'); else openDrawer('mission', x.id, x.tab || 'main'); };
+  const go = (x: Todo) => { if (x.cid) openDrawer('client', x.cid); else if (x.pid) openDrawer('partenaire', x.pid); else if (x.vid) openDrawer('vehicule', x.vid, x.vtab || 'main'); else openDrawer('mission', x.id, x.tab || 'main'); };
   return <>
     <div className="todo-tabs" role="group" aria-label="À faire par personne">{TEAM.map((p) => <button key={p.id} type="button" aria-pressed={sel === p.id} onClick={() => { setSel(p.id); setAll(false); }}><Av id={p.id} />{p.nom} <span className="n">{T[p.id].length}</span></button>)}</div>
     {sh.length ? sh.map((x, i) => <button key={i} className="todo" type="button" onClick={() => go(x)}><span className="sev" style={{ background: `var(--${x.sev})` }} /><span><div className="tt" dir="auto">{x.t}</div><div className="td" dir="auto">{x.d}</div></span></button>) : <Empty>Rien en attente pour {teamOf(sel)?.nom}.</Empty>}

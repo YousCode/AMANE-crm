@@ -12,10 +12,11 @@
     "./rules": "./rules.js",
     "./i18n": "./i18n.js",
     "./tokens": "./tokens.js",
-    "./validate": "./validate.js"
+    "./validate": "./validate.js",
+    "./docs": "./docs.js"
   },
   "sideEffects": false,
-  "files": ["index.js", "index.d.ts", "constants.js", "rules.js", "i18n.js", "tokens.js", "validate.js", "README.md"],
+  "files": ["index.js", "index.d.ts", "constants.js", "rules.js", "i18n.js", "tokens.js", "validate.js", "docs.js", "README.md"],
   "scripts": {
     "test": "node --test \"test/**/*.test.js\""
   },

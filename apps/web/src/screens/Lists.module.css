@@ -2,6 +2,13 @@
 .contrats{grid-template-columns:minmax(0,1.6fr) repeat(5,minmax(70px,.6fr)) 90px}
 .partners{grid-template-columns:34px minmax(0,1.6fr) minmax(0,1fr) 70px auto}
 .fin{grid-template-columns:minmax(0,1fr) 120px 110px}
+/* Prestataires : inscriptions et véhicules à valider (en tête du Carnet et de la Flotte), pastille du propriétaire sur les cartes. */
+.aval{grid-template-columns:34px minmax(0,1fr) auto}
+.avalA{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.cf{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;font-size:0.8125rem;color:var(--bad)}
+.own{max-width:100%;align-self:flex-start}
+.own svg{width:12px;height:12px;flex:0 0 auto;color:var(--accent)}
+.own span{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .rel{grid-template-columns:34px minmax(0,1.4fr) minmax(0,1fr) 120px auto}
 .rent{grid-template-columns:minmax(0,1.4fr) repeat(6,minmax(70px,.7fr))}
 .fleet{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:14px}
@@ -54,6 +61,7 @@
   .clients{grid-template-columns:30px minmax(0,1fr) auto auto;gap:10px;padding:12px 14px}
   .contrats{grid-template-columns:minmax(0,1fr) auto}
   .partners{grid-template-columns:34px minmax(0,1fr) auto;gap:10px;padding:12px 14px}
+  .aval{grid-template-columns:34px minmax(0,1fr)}.avalA{grid-column:1/-1;justify-content:flex-start}.cf{justify-content:flex-start}
   .fin{grid-template-columns:minmax(0,1fr) auto}
   .rel{grid-template-columns:34px minmax(0,1fr)}.rel>span:last-child{grid-column:2;justify-self:start}
   .rent{grid-template-columns:minmax(0,1fr) auto auto}

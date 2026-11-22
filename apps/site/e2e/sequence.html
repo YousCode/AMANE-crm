@@ -1,0 +1,41 @@
+<!doctype html>
+<!-- Page d'essai du moteur de films (src/sequence.ts), hors du build du site : servie par Vite en mode dev pour e2e/sequence.mjs.
+     /e2e/sequence.html?film=porte|rivoli|cles &mobile=1 &focus=0.4,0.5 &manuel=1 (le test pilote set() lui-même, sans défilement) -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Essai — film au défilement</title>
+<base href="/"><!-- le moteur demande ./media/seq/… : même adresse que depuis la page du site -->
+<style>
+  html, body { margin: 0; background: #0b0d14; }
+  body { height: 500vh; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #etat { position: fixed; left: 12px; bottom: 10px; padding: 4px 8px; border-radius: 4px; font: 12px/1.4 ui-monospace, monospace; color: #e9dfc9; background: rgba(11, 13, 20, .6); }
+</style>
+</head>
+<body>
+<canvas id="film"></canvas>
+<div id="etat"></div>
+<script type="module">
+  import { createSequence } from '/src/sequence.ts';
+
+  const q = new URLSearchParams(location.search), etat = document.querySelector('#etat');
+  const focus = q.get('focus')?.split(',').map(Number);
+  const essai = (window.essai = { createSequence, t0: performance.now(), ready: false, loaded: false, progress: [], doneAtReady: -1, tReady: -1, tLoaded: -1 });
+  const seq = (essai.seq = createSequence({
+    canvas: document.querySelector('#film'),
+    name: q.get('film') || 'porte',
+    mobile: q.has('mobile') ? q.get('mobile') === '1' : matchMedia('(max-width: 760px)').matches,
+    focus: focus && focus.length === 2 ? focus : undefined,
+    onProgress: (n, total) => { essai.progress.push([n, total]); etat.textContent = `${n} / ${total}`; },
+  }));
+  seq.ready.then(() => { essai.ready = true; essai.tReady = performance.now() - essai.t0; essai.doneAtReady = essai.progress.length; });
+  seq.loaded.then(() => { essai.loaded = true; essai.tLoaded = performance.now() - essai.t0; });
+  if (q.get('manuel') !== '1') {
+    const follow = () => seq.set(scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight));
+    addEventListener('scroll', follow, { passive: true }); follow();
+  }
+</script>
+</body>
+</html>

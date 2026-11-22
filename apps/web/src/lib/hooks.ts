@@ -18,7 +18,7 @@ export function useCoarse() {
 }
 /** Les cinq collections métier, mémorisées, pour les règles dérivées. */
 export function useData(): Data {
-  const missions = useStore((x) => x.missions), clients = useStore((x) => x.clients), vehicules = useStore((x) => x.vehicules), partenaires = useStore((x) => x.partenaires), services = useStore((x) => x.services);
-  return useMemo(() => ({ missions, clients, vehicules, partenaires, services }), [missions, clients, vehicules, partenaires, services]);
+  const missions = useStore((x) => x.missions), clients = useStore((x) => x.clients), vehicules = useStore((x) => x.vehicules), partenaires = useStore((x) => x.partenaires), services = useStore((x) => x.services), reglages = useStore((x) => x.reglages);
+  return useMemo(() => ({ missions, clients, vehicules, partenaires, services, reglages }), [missions, clients, vehicules, partenaires, services, reglages]);
 }
 export function useTick(ms: number) { const [, set] = useState(0); useEffect(() => { const i = setInterval(() => set((x) => x + 1), ms); return () => clearInterval(i); }, [ms]); }

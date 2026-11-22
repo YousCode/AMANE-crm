@@ -12,7 +12,7 @@ describe('store : connexion, synchro, écritures optimistes, hors ligne', () => 
   it('boot sans session → écran de connexion ; login → données chargées', async () => {
     await useStore.getState().boot(); expect(useStore.getState().auth).toBe('login');
     await useStore.getState().login('amel', '1234'); expect(useStore.getState().user?.nom).toBe('Amel');
-    await wait(80); const s = useStore.getState(); expect(s.ready).toBe(true); expect(s.missions.length).toBeGreaterThan(5); expect(s.vehicules.length).toBe(5); expect(s.conversations.length).toBe(4); expect(s.since).toBeTruthy();
+    await wait(80); const s = useStore.getState(); expect(s.ready).toBe(true); expect(s.missions.length).toBeGreaterThan(5); expect(s.vehicules.length).toBe(7); expect(s.conversations.length).toBe(4); expect(s.since).toBeTruthy();
   });
   it('mauvais PIN → 401 bad_pin', async () => { await expect(useStore.getState().login('amel', '9999')).rejects.toMatchObject({ status: 401, code: 'bad_pin' }); });
   it('put : visible aussitôt, envoyé au serveur, activité tracée', async () => {

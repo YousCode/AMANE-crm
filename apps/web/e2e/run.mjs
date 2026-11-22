@@ -1,4 +1,4 @@
-/* Parcours Playwright (8 parcours × 1440×900 et 390×844 + absence de débordement horizontal sur chaque route à 390×844).
+/* Parcours Playwright (9 parcours × 1440×900 et 390×844 + absence de débordement horizontal sur chaque route à 390×844).
    Lancer le serveur de développement (npm run dev, msw actif) puis : node e2e/run.mjs */
 import { newPage, login, closeBrowser, DESKTOP, MOBILE, BASE, assertNoErrors, noOverflow, shot } from './lib.mjs';
 
@@ -92,6 +92,37 @@ const journeys = {
     await mock(page, () => { window.__amaneMock.setOffline(false); window.dispatchEvent(new Event('online')); });
     await page.waitForFunction(() => /Synchronisé/.test(document.querySelector('[data-testid="live"]')?.textContent || ''), null, { timeout: 15000 });
     await page.waitForFunction(() => window.__amaneMock.state().db.missions.get('m_clip').lieu === 'Pont des Arts');
+  },
+  /* Prestataires : inscription validée → lien du portail → demande sur le van d'un loueur → dispo demandée → il répond « oui » sur son portail → « Disponible ». */
+  async prestataire(page, vp) {
+    const etat = (k) => page.waitForFunction((x) => document.querySelector('[data-testid="dispo-etat"]')?.dataset.etat === x, k, { timeout: 8000 });
+    const ouvrir = async () => { if (isMobile(vp)) await page.click('[data-testid="lcard-m_seminaire"]', { position: { x: 60, y: 22 } }); else await page.click('[data-testid="card-m_seminaire"]'); await page.waitForSelector('[data-testid="dispo"]'); };
+    await login(page, 'youssouf'); await page.goto(BASE + '/carnet');
+    // 1. L'inscription reçue du site est en tête du Carnet : la valider crée le lien et ouvre la fiche.
+    await page.waitForSelector('[data-testid="inscriptions"]'); await page.click('[data-testid="insc-ok-p_marais"]');
+    await page.waitForSelector('[data-testid="portail-url"]'); const l0 = await page.textContent('[data-testid="portail-url"]'); if (!/\/p\/[A-Za-z0-9_-]{24}$/.test(l0)) throw new Error('lien du portail invalide après validation : ' + l0);
+    await page.waitForFunction(() => { const p = window.__amaneMock.state().db.partenaires.get('p_marais'); return !p.aValider && !!p.portailToken; });
+    await page.click('[data-testid="drawer"] button[aria-label="Fermer"]'); if (await page.locator('[data-testid="inscriptions"]').count()) throw new Error('l’inscription validée est encore à valider'); await page.waitForSelector('[data-testid="part-p_marais"]');
+    // 2. Loueur déjà validé : créer le lien de son portail, prêt à envoyer par WhatsApp.
+    await page.click('[data-testid="part-p_rivoli"] .main-t'); await page.waitForSelector('[data-testid="portail-btn"]'); await page.click('[data-testid="portail-btn"]'); await page.waitForSelector('text=Lien créé');
+    const link = await page.textContent('[data-testid="portail-url"]'); const token = link.split('/p/')[1]; if (!token || token.length !== 24) throw new Error('lien invalide : ' + link);
+    const wa = await page.getAttribute('[data-testid="portail"] a.btn', 'href'); if (!wa || !wa.startsWith('https://wa.me/33639980001?text=') || !decodeURIComponent(wa).includes(link)) throw new Error('lien WhatsApp du portail incorrect : ' + wa);
+    const pj = await page.evaluate(async (t) => (await fetch('/api/portail/' + t)).json(), token); if (pj.partenaire?.nom !== 'Loueur Test Rivoli' || pj.vehicules.length !== 2) throw new Error('portail du prestataire incomplet');
+    await page.click('[data-testid="drawer"] button[aria-label="Fermer"]');
+    // 3. Demande sur son van, hors de ses jours déclarés : la dispo est à demander.
+    await page.goto(BASE + '/demandes'); await ouvrir(); await etat('a_demander'); if (!/1.350.€/.test(await page.textContent('[data-testid="marge"]'))) throw new Error('marge absente');
+    // Ordinateur : envoi automatique indisponible → message à envoyer soi-même ; téléphone : WhatsApp part tout seul.
+    if (!isMobile(vp)) await mock(page, () => { window.__amaneMock.state().whatsappOn = false; });
+    await page.click('[data-testid="dispo-btn"]'); await etat('attente');
+    if (!isMobile(vp)) { await page.waitForSelector('[data-testid="dispo-msg"]'); const w = await page.getAttribute('[data-testid="dispo-wa"]', 'href'); if (!w || !w.includes('wa.me/33639980001') || !decodeURIComponent(w).includes('/p/' + token)) throw new Error('message WhatsApp au prestataire incorrect'); }
+    else await page.waitForSelector('[data-testid="dispo-envoyee"]');
+    await page.waitForFunction(() => (window.__amaneMock.state().db.missions.get('m_seminaire').dispoDemandes || [])[0]?.statut === 'envoyee');
+    // 4. Le prestataire répond « oui » sur son portail (même origine : msw répond) : la fiche ouverte passe à « Disponible ».
+    const r = await page.evaluate(async (t) => (await fetch(`/api/portail/${t}/demandes/m_seminaire`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ vehiculeId: 'v_rivoli_v', reponse: 'oui' }) })).json(), token); if (!r.ok || r.statut !== 'oui') throw new Error('réponse du prestataire refusée');
+    await etat('oui'); if (!(await page.textContent('[data-testid="dispo-etat"]')).includes('Disponible')) throw new Error('état « Disponible » absent'); if (await page.locator('[data-testid="dispo-btn"]').count()) throw new Error('bouton de demande encore affiché');
+    // La fiche rouverte garde l'état, et la flotte compte le van comme libre sur ces jours.
+    await page.click('[data-testid="drawer"] button[aria-label="Fermer"]'); await page.goto(BASE + '/demandes'); await ouvrir(); await etat('oui');
+    if (!(await page.evaluate(() => (window.__amaneMock.state().db.vehicules.get('v_rivoli_v').dispos || []).length))) throw new Error('jours de la demande non ajoutés aux jours déclarés');
   },
 };
 

@@ -1,0 +1,28 @@
+{
+  "name": "@amane/site",
+  "version": "4.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Site vitrine Amane : scène 3D pilotée par le défilement, quatre langues, demande reliée au CRM",
+  "scripts": {
+    "media": "node scripts/copy-media.mjs",
+    "dev": "node scripts/copy-media.mjs && vite",
+    "build": "node scripts/copy-media.mjs && tsc --noEmit && vite build",
+    "preview": "vite preview --port 4174 --strictPort",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource-variable/bodoni-moda": "^5.2.0",
+    "@fontsource-variable/jost": "^5.2.0",
+    "@fontsource/amiri": "^5.2.0",
+    "@fontsource/ibm-plex-sans-arabic": "^5.2.0",
+    "gsap": "^3.12.5",
+    "lenis": "^1.1.18",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.170.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}

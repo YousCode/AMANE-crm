@@ -3,4 +3,5 @@ export * from './constants.js';
 export * from './rules.js';
 export * from './i18n.js';
 export * from './tokens.js';
+export * from './docs.js';
 export { validate, client as validateClient, mission as validateMission, devis as validateDevis, vehicule as validateVehicule, partenaire as validatePartenaire, service as validateService } from './validate.js';
