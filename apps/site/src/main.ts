@@ -7,10 +7,10 @@ import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CONFIG } from './config';
-import { applyLang, detectLang, type Lang } from './i18n';
+import { applyLang, detectLang, tr, type Lang } from './i18n';
 import { lazySequence } from './lazy';
 import { initForm } from './form';
-import { mountStatic, renderDynamic, initReveal, initProgress, initSeuil, initHeure, initRituel, initManifesto, initServices, initFleet, initFrises } from './sections';
+import { mountStatic, renderDynamic, initReveal, initSeuil, initHeure, initRituel, initManifesto, initServices, initFleet, initFrises } from './sections';
 
 gsap.registerPlugin(ScrollTrigger);
 const html = document.documentElement;
@@ -62,6 +62,26 @@ const onScroll = () => nav.classList.toggle('solid', window.scrollY > window.inn
 window.addEventListener('scroll', onScroll, { passive: true });
 onScroll();
 
+// ─── Menu des écrans étroits ────────────────────────────────────────────
+const menu = one('#menu'), menuBtn = one<HTMLButtonElement>('#menuBtn');
+const menuOpen = () => menu.classList.contains('open');
+const setMenu = (open: boolean) => {
+  menu.classList.toggle('open', open);
+  menu.inert = !open;
+  menu.setAttribute('aria-hidden', String(!open));
+  menuBtn.setAttribute('aria-expanded', String(open));
+  menuBtn.textContent = tr(lang, open ? 'close' : 'menu');
+  html.classList.toggle('menu-open', open);
+  if (lenis) { if (open) lenis.stop(); else lenis.start(); }
+};
+menu.inert = true;
+menuBtn.textContent = tr(lang, 'menu');
+menuBtn.addEventListener('click', () => setMenu(!menuOpen()));
+// Le menu se ferme avant que le lien fasse défiler la page (l'écouteur du document passe après).
+menu.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('a')) setMenu(false); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && menuOpen()) { setMenu(false); menuBtn.focus(); } });
+matchMedia('(min-width: 1080px)').addEventListener('change', (m) => { if (m.matches && menuOpen()) setMenu(false); });
+
 document.addEventListener('click', (e) => {
   const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="#"]');
   if (!a) return;
@@ -76,7 +96,6 @@ document.addEventListener('click', (e) => {
 
 // ─── Parties de la page ─────────────────────────────────────────────────
 const watchReveal = initReveal();
-initProgress();
 const bindServices = initServices({ mobile, animate: !reduced });
 let bindFleet: () => void = () => undefined;
 if (reduced) {
@@ -102,6 +121,7 @@ all<HTMLButtonElement>('[data-lang]').forEach((b) => b.addEventListener('click',
   if (lang === 'ar') await arabicFonts();
   applyLang(lang);
   renderDynamic(lang);
+  menuBtn.textContent = tr(lang, menuOpen() ? 'close' : 'menu');
   one('.seuil-title').classList.add('in');
   if (reduced) all('#manifesto .w').forEach((w) => w.classList.add('lit'));
   watchReveal();

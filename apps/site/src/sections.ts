@@ -28,9 +28,9 @@ const KEYHOLE = '<g transform="translate(60 112)" stroke="none" fill="currentCol
 const arch = (x: number, y: number, key: boolean) => `<g transform="translate(${x} ${y})">${ARCH}${key ? KEYHOLE : ''}</g>`;
 
 /** Frise : une rangée d'arcades au trait. */
-function friseSvg(n = 16) {
-  let g = ''; for (let i = 0; i < n; i++) g += arch(i * 120, 0, i % 3 === 1);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 58 ${n * 120} 132" preserveAspectRatio="xMidYMax slice" fill="none" stroke="currentColor" stroke-width="1.6">${g}</svg>`;
+function friseSvg(n = 26) {
+  let g = ''; for (let i = 0; i < n; i++) g += arch(i * 120, 0, false);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 10 ${n * 120} 182" fill="none" stroke="currentColor" stroke-width="1.6">${g}</svg>`;
 }
 /** Tapisserie : le motif en deux rangs décalés, ton sur ton, pour un fond. */
 function tapestry(stroke: string) {
@@ -78,12 +78,6 @@ export function initReveal() {
   const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
   const watch = () => $$('.reveal:not(.in)').forEach((el) => io.observe(el));
   watch(); return watch;
-}
-
-/** Filet de progression sous la barre du haut. */
-export function initProgress() {
-  const bar = $('#progress');
-  ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (st) => { bar.style.transform = `scaleX(${st.progress.toFixed(4)})`; } });
 }
 
 /** Le seuil : le défilement ouvre la porte ; le premier texte s'efface, le second arrive quand le hall se découvre. */
@@ -170,10 +164,10 @@ export function initFleet() {
   bind(); return bind;
 }
 
-/** Les frises se tracent à l'entrée dans l'écran. */
+/** Les frises se tracent une fois, à leur arrivée dans l'écran. */
 export function initFrises() {
   $$('.frise').forEach((f) => {
     const paths = f.querySelectorAll('path[pathLength]');
-    gsap.fromTo(paths, { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, ease: 'none', stagger: 0.012, scrollTrigger: { trigger: f, start: 'top 96%', end: 'top 55%', scrub: true } });
+    gsap.fromTo(paths, { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.6, ease: 'power2.inOut', stagger: 0.035, scrollTrigger: { trigger: f, start: 'top 88%', toggleActions: 'play none none none' } });
   });
 }

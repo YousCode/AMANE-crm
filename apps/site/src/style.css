@@ -2,7 +2,7 @@
    le texte est crème, l'or ne sert qu'aux filets, aux repères et aux mots en italique. */
 :root {
   --night: #0b0a0d; --night-2: #121014; --ink: #15110f; --cream: #f3ecdf; --gold: #b8955c; --gold-light: #d9b98a; --bordeaux-deep: #2a0a10;
-  --fg: var(--cream); --muted: rgba(243, 236, 223, .62); --faint: rgba(243, 236, 223, .34); --line: rgba(217, 185, 138, .2);
+  --fg: var(--cream); --muted: rgba(243, 236, 223, .7); --faint: rgba(243, 236, 223, .42); --line: rgba(217, 185, 138, .2);
   --f-display: 'Bodoni Moda Variable', 'Bodoni Moda', Didot, 'Bodoni 72', Georgia, serif;
   --f-ui: 'Jost Variable', Jost, Futura, 'Century Gothic', system-ui, sans-serif;
   --gutter: max(22px, env(safe-area-inset-left, 0px));
@@ -62,7 +62,7 @@ body:not(.loading) .loader { opacity: 0; visibility: hidden; }
 
 /* ---------- navigation : le seul endroit où le logo apparaît ---------- */
 .nav { position: fixed; inset: 0 0 auto; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: calc(16px + env(safe-area-inset-top, 0px)) var(--gutter) 16px; transition: background-color .6s var(--ease); }
-.nav.solid { background: rgba(11, 10, 13, .78); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.nav.solid { box-shadow: 0 1px 0 var(--line); background: rgba(11, 10, 13, .78); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
 .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
 .nav-logo span { height: 28px; line-height: 0; }
 .nav-logo svg { height: 100%; width: auto; }
@@ -78,9 +78,26 @@ body:not(.loading) .loader { opacity: 0; visibility: hidden; }
 .nav-cta { display: none; }
 @media (min-width: 760px) { .nav-cta { display: inline-block; } }
 @media (min-width: 1080px) { .nav-links { display: flex; } }
-.nav-progress { position: absolute; inset: auto 0 0; height: 1px; background: transparent; }
-.nav-progress i { display: block; height: 100%; background: var(--gold); transform: scaleX(0); transform-origin: left; }
-html[dir='rtl'] .nav-progress i { transform-origin: right; }
+@media (max-width: 759px) { .nav-end > .langs { display: none; } }
+
+/* ---------- menu des écrans étroits ---------- */
+.menu-btn { display: inline-flex; align-items: center; gap: 14px; min-height: 44px; padding: 0; background: none; border: 0; cursor: pointer; font-size: .7rem; letter-spacing: .26em; text-transform: uppercase; color: var(--fg); }
+.menu-btn::before { content: ''; width: 22px; height: 1px; background: var(--gold-light); box-shadow: 0 6px 0 var(--gold-light); transform: translateY(-3px); transition: box-shadow .5s var(--ease), transform .5s var(--ease); }
+.menu-btn[aria-expanded='true']::before { box-shadow: 0 0 0 var(--gold-light); transform: none; }
+html[dir='rtl'] .menu-btn { letter-spacing: 0; font-size: .86rem; }
+@media (min-width: 1080px) { .menu-btn { display: none; } }
+.menu { position: fixed; inset: 0; z-index: 39; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; overflow-y: auto; padding: calc(112px + env(safe-area-inset-top, 0px)) var(--gutter) calc(36px + env(safe-area-inset-bottom, 0px)); background: var(--night); opacity: 0; visibility: hidden; transition: opacity .6s var(--ease), visibility 0s linear .6s; }
+.menu.open { opacity: 1; visibility: visible; transition: opacity .6s var(--ease); }
+.menu-links { display: grid; gap: 2px; }
+.menu-links a { font-family: 'Bodoni Moda Variable', Georgia, serif; font-size: clamp(2rem, 9vw, 3rem); line-height: 1.2; padding-block: 6px; text-decoration: none; color: var(--fg); opacity: 0; transform: translateY(14px); transition: opacity .8s var(--ease), transform .8s var(--ease), color .4s var(--ease); }
+.menu-links a:hover { color: var(--gold-light); }
+.menu.open .menu-links a { opacity: 1; transform: none; }
+.menu.open .menu-links a:nth-child(2) { transition-delay: .05s; } .menu.open .menu-links a:nth-child(3) { transition-delay: .1s; }
+.menu.open .menu-links a:nth-child(4) { transition-delay: .15s; } .menu.open .menu-links a:nth-child(5) { transition-delay: .2s; }
+.menu-foot { display: grid; gap: 22px; justify-items: start; border-top: 1px solid var(--line); padding-top: 26px; }
+.menu-foot .langs { margin-inline-start: -8px; }
+html.menu-open, html.menu-open body { overflow: hidden; }
+@media (min-width: 1080px) { .menu { display: none; } }
 
 /* ---------- apparitions : un fondu, rien de plus ---------- */
 .js .reveal { opacity: 0; transform: translateY(16px); transition: opacity 1.2s var(--ease), transform 1.2s var(--ease); }
@@ -126,21 +143,21 @@ html[dir='rtl'] .manifesto { line-height: 1.65; letter-spacing: 0; }
 .pillars p { color: var(--muted); font-size: .97rem; }
 
 /* ---------- frise aux arcades ---------- */
-.frise { color: var(--gold); opacity: .42; overflow: hidden; height: clamp(54px, 8vw, 96px); margin-inline: var(--gutter); border-bottom: 1px solid var(--line); }
-.frise svg { height: 100%; width: auto; min-width: 100%; margin-inline: auto; }
+.frise { display: flex; justify-content: center; color: var(--gold); opacity: .42; overflow: hidden; height: clamp(54px, 8vw, 96px); margin-inline: var(--gutter); border-bottom: 1px solid var(--line); }
+.frise svg { flex: none; height: 100%; width: auto; }
 
 /* ---------- 3. les services ---------- */
 .services { padding-block: var(--space); }
 .svc { display: grid; gap: 0; }
 .svc-door { position: sticky; top: 76px; z-index: 2; background: var(--night); padding-bottom: 18px; }
 .arch { position: relative; border-radius: 999px 999px 0 0; overflow: hidden; background: var(--night-2); isolation: isolate; }
-.arch::after { content: ''; position: absolute; inset: 10px; border: 1px solid rgba(217, 185, 138, .5); border-radius: 999px 999px 0 0; pointer-events: none; z-index: 3; }
+.arch::after { content: ''; position: absolute; inset: 10px; border: 1px solid rgba(217, 185, 138, .36); border-radius: 999px 999px 0 0; pointer-events: none; z-index: 3; }
 .arch video, .arch img, .arch canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 #svcArch { height: 32svh; max-width: 300px; margin-inline: auto; }
 #svcArch canvas { z-index: 1; }
 .svc-list li { padding-block: 26px; border-top: 1px solid var(--line); transition: opacity .7s var(--ease); }
 .svc-list li:last-child { border-bottom: 1px solid var(--line); }
-.js .svc-list li { opacity: .38; }
+.js .svc-list li { opacity: .46; }
 .js .svc-list li.on { opacity: 1; }
 .svc-list h3 { font-family: var(--f-display); font-weight: 400; font-size: clamp(1.5rem, 2.6vw, 2.2rem); line-height: 1.12; margin-bottom: .5rem; }
 .svc-list p { color: var(--muted); max-width: 30em; }
@@ -178,7 +195,7 @@ html[dir='rtl'] .svc-list .meta { letter-spacing: 0; font-size: .82rem; }
 @media (min-width: 1000px) { .fleet { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; } }
 .car .arch { height: clamp(240px, 42vw, 460px); margin-bottom: 18px; }
 @media (min-width: 1000px) { .car .arch { height: min(54svh, 500px); } }
-.car .arch img { height: 116%; top: -8%; will-change: transform; }
+.car .arch img { height: 116%; top: -8%; will-change: transform; filter: brightness(.84) saturate(.8) contrast(1.05); }
 .car h3 { font-family: var(--f-display); font-weight: 400; font-size: 1.3rem; }
 .car p { color: var(--muted); font-size: .92rem; }
 
@@ -216,7 +233,10 @@ html[dir='rtl'] .f label { letter-spacing: 0; font-size: .84rem; }
 .f select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--gold-light) 50%), linear-gradient(135deg, var(--gold-light) 50%, transparent 50%); background-position: calc(100% - 11px) 22px, calc(100% - 6px) 22px; background-size: 5px 5px; background-repeat: no-repeat; }
 html[dir='rtl'] .f select { background-position: 11px 22px, 6px 22px; }
 .f select option { color: #15110f; }
-.f textarea { resize: vertical; min-height: 96px; }
+.f textarea { resize: none; min-height: 96px; }
+.f { color-scheme: dark; }
+.f select option { background: var(--night-2); color: var(--fg); }
+.f input[type='date']::-webkit-calendar-picker-indicator { filter: invert(78%) sepia(28%) saturate(420%) hue-rotate(352deg); opacity: .85; cursor: pointer; }
 .f input:focus, .f select:focus, .f textarea:focus { outline: none; border-color: var(--gold-light); }
 /* Champ piège : caché sans le pousser hors écran (en arabe, un décalage à gauche élargirait la page). */
 .hp { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); opacity: 0; pointer-events: none; }

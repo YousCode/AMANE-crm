@@ -30,6 +30,7 @@ try {
   let p = await ctx.newPage(); p.on('pageerror', (e) => errs.push(e.message));
   await p.goto(BASE); await p.waitForFunction(() => !document.body.classList.contains('loading'), null, { timeout: 9000 });
   ok('chargement terminé, titre en français', (await p.textContent('.seuil-title')).includes('Toutes les portes de Paris'));
+  ok('typographie française : espace insécable avant « ? » et apostrophes courbes', await p.evaluate(() => { const t = document.querySelector('#prestataires h2').textContent; return t.includes('\u202F?') && !/ \?/.test(t) && !document.body.innerText.includes("l'occasion"); }));
   ok('le logo n’apparaît qu’une fois, dans la barre du haut', (await p.$$eval('svg path[d^="M452 -6"]', (e) => e.map((x) => !!x.closest('.nav-logo')))).join() === 'true');
   ok('huit services dans la liste et dans le formulaire', (await p.$$('#svcList li')).length === 8 && (await p.$$('#f-service option')).length === 8);
   ok('pas de débordement horizontal (français)', (await overflow(p)) <= 1, await overflow(p));
@@ -44,7 +45,6 @@ try {
   await scrollTo(p, seuilH * 0.95, 1400); const a2 = await look(p, '#porte');
   ok('la porte continue de s’ouvrir jusqu’au bout', a1 !== a2);
   ok('le second texte arrive quand le hall se découvre', (await p.evaluate(() => +getComputedStyle(document.querySelector('#seuilB')).opacity)) > 0.9);
-  ok('le filet de progression avance', (await p.evaluate(() => new DOMMatrix(getComputedStyle(document.querySelector('#progress')).transform).a)) > 0.02);
 
   // Les services : la ligne lue s'éclaire, la porte change de film.
   const li5 = await topOf(p, '#svcList li[data-i="5"]');
@@ -99,7 +99,18 @@ try {
   ok('téléphone : pas de débordement horizontal sur toute la page', worst <= 1, worst);
   const petits = await p.$$eval('.btn, .langs button, .faq summary, .link', (els) => els.filter((e) => e.offsetParent && e.getBoundingClientRect().height < 43.5).map((e) => e.className + ' « ' + e.textContent.trim().slice(0, 24) + ' » :' + Math.round(e.getBoundingClientRect().height)));
   ok('téléphone : boutons et liens d’au moins 44 px', petits.length === 0, petits.join(', '));
-  await p.click('[data-lang="ar"]'); await settle(p, 900);
+  // Menu : il s'ouvre, mène à la section choisie et se referme.
+  await scrollTo(p, 0, 600);
+  ok('téléphone : la barre du haut ne déborde pas et montre « Menu »', (await p.isVisible('#menuBtn')) && (await p.textContent('#menuBtn')) === 'Menu' && !(await p.isVisible('.nav-end > .langs')));
+  await p.click('#menuBtn'); await settle(p, 900);
+  ok('téléphone : le menu s’ouvre avec les sections, la demande et les langues', (await p.isVisible('#menu .menu-links a[href="#questions"]')) && (await p.isVisible('#menu [data-lang="ar"]')) && (await p.getAttribute('#menuBtn', 'aria-expanded')) === 'true');
+  await p.click('#menu .menu-links a[href="#questions"]'); await settle(p, 2400);
+  const q = await p.evaluate(() => document.querySelector('#questions').getBoundingClientRect().top);
+  ok('téléphone : un lien du menu ferme le menu et mène à la section', !(await p.isVisible('#menu .menu-links')) && Math.abs(q) < 120, q);
+  await p.click('#menuBtn'); await settle(p, 700);
+  await p.click('#menu [data-lang="ar"]'); await settle(p, 900);
+  await p.keyboard.press('Escape'); await settle(p, 700);
+  ok('téléphone, arabe : la langue se change depuis le menu', (await p.evaluate(() => document.documentElement.dir)) === 'rtl' && !(await p.isVisible('#menu .menu-links')));
   ok('téléphone, arabe : pas de débordement horizontal', (await overflow(p)) <= 1, await overflow(p));
   await ctx.close();
 } catch (e) {

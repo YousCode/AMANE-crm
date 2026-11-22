@@ -32,9 +32,29 @@
       <button type="button" data-lang="ar" aria-pressed="false">ع</button>
     </div>
     <a class="link nav-cta" href="#demande" data-i18n="cta">Faire une demande</a>
+    <button class="menu-btn" type="button" id="menuBtn" aria-expanded="false" aria-controls="menu">Menu</button>
   </div>
-  <span class="nav-progress" aria-hidden="true"><i id="progress"></i></span>
 </header>
+
+<!-- Menu des écrans étroits : les sections, la demande et les langues -->
+<div class="menu" id="menu" aria-hidden="true">
+  <nav class="menu-links" aria-label="Sections">
+    <a href="#services" data-i18n="n1">Services</a>
+    <a href="#rituel" data-i18n="n2">Le rituel</a>
+    <a href="#flotte" data-i18n="n3">La flotte</a>
+    <a href="#prestataires" data-i18n="n5">Prestataires</a>
+    <a href="#questions" data-i18n="n4">Questions</a>
+  </nav>
+  <div class="menu-foot">
+    <a class="btn" href="#demande" data-i18n="cta">Faire une demande</a>
+    <div class="langs" role="group" data-i18n-aria="langLabel" aria-label="Langue">
+      <button type="button" data-lang="fr" aria-pressed="true">FR</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      <button type="button" data-lang="es" aria-pressed="false">ES</button>
+      <button type="button" data-lang="ar" aria-pressed="false">ع</button>
+    </div>
+  </div>
+</div>
 
 <main id="main">
 

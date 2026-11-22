@@ -9,9 +9,16 @@ export const LOCALES: Record<Lang, string> = { fr: 'fr-FR', en: 'en-GB', es: 'es
 const DICT = Object.fromEntries(LANGS.map((l) => [l, { ...BASE[l], ...EXTRA[l] }])) as Record<Lang, Record<string, any>>;
 
 /** Texte d'une clé, avec chemin (« s1.0 », « pr.k ») ; repli sur le français, puis sur une chaîne vide. */
+/** Typographie française : espace fine insécable avant ; : ! ? » et après «, apostrophe courbe. */
+const fine = (v: any): any =>
+  typeof v === 'string' ? v.replace(/ ([;:!?»])/g, '\u202F$1').replace(/« /g, '«\u202F').replace(/(\p{L})'(\p{L})/gu, '$1’$2')
+  : Array.isArray(v) ? v.map(fine)
+  : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fine(x)])) : v;
+
 export function tr(lang: Lang, path: string): any {
   const walk = (o: any) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
-  return walk(DICT[lang]) ?? walk(DICT.fr) ?? '';
+  const v = walk(DICT[lang]) ?? walk(DICT.fr) ?? '';
+  return lang === 'fr' ? fine(v) : v;
 }
 export const message = (lang: Lang, ...a: Parameters<(typeof MSG)['fr']>) => MSG[lang](...a);
 

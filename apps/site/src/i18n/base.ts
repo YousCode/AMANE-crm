@@ -28,7 +28,7 @@ export const BASE: Record<Lang, Record<string, any>> = {
     s1: ["Voitures d'exception","Berlines, SUV et supercars, livrés à votre adresse, avec ou sans chauffeur.","Livraison · Avec ou sans chauffeur"],
     s2: ["Chauffeur privé","Chauffeurs professionnels, discrets et ponctuels, pour une soirée ou une semaine.","Français · Anglais · Arabe"],
     s3: ["Van VIP","Un salon roulant pour les familles, les équipes et les transferts d'aéroport.","Jusqu'à 7 passagers · CDG · Orly · Le Bourget"],
-    s4: ["Personal shopping","Rendez-vous privés en boutique, accompagnement et livraison à votre hôtel.","Faubourg Saint-Honoré · Avenue Montaigne"],
+    s4: ["Shopping privé","Rendez-vous privés en boutique, accompagnement et livraison à votre hôtel.","Faubourg Saint-Honoré · Avenue Montaigne"],
     s5: ["Séjours clé en main","Voiture, chauffeur, tables et adresses : un séjour entier composé pour vous.","Sur mesure"],
     s6: ["Conciergerie sur demande","Tables, palaces, événements, réservations difficiles. Demandez, nous trouvons la porte.","Sur demande"],
     rk: "Le rituel",
