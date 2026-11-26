@@ -45,7 +45,7 @@ Exemple : `curl -X POST localhost:3000/__dev/inbound -H 'content-type: applicati
 
 ## Routes
 
-Toutes en JSON sauf mention. Erreurs : `{error:'code', message:'texte français'}`. Session = cookie `amane_s` (ou en-tête `Cookie` envoyé par le mobile). Les écritures vérifient l'en-tête `Origin` (même hôte, `PUBLIC_URL`, `CORS_ORIGINS`, origines locales Expo/Vite en dev) et renvoient les en-têtes CORS pour une origine acceptée ; `POST /api/lead` reste strictement même origine.
+Toutes en JSON sauf mention. Erreurs : `{error:'code', message:'texte français'}`. Session = cookie `amane_s` (ou en-tête `Cookie` envoyé par le mobile). Les écritures vérifient l'en-tête `Origin` (même hôte, `PUBLIC_URL`, `CORS_ORIGINS`, origines locales Expo/Vite en dev) et renvoient les en-têtes CORS pour une origine acceptée ; `POST /api/lead` reste strictement même origine pour un navigateur ; le site amane.paris l'appelle de serveur à serveur, signé avec `SITE_LEAD_SECRET` (voir `docs/crm-serveur.md`).
 
 ### Contrat v1 (inchangé, voir `docs/crm-serveur.md`)
 `GET /api/health` · `POST /api/auth/setup|login|logout` · `GET /api/auth/me` · `GET /api/sync?since=` · `PUT|DELETE /api/doc/:col/:id` · `POST /api/counter` · `GET /api/activity` · `POST|GET /api/photo` · `POST /api/ai` · `GET|POST /api/whatsapp` (Meta) · `POST /api/whatsapp/send` · `POST /api/whatsapp/read` · `POST /api/lead`. Les formes réécrites (`/api/auth?action=`, `/api/doc?col=&id=`, `/api/doc?op=counter|activity`, `/api/whatsapp?action=`) sont acceptées aussi.
