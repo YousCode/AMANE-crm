@@ -176,6 +176,15 @@ test('demande signée : signature fausse, périmée ou sans secret → 403, rien
   }
 });
 
+test('demande signée : passagers « 8+ » repris tel quel, valeur fantaisiste ignorée', async () => {
+  const { db } = fresh({ SITE_LEAD_SECRET: SECRET });
+  at('2026-11-26T12:00:00Z');
+  await signed({ nom: 'Huit', email: 'huit@example.com', service: 'van', passagers: '8+', message: 'Mariage' });
+  await signed({ nom: 'Faux', email: 'faux@example.com', service: 'van', passagers: 'beaucoup', message: 'Mariage' });
+  assert.equal(db.dump('missions').find((m) => m.titre === 'Site — Huit').notes, 'Mariage\n\nPassagers : 8+');
+  assert.equal(db.dump('missions').find((m) => m.titre === 'Site — Faux').notes, 'Mariage');
+});
+
 test('demande signée : renvoyée deux fois, enregistrée une seule', async () => {
   const { db } = fresh({ SITE_LEAD_SECRET: SECRET });
   at('2026-11-26T12:00:00Z');

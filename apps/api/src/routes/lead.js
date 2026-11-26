@@ -102,7 +102,8 @@ router.all('/api/lead', wrap(async (req, res) => {
   const asked = str(body.service, 80);
   const siteLabel = SITE_LABELS[asked.toLowerCase()] || '';
   const service = siteLabel ? 'conciergerie' : serviceFrom(SITE_SERVICES[asked.toLowerCase()] || asked, message);
-  const passagers = /^\d{1,2}$/.test(str(String(body.passagers ?? ''), 4)) ? Number(body.passagers) : 0;
+  // « 1 » à « 7 », ou « 8+ » : tel que le site l'envoie.
+  const passagers = /^\d{1,2}\+?$/.test(str(String(body.passagers ?? ''), 4)) ? str(String(body.passagers), 4) : '';
   const clients = db.collection('clients');
   let client = null;
   if (telNorm) client = await clients.findOne({ telNorm, _deleted: { $ne: true } });
