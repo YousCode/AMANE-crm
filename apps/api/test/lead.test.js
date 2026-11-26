@@ -185,6 +185,29 @@ test('demande signée : passagers « 8+ » repris tel quel, valeur fantaisiste i
   assert.equal(db.dump('missions').find((m) => m.titre === 'Site — Faux').notes, 'Mariage');
 });
 
+test('téléphone en chiffres arabes : lu comme les chiffres latins', async () => {
+  const { db } = fresh({ SITE_LEAD_SECRET: SECRET });
+  at('2026-11-26T12:00:00Z');
+  assert.equal((await signed({ nom: 'Khalid', tel: '+٩٦٦ ٥٠ ١٢٣ ٤٥٦٧', message: 'Bonjour' })).status, 200);
+  assert.equal(db.dump('clients')[0].tel, '+966501234567');
+});
+
+test('demande signée : un téléphone illisible ne fait pas perdre une demande qui a un e-mail', async () => {
+  const { db } = fresh({ SITE_LEAD_SECRET: SECRET });
+  at('2026-11-26T12:00:00Z');
+  assert.equal((await signed({ nom: 'Avec Mail', tel: '12 34', email: 'avec@example.com', message: 'Bonjour' })).status, 200);
+  const [m] = db.dump('missions');
+  assert.equal(m.notes, 'Bonjour\n\nTéléphone saisi sur le site : 12 34');
+  assert.equal(db.dump('clients')[0].tel, '');
+  // Sans e-mail, il n'y a aucun moyen de répondre : la demande reste refusée.
+  const r = await signed({ nom: 'Sans Mail', tel: '12 34', message: 'Bonjour' });
+  assert.equal(r.status, 400);
+  // Hors appel signé, la règle ne change pas.
+  const n = await lead({ nom: 'Navigateur', tel: '12 34', email: 'nav@example.com' });
+  assert.equal(n.status, 400);
+  assert.equal(n.json.error, 'tel_invalide');
+});
+
 test('demande signée : renvoyée deux fois, enregistrée une seule', async () => {
   const { db } = fresh({ SITE_LEAD_SECRET: SECRET });
   at('2026-11-26T12:00:00Z');

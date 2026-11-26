@@ -89,13 +89,17 @@ router.all('/api/lead', wrap(async (req, res) => {
     throw tooMany('Trop de demandes envoyées. Réessayez plus tard ou écrivez-nous sur WhatsApp.');
   }
   const nom = str(body.nom, 120);
-  const telRaw = str(body.tel, 40);
+  // Chiffres arabes et persans ramenés aux chiffres latins : le site accepte « +٩٦٦ ٥٠… ».
+  const telRaw = str(body.tel, 40).replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) & 0xf));
   const email = str(body.email, 200).toLowerCase();
   const message = str(body.message, 4000);
   const date = str(body.date, 40);
   const telNorm = normPhone(telRaw);
   if (!telNorm && !email) throw new HttpError(400, 'contact_requis', 'Indiquez un téléphone ou une adresse e-mail.');
-  if (telRaw && !telNorm) throw new HttpError(400, 'tel_invalide', 'Numéro de téléphone invalide.');
+  // Une demande signée a déjà été acceptée par le site : un numéro que le CRM ne sait pas lire
+  // ne doit pas la faire perdre quand un e-mail permet de répondre. Il est gardé dans les notes.
+  const telIllisible = Boolean(signature && telRaw && !telNorm && email);
+  if (telRaw && !telNorm && !telIllisible) throw new HttpError(400, 'tel_invalide', 'Numéro de téléphone invalide.');
   if (email && !EMAIL_RE.test(email)) throw new HttpError(400, 'email_invalide', 'Adresse e-mail invalide.');
   const langueIn = str(body.langue, 4).toUpperCase();
   const langue = LANGUES.includes(langueIn) ? langueIn : detectLang(message) || 'FR';
@@ -130,6 +134,7 @@ router.all('/api/lead', wrap(async (req, res) => {
       message,
       date && !/^\d{4}-\d{2}-\d{2}/.test(date) ? `Date souhaitée : ${date}` : '',
       passagers ? `Passagers : ${passagers}` : '',
+      telIllisible ? `Téléphone saisi sur le site : ${telRaw}` : '',
     ].filter(Boolean).join('\n\n'),
   };
   const dm = /^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}))?/.exec(date);
