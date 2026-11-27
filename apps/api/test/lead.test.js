@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 import { fresh, call, H, login, at } from './helpers.js';
 
 const lead = (body, opts = {}) => call(H.lead, { method: 'POST', url: '/api/lead', body, ...opts });
@@ -106,4 +107,126 @@ test('alerte équipe envoyée si configurée', async () => {
   assert.equal(b.type, 'template');
   assert.equal(b.template.name, 'amane_alerte');
   assert.deepEqual(b.template.components[0].parameters.map((p) => p.text), ['Sophie', 'Van pour 8 personnes']);
+});
+
+// ── Demandes signées par le site amane.paris (serveur à serveur) ──
+const SECRET = 's'.repeat(40);
+/** Appel signé comme le fait le site : HMAC-SHA256 de « <horodatage>.<corps> ». */
+function signed(body, { t, secret = SECRET, origin = 'https://amane.paris', sig } = {}) {
+  const raw = JSON.stringify(body);
+  const ts = String(t ?? Math.floor(Date.parse('2026-11-26T12:00:00Z') / 1000));
+  const v1 = sig ?? createHmac('sha256', secret).update(`${ts}.${raw}`).digest('hex');
+  return call(H.lead, { method: 'POST', url: '/api/lead', raw, headers: { origin, 'content-type': 'application/json', 'x-amane-signature': `t=${ts},v1=${v1}` }, ip: '51.91.0.10' });
+}
+
+test('demande signée par le site : acceptée depuis une autre origine', async () => {
+  const { db } = fresh({ SITE_LEAD_SECRET: SECRET });
+  at('2026-11-26T12:00:00Z');
+  const r = await signed({ nom: 'Claire Martin', email: 'claire@example.fr', langue: 'FR', service: 'voitures', date: '2026-12-05', passagers: '3', message: 'Une berline pour la soirée' });
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.json, { ok: true });
+  assert.equal(r.headers['access-control-allow-origin'], undefined);
+  const [m] = db.dump('missions');
+  assert.deepEqual(
+    { statut: m.statut, source: m.source, service: m.service, debut: m.debut, notes: m.notes },
+    { statut: 'nouvelle', source: 'site', service: 'location', debut: '2026-12-05', notes: 'Une berline pour la soirée\n\nPassagers : 3' },
+  );
+  assert.equal(db.dump('clients')[0].email, 'claire@example.fr');
+});
+
+test('demande signée : les services que le CRM ne connaît pas vont en conciergerie, leur nom en tête des notes', async () => {
+  const { db } = fresh({ SITE_LEAD_SECRET: SECRET });
+  at('2026-11-26T12:00:00Z');
+  const cases = [['immobilier', 'Immobilier'], ['tables', 'Tables & restaurants'], ['evenements', 'Événements'], ['esthetique', 'Séjour esthétique'], ['creation', 'Création & marketing'], ['autre', 'Autre demande']];
+  for (const [i, [id, label]] of cases.entries()) {
+    assert.equal((await signed({ nom: 'S' + i, email: `s${i}@example.com`, service: id, message: 'Bonjour' })).status, 200);
+    const m = db.dump('missions').find((x) => x.titre === 'Site — S' + i);
+    assert.equal(m.service, 'conciergerie', id);
+    assert.equal(m.notes, `Service demandé sur le site : ${label}\n\nBonjour`, id);
+  }
+  const known = [['van', 'van'], ['chauffeur', 'chauffeur'], ['sejours', 'sejour'], ['shopping', 'shopping'], ['conciergerie', 'conciergerie']];
+  for (const [i, [id, crm]] of known.entries()) {
+    await signed({ nom: 'K' + i, email: `k${i}@example.com`, service: id, message: 'Bonjour' });
+    assert.equal(db.dump('missions').find((x) => x.titre === 'Site — K' + i).service, crm, id);
+  }
+});
+
+test('demande signée : signature fausse, périmée ou sans secret → 403, rien n’est créé', async () => {
+  const body = { nom: 'X', email: 'x@example.com', message: 'Bonjour' };
+  let { db } = fresh({ SITE_LEAD_SECRET: SECRET });
+  at('2026-11-26T12:00:00Z');
+  for (const r of [
+    await signed(body, { sig: 'a'.repeat(64) }),
+    await signed(body, { secret: 'autre-secret-'.repeat(4) }),
+    await signed(body, { t: Math.floor(Date.parse('2026-11-26T11:50:00Z') / 1000) }),
+    await signed(body, { t: Math.floor(Date.parse('2026-11-26T12:10:00Z') / 1000) }),
+    await call(H.lead, { method: 'POST', url: '/api/lead', body, headers: { origin: 'https://amane.paris', 'x-amane-signature': 'n-importe-quoi' } }),
+  ]) {
+    assert.equal(r.status, 403);
+    assert.equal(r.json.error, 'signature_refusee');
+  }
+  assert.equal(db.dump('missions').length, 0);
+  // Sans secret configuré (ou trop court), aucune signature n'est acceptée.
+  for (const env of [{}, { SITE_LEAD_SECRET: 'court' }]) {
+    ({ db } = fresh(env));
+    at('2026-11-26T12:00:00Z');
+    const r = await signed(body, { secret: env.SITE_LEAD_SECRET || SECRET });
+    assert.equal(r.status, 403);
+    assert.equal(db.dump('missions').length, 0);
+  }
+});
+
+test('demande signée : passagers « 8+ » repris tel quel, valeur fantaisiste ignorée', async () => {
+  const { db } = fresh({ SITE_LEAD_SECRET: SECRET });
+  at('2026-11-26T12:00:00Z');
+  await signed({ nom: 'Huit', email: 'huit@example.com', service: 'van', passagers: '8+', message: 'Mariage' });
+  await signed({ nom: 'Faux', email: 'faux@example.com', service: 'van', passagers: 'beaucoup', message: 'Mariage' });
+  assert.equal(db.dump('missions').find((m) => m.titre === 'Site — Huit').notes, 'Mariage\n\nPassagers : 8+');
+  assert.equal(db.dump('missions').find((m) => m.titre === 'Site — Faux').notes, 'Mariage');
+});
+
+test('téléphone en chiffres arabes : lu comme les chiffres latins', async () => {
+  const { db } = fresh({ SITE_LEAD_SECRET: SECRET });
+  at('2026-11-26T12:00:00Z');
+  assert.equal((await signed({ nom: 'Khalid', tel: '+٩٦٦ ٥٠ ١٢٣ ٤٥٦٧', message: 'Bonjour' })).status, 200);
+  assert.equal(db.dump('clients')[0].tel, '+966501234567');
+});
+
+test('demande signée : un téléphone illisible ne fait pas perdre une demande qui a un e-mail', async () => {
+  const { db } = fresh({ SITE_LEAD_SECRET: SECRET });
+  at('2026-11-26T12:00:00Z');
+  assert.equal((await signed({ nom: 'Avec Mail', tel: '12 34', email: 'avec@example.com', message: 'Bonjour' })).status, 200);
+  const [m] = db.dump('missions');
+  assert.equal(m.notes, 'Bonjour\n\nTéléphone saisi sur le site : 12 34');
+  assert.equal(db.dump('clients')[0].tel, '');
+  // Sans e-mail, il n'y a aucun moyen de répondre : la demande reste refusée.
+  const r = await signed({ nom: 'Sans Mail', tel: '12 34', message: 'Bonjour' });
+  assert.equal(r.status, 400);
+  // Hors appel signé, la règle ne change pas.
+  const n = await lead({ nom: 'Navigateur', tel: '12 34', email: 'nav@example.com' });
+  assert.equal(n.status, 400);
+  assert.equal(n.json.error, 'tel_invalide');
+});
+
+test('demande signée : renvoyée deux fois, enregistrée une seule', async () => {
+  const { db } = fresh({ SITE_LEAD_SECRET: SECRET });
+  at('2026-11-26T12:00:00Z');
+  const body = { nom: 'Deux Fois', email: 'deux@example.com', message: 'Bonjour' };
+  assert.equal((await signed(body)).status, 200);
+  assert.equal((await signed(body)).status, 200);
+  assert.equal(db.dump('missions').length, 1);
+});
+
+test('demande signée : pas de limite par IP, le site appelle toujours de la même adresse', async () => {
+  const { db } = fresh({ SITE_LEAD_SECRET: SECRET });
+  at('2026-11-26T12:00:00Z');
+  for (let i = 0; i < 8; i++) assert.equal((await signed({ nom: 'N' + i, email: `n${i}@example.com`, message: 'Bonjour' })).status, 200);
+  assert.equal(db.dump('missions').length, 8);
+});
+
+test('sans signature, une autre origine reste refusée même si le secret est configuré', async () => {
+  fresh({ SITE_LEAD_SECRET: SECRET });
+  const r = await lead({ nom: 'X', email: 'x@example.com' }, { headers: { origin: 'https://amane.paris' } });
+  assert.equal(r.status, 403);
+  assert.equal(r.json.error, 'origine_refusee');
 });
